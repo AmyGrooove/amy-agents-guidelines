@@ -133,10 +133,21 @@ repository, refreshes knowledge, or activates Scout; it returns explicit
 See [Context Intelligence](context-intelligence.md) for contracts and the Stage 5
 Handoff.
 
+## Compute Routing
+
+Stage 6 adds an independent `amy.compute-routing` capability. It maps validated
+Task Intelligence signals to provider-independent logical compute profiles and,
+when configured, to opaque model/reasoning bindings. The capability supports
+explicit task/DAG-node targets, upgrade/downgrade transitions, ordered model
+fallback, and bounded upward escalation when a required model is explicitly
+reported unavailable. It does not select agent roles or execution strategy.
+
+See [Compute Routing](compute-routing.md) for contracts and the Stage 6 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
-interpretation, automatic source exploration, Scout activation, model selection,
+interpretation, automatic source exploration, Scout activation, agent-role selection,
 decomposition, advanced orchestration, reviewer intelligence, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.

@@ -2,12 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { createAmyRuntime } from './create-amy-runtime.js';
+import { createComputeRoutingCapability } from './compute-routing/compute-routing-capability.js';
 import { createContextIntelligenceCapability } from './context-intelligence/context-intelligence-capability.js';
 import { AmyRuntimeError } from './errors/amy-runtime-error.js';
 import { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 import { createTaskIntelligenceCapability } from './task-intelligence/task-intelligence-capability.js';
 
 import type { AmyRuntime } from './kernel/amy-runtime.js';
+import type { IComputeRoutingApi } from './compute-routing/compute-routing-contract.js';
 import type { IContextIntelligenceApi } from './context-intelligence/context-intelligence-contract.js';
 import type { IPluginInventoryApi } from './compatibility/plugin-inventory.js';
 import type { IProjectIntelligenceApi } from './project-intelligence/project-intelligence-contract.js';
@@ -16,6 +18,7 @@ import type { ITaskIntelligenceApi } from './task-intelligence/task-intelligence
 type TCliCommand =
   | 'capabilities'
   | 'config'
+  | 'compute-route'
   | 'context-resolve'
   | 'intelligence-discover'
   | 'intelligence-freshness-refresh'
@@ -45,6 +48,7 @@ interface ICliArguments {
 const CLI_COMMANDS: readonly TCliCommand[] = [
   'capabilities',
   'config',
+  'compute-route',
   'context-resolve',
   'intelligence-discover',
   'intelligence-freshness-refresh',
@@ -82,6 +86,10 @@ const TASK_INTELLIGENCE_COMMANDS: readonly TCliCommand[] = [
 
 const CONTEXT_INTELLIGENCE_COMMANDS: readonly TCliCommand[] = [
   'context-resolve',
+];
+
+const COMPUTE_ROUTING_COMMANDS: readonly TCliCommand[] = [
+  'compute-route',
 ];
 
 const checkIsCliCommand = (value: string): value is TCliCommand =>
@@ -141,6 +149,7 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
     'intelligence-graph-save',
     'intelligence-save',
     'context-resolve',
+    'compute-route',
     'task-classify',
     'task-contract-validate',
   ];
@@ -243,6 +252,14 @@ const checkIsContextIntelligenceApi = (
   'resolve' in value &&
   typeof value.resolve === 'function';
 
+const checkIsComputeRoutingApi = (
+  value: unknown,
+): value is IComputeRoutingApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'route' in value &&
+  typeof value.route === 'function';
+
 const writeJson = (value: unknown, stream: NodeJS.WriteStream) => {
   stream.write(`${JSON.stringify(value, undefined, 2)}\n`);
 };
@@ -266,6 +283,35 @@ const executeCommand = async (
 
   if (command === 'capabilities') {
     return runtime.capabilities.list();
+  }
+
+  if (COMPUTE_ROUTING_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired('amy.compute-routing');
+
+    if (!checkIsComputeRoutingApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Compute Routing capability API is incompatible',
+      });
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      return capability.api.route(value);
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Compute Routing input at ${inputPath}`,
+      });
+    }
   }
 
   if (CONTEXT_INTELLIGENCE_COMMANDS.includes(command)) {
@@ -465,6 +511,15 @@ export const runCli = async (args: readonly string[]) => {
         : {}),
       projectRoot: cliArguments.projectRoot,
     });
+
+    if (COMPUTE_ROUTING_COMMANDS.includes(cliArguments.command)) {
+      runtime.capabilities.register(
+        createComputeRoutingCapability({
+          ...(runtime.config.compute ? { config: runtime.config.compute } : {}),
+        }),
+      );
+    }
+
     const result = await executeCommand(
       runtime,
       cliArguments.command,

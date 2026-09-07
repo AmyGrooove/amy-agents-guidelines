@@ -2,9 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+import { validateComputeRoutingConfig } from '../compute-routing/validate-compute-routing.js';
 import { AmyRuntimeError } from '../errors/amy-runtime-error.js';
 import { RUNTIME_VERSIONS } from '../versions.js';
 
+import type { IComputeProfileBinding, IComputeRoutingConfig, TComputeProfile } from '../compute-routing/compute-routing-contract.js';
 import type {
   IAmyRuntimeConfig,
   ICapabilityConfig,
@@ -66,6 +68,48 @@ const mergeCapabilityConfig = (
     ...incoming,
   });
 
+const mergeComputeProfileBinding = (
+  current: Readonly<IComputeProfileBinding> | undefined,
+  incoming: Readonly<IComputeProfileBinding>,
+): Readonly<IComputeProfileBinding> =>
+  Object.freeze({
+    ...current,
+    ...incoming,
+    ...(incoming.fallbackModels
+      ? { fallbackModels: Object.freeze([...incoming.fallbackModels]) }
+      : {}),
+  });
+
+const mergeComputeConfig = (
+  current: Readonly<IComputeRoutingConfig> | undefined,
+  incoming: Readonly<IComputeRoutingConfig>,
+): Readonly<IComputeRoutingConfig> => {
+  const profiles = Object.entries(incoming.profiles ?? {}).reduce<
+    Partial<Record<TComputeProfile, Readonly<IComputeProfileBinding>>>
+  >(
+    (nextProfiles, [profile, binding]) => ({
+      ...nextProfiles,
+      [profile]: mergeComputeProfileBinding(
+        current?.profiles?.[profile as TComputeProfile],
+        binding,
+      ),
+    }),
+    { ...(current?.profiles ?? {}) },
+  );
+
+  return Object.freeze({
+    ...(current?.defaultProfile
+      ? { defaultProfile: current.defaultProfile }
+      : {}),
+    ...(Object.keys(profiles).length > 0
+      ? { profiles: Object.freeze(profiles) }
+      : {}),
+    ...(incoming.defaultProfile
+      ? { defaultProfile: incoming.defaultProfile }
+      : {}),
+  });
+};
+
 const mergeLayers = (
   layers: readonly IConfigLayer[],
 ): Readonly<IAmyRuntimeConfig> => {
@@ -82,9 +126,24 @@ const mergeLayers = (
       ),
     {},
   );
+  const compute = layers.reduce<Readonly<IComputeRoutingConfig> | undefined>(
+    (currentCompute, layer) =>
+      layer.config.compute
+        ? mergeComputeConfig(currentCompute, layer.config.compute)
+        : currentCompute,
+    undefined,
+  );
+
+  const validatedCompute = compute
+    ? validateComputeRoutingConfig(compute, {
+        code: 'INVALID_CONFIGURATION',
+        source: 'merged',
+      })
+    : undefined;
 
   return Object.freeze({
     capabilities: Object.freeze(capabilities),
+    ...(validatedCompute ? { compute: validatedCompute } : {}),
     schemaVersion: RUNTIME_VERSIONS.configSchema,
   });
 };

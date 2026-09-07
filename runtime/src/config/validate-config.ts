@@ -1,4 +1,5 @@
 import { AmyRuntimeError } from '../errors/amy-runtime-error.js';
+import { validateComputeRoutingConfig } from '../compute-routing/validate-compute-routing.js';
 import { RUNTIME_VERSIONS } from '../versions.js';
 
 import type {
@@ -81,8 +82,8 @@ export const validateRuntimeConfig = (
   }
 
   const allowedKeys = props.isSchemaRequired
-    ? ['capabilities', 'schemaVersion']
-    : ['capabilities'];
+    ? ['capabilities', 'compute', 'schemaVersion']
+    : ['capabilities', 'compute'];
   const unknownKeys = Object.keys(props.value).filter(
     (key) => !allowedKeys.includes(key),
   );
@@ -120,6 +121,17 @@ export const validateRuntimeConfig = (
       validateCapabilityConfig(value, `${props.source}:${id}`),
     ]),
   );
+  const compute =
+    props.value.compute === undefined
+      ? undefined
+      : validateComputeRoutingConfig(props.value.compute, {
+          allowPartialBindings: true,
+          code: 'INVALID_CONFIGURATION',
+          source: props.source,
+        });
 
-  return Object.keys(capabilities).length === 0 ? {} : { capabilities };
+  return {
+    ...(Object.keys(capabilities).length === 0 ? {} : { capabilities }),
+    ...(compute ? { compute } : {}),
+  };
 };

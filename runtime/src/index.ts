@@ -8,6 +8,10 @@ export { RuntimeEventBus } from './events/runtime-event-bus.js';
 export { AmyRuntime } from './kernel/amy-runtime.js';
 export { MemoryStateStore } from './state/memory-state-store.js';
 export { RUNTIME_VERSIONS } from './versions.js';
+export { createComputeRoutingCapability } from './compute-routing/compute-routing-capability.js';
+export { routeCompute } from './compute-routing/compute-router.js';
+export { COMPUTE_PROFILES, COMPUTE_ROUTING_VERSIONS } from './compute-routing/compute-routing-contract.js';
+export { validateComputeRoutingInput } from './compute-routing/validate-compute-routing.js';
 export { discoverProject } from './project-intelligence/discover-project.js';
 export { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 export { PROJECT_INTELLIGENCE_VERSIONS } from './project-intelligence/project-intelligence-contract.js';
@@ -32,6 +36,23 @@ export {
   validateTaskContract,
   validateTaskIntelligenceAnalysis,
 } from './task-intelligence/validate-task-intelligence.js';
+
+export type {
+  IComputeAssignment,
+  IComputeProfileBinding,
+  IComputeRoutingApi,
+  IComputeRoutingConfig,
+  IComputeRoutingDecision,
+  IComputeRoutingInput,
+  IComputeTarget,
+  TComputeAssignmentStatus,
+  TComputeProfile,
+  TComputeReasonCode,
+  TComputeRoutingMode,
+  TComputeTargetKind,
+} from './compute-routing/compute-routing-contract.js';
+export type { ICreateComputeRoutingCapabilityOptions } from './compute-routing/compute-routing-capability.js';
+export type { IRouteComputeOptions } from './compute-routing/compute-router.js';
 
 export type {
   IAmyRuntimeErrorProps,

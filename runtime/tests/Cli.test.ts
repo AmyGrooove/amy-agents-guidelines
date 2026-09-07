@@ -291,6 +291,80 @@ describe('Cli', () => {
     assert.ok(selection.data.resolution.reasonCodes.includes('project-knowledge-missing'));
   });
 
+  it('маршрутизирует compute явно через CLI и использует project model mapping', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'compute-input.json');
+    const configRoot = join(projectRoot, '.amy');
+    const taskAnalysis = {
+      data: {
+        classification: {
+          confidence: 'medium',
+          dimensions: {
+            blastRadius: 'local',
+            complexity: 'low',
+            coupling: 'low',
+            expectedContextCost: 'low',
+            novelty: 'unknown',
+            parallelizability: 'low',
+            risk: 'unknown',
+            scope: 'local',
+            uncertainty: 'low',
+            verificationCost: 'low',
+          },
+          evidenceGaps: ['novelty', 'project-risk'],
+          mode: 'text-only',
+          reasonCodes: ['scope-local'],
+          schemaVersion: 1,
+        },
+        contract: {
+          affectedScope: { kind: 'local', targets: ['src/Button.tsx'] },
+          goal: 'Add disabled state.',
+          kind: 'task-contract',
+          schemaVersion: 1,
+          uncertainties: [],
+          verificationExpectations: ['Run tests'],
+        },
+      },
+      kind: 'task-analysis',
+      schemaVersion: 1,
+    };
+
+    await mkdir(configRoot, { recursive: true });
+    await writeFile(
+      join(configRoot, 'config.json'),
+      JSON.stringify({
+        capabilities: {},
+        compute: {
+          profiles: {
+            FAST: { model: 'fast-model', reasoningEffort: 'low' },
+          },
+        },
+        schemaVersion: 1,
+      }),
+      'utf8',
+    );
+    await writeFile(inputPath, JSON.stringify({ taskAnalysis }), 'utf8');
+
+    const result = runCli([
+      'compute-route',
+      '--input',
+      inputPath,
+      '--project',
+      projectRoot,
+      '--plugin',
+      pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    const decision = JSON.parse(result.stdout);
+    assert.equal(decision.profile, 'FAST');
+    assert.deepEqual(decision.assignment, {
+      model: 'fast-model',
+      reasoningEffort: 'low',
+      status: 'mapped',
+    });
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

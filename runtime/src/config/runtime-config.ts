@@ -1,3 +1,5 @@
+import type { IComputeRoutingConfig } from '../compute-routing/compute-routing-contract.js';
+
 export interface ICapabilityConfig {
   enabled?: boolean;
   required?: boolean;
@@ -6,10 +8,13 @@ export interface ICapabilityConfig {
 export interface IAmyRuntimeConfig {
   capabilities: Readonly<Record<string, Readonly<ICapabilityConfig>>>;
   schemaVersion: number;
+
+  compute?: Readonly<IComputeRoutingConfig>;
 }
 
 export interface IRuntimeConfigOverrides {
   capabilities?: Readonly<Record<string, Readonly<ICapabilityConfig>>>;
+  compute?: Readonly<IComputeRoutingConfig>;
 }
 
 export type TRuntimeConfigSource =

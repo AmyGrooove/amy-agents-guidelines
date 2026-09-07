@@ -91,6 +91,77 @@ describe('RuntimeConfig', () => {
     ]);
   });
 
+  it('объединяет optional compute routing config без влияния на старые config files', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const homeDirectory = await createTemporaryDirectory();
+
+    await writeJson(homeDirectory, {
+      capabilities: {},
+      compute: {
+        defaultProfile: 'STANDARD',
+        profiles: {
+          ADVANCED: {
+            model: 'advanced-primary',
+            reasoningEffort: 'high',
+          },
+        },
+      },
+      schemaVersion: 1,
+    });
+    await writeJson(projectRoot, {
+      capabilities: {},
+      compute: {
+        profiles: {
+          ADVANCED: { fallbackModels: ['advanced-backup'] },
+          DEEP: { model: 'deep-model' },
+        },
+      },
+      schemaVersion: 1,
+    });
+
+    const result = await loadRuntimeConfig({
+      homeDirectory,
+      overrides: {
+        compute: { defaultProfile: 'ADVANCED' },
+      },
+      projectRoot,
+    });
+
+    assert.deepEqual(result.config.compute, {
+      defaultProfile: 'ADVANCED',
+      profiles: {
+        ADVANCED: {
+          fallbackModels: ['advanced-backup'],
+          model: 'advanced-primary',
+          reasoningEffort: 'high',
+        },
+        DEEP: { model: 'deep-model' },
+      },
+    });
+  });
+
+  it('отклоняет incomplete effective compute binding после merge', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const homeDirectory = await createTemporaryDirectory();
+
+    await writeJson(projectRoot, {
+      capabilities: {},
+      compute: {
+        profiles: {
+          FAST: { fallbackModels: ['backup-only'] },
+        },
+      },
+      schemaVersion: 1,
+    });
+
+    await assert.rejects(
+      loadRuntimeConfig({ homeDirectory, projectRoot }),
+      (error: unknown) =>
+        error instanceof AmyRuntimeError &&
+        error.code === 'INVALID_CONFIGURATION',
+    );
+  });
+
   it('отклоняет неизвестные поля', async () => {
     const projectRoot = await createTemporaryDirectory();
     const homeDirectory = await createTemporaryDirectory();
