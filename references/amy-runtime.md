@@ -121,10 +121,22 @@ loads or refreshes it automatically.
 See [Task Intelligence](task-intelligence.md) for contracts and the Stage 4
 Handoff.
 
+## Context Intelligence
+
+Stage 5 adds an independent `amy.context-intelligence` capability. It consumes a
+validated Task Analysis and selectively reuses Project Intelligence knowledge,
+freshness, and direct graph impact to compile a bounded `context-selection`
+packet. Project Intelligence remains optional. The resolver never scans the
+repository, refreshes knowledge, or activates Scout; it returns explicit
+`none`, `source-read`, or `scout` exploration recommendations with evidence.
+
+See [Context Intelligence](context-intelligence.md) for contracts and the Stage 5
+Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
-interpretation, context resolution, Scout activation, model selection,
+interpretation, automatic source exploration, Scout activation, model selection,
 decomposition, advanced orchestration, reviewer intelligence, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.

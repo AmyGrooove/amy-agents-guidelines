@@ -240,6 +240,57 @@ describe('Cli', () => {
     );
   });
 
+
+  it('резолвит Context Packet только через явную context-команду', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const classificationInputPath = join(projectRoot, 'task-classification.json');
+    const contextInputPath = join(projectRoot, 'context-input.json');
+    const contract = {
+      affectedScope: { kind: 'local', targets: ['src/Button.tsx'] },
+      goal: 'Add disabled state.',
+      kind: 'task-contract',
+      schemaVersion: 1,
+      uncertainties: [],
+      verificationExpectations: ['Run tests'],
+    };
+
+    await writeFile(
+      classificationInputPath,
+      JSON.stringify({ contract }),
+      'utf8',
+    );
+
+    const commonArgs = ['--project', projectRoot, '--plugin', pluginRoot];
+    const classified = runCli([
+      'task-classify',
+      '--input',
+      classificationInputPath,
+      ...commonArgs,
+    ]);
+
+    assert.equal(classified.status, 0, classified.stderr);
+    await writeFile(
+      contextInputPath,
+      JSON.stringify({ taskAnalysis: JSON.parse(classified.stdout) }),
+      'utf8',
+    );
+
+    const context = runCli([
+      'context-resolve',
+      '--input',
+      contextInputPath,
+      ...commonArgs,
+    ]);
+
+    assert.equal(context.status, 0, context.stderr);
+    const selection = JSON.parse(context.stdout);
+    assert.equal(selection.kind, 'context-selection');
+    assert.equal(selection.data.packet.goal, 'Add disabled state.');
+    assert.deepEqual(selection.data.packet.likelyAffectedFiles, ['src/Button.tsx']);
+    assert.equal(selection.data.resolution.exploration, 'source-read');
+    assert.ok(selection.data.resolution.reasonCodes.includes('project-knowledge-missing'));
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

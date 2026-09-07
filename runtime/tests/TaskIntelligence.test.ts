@@ -49,6 +49,7 @@ interface ITaskIntelligenceModule {
       version: string;
     };
   };
+  validateTaskIntelligenceAnalysis(value: unknown): ReturnType<ITaskIntelligenceModule['classifyTask']>;
   validateTaskContract(value: unknown): {
     affectedScope?: { kind: string; targets?: readonly string[] };
     goal: string;
@@ -243,6 +244,28 @@ describe('TaskIntelligence', () => {
       'uncertainties-many',
       'verification-many',
     ]);
+  });
+
+  it('валидирует Task Analysis как canonical pipeline input для следующих этапов', async () => {
+    const module = await loadTaskIntelligenceModule();
+    const analysis = module.classifyTask({ contract: createLocalContract() });
+
+    assert.deepEqual(module.validateTaskIntelligenceAnalysis(analysis), analysis);
+    assert.throws(
+      () =>
+        module.validateTaskIntelligenceAnalysis({
+          ...analysis,
+          data: {
+            ...analysis.data,
+            classification: {
+              ...analysis.data.classification,
+              confidence: 'certain',
+            },
+          },
+        }),
+      (error: unknown) =>
+        error instanceof AmyRuntimeError && error.code === 'VALIDATION_FAILURE',
+    );
   });
 
   it('оставляет неизвестными характеристики, для которых Task Contract не даёт evidence', async () => {

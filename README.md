@@ -43,6 +43,7 @@ node runtime/dist/cli.js intelligence-freshness-show --project <path>
 node runtime/dist/cli.js intelligence-impact --project <path> --module <module-id>
 node runtime/dist/cli.js task-contract-validate --input <contract.json>
 node runtime/dist/cli.js task-classify --input <classification-input.json>
+node runtime/dist/cli.js context-resolve --input <context-input.json> --project <path>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не
@@ -50,4 +51,5 @@ Runtime используется только явно. Существующие
 
 Подробнее: [архитектура Amy Runtime](references/amy-runtime.md) и
 [Project Intelligence](references/project-intelligence.md) и
-[Task Intelligence](references/task-intelligence.md).
+[Task Intelligence](references/task-intelligence.md) и
+[Context Intelligence](references/context-intelligence.md).

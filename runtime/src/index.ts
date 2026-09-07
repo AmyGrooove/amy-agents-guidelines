@@ -18,10 +18,20 @@ export {
 } from './project-intelligence/project-intelligence-graph.js';
 export { validateProjectIntelligenceFreshnessSnapshot } from './project-intelligence/project-intelligence-freshness.js';
 export { validateSpecWorthinessDecision } from './project-intelligence/validate-project-intelligence.js';
+export { createContextIntelligenceCapability } from './context-intelligence/context-intelligence-capability.js';
+export type { ICreateContextIntelligenceCapabilityOptions } from './context-intelligence/context-intelligence-capability.js';
+export type { IContextExplorationCache } from './context-intelligence/context-exploration-cache.js';
+export { CONTEXT_INTELLIGENCE_VERSIONS } from './context-intelligence/context-intelligence-contract.js';
+export { MemoryContextExplorationCache } from './context-intelligence/context-exploration-cache.js';
+export { resolveTaskContext } from './context-intelligence/context-resolver.js';
+export { validateContextResolutionInput } from './context-intelligence/validate-context-intelligence.js';
 export { createTaskIntelligenceCapability } from './task-intelligence/task-intelligence-capability.js';
 export { classifyTask } from './task-intelligence/task-classifier.js';
 export { TASK_INTELLIGENCE_VERSIONS } from './task-intelligence/task-intelligence-contract.js';
-export { validateTaskContract } from './task-intelligence/validate-task-intelligence.js';
+export {
+  validateTaskContract,
+  validateTaskIntelligenceAnalysis,
+} from './task-intelligence/validate-task-intelligence.js';
 
 export type {
   IAmyRuntimeErrorProps,
@@ -125,6 +135,28 @@ export type {
   TSpecWorthinessConfidence,
   TSpecWorthinessReason,
 } from './project-intelligence/project-intelligence-contract.js';
+
+export type {
+  IContextBudgetLimits,
+  IContextBudgetSummary,
+  IContextBudgetUsage,
+  IContextIntelligenceApi,
+  IContextModuleSelection,
+  IContextPacket,
+  IContextResolution,
+  IContextResolutionInput,
+  IContextSelectionData,
+  IContextSpecSelection,
+  TContextBudgetProfile,
+  TContextConfidence,
+  TContextEvidenceGap,
+  TContextExploration,
+  TContextGraphState,
+  TContextIntelligenceSelection,
+  TContextModuleFreshness,
+  TContextModuleRelevance,
+  TContextReasonCode,
+} from './context-intelligence/context-intelligence-contract.js';
 
 export type {
   ITaskAffectedScope,

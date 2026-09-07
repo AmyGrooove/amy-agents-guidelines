@@ -63,6 +63,7 @@ Stale or missing Project Intelligence evidence is surfaced as an evidence gap ra
 Canonical public functions are:
 
 - `validateTaskContract(value)`;
+- `validateTaskIntelligenceAnalysis(value)`;
 - `classifyTask(value)`;
 - `createTaskIntelligenceCapability()`.
 
@@ -88,6 +89,11 @@ Classification input is:
 ```
 
 `projectEvidence` is optional. Omitting it guarantees text-only classification.
+
+Stage 5 adds `validateTaskIntelligenceAnalysis(value)` as an additive downstream
+validation boundary so Context Intelligence can reject malformed Task Analysis
+envelopes without reclassifying them. Task Intelligence behavior and schemas are
+otherwise unchanged.
 
 ## Stage 4 Handoff
 

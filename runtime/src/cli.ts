@@ -2,11 +2,13 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { createAmyRuntime } from './create-amy-runtime.js';
+import { createContextIntelligenceCapability } from './context-intelligence/context-intelligence-capability.js';
 import { AmyRuntimeError } from './errors/amy-runtime-error.js';
 import { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 import { createTaskIntelligenceCapability } from './task-intelligence/task-intelligence-capability.js';
 
 import type { AmyRuntime } from './kernel/amy-runtime.js';
+import type { IContextIntelligenceApi } from './context-intelligence/context-intelligence-contract.js';
 import type { IPluginInventoryApi } from './compatibility/plugin-inventory.js';
 import type { IProjectIntelligenceApi } from './project-intelligence/project-intelligence-contract.js';
 import type { ITaskIntelligenceApi } from './task-intelligence/task-intelligence-contract.js';
@@ -14,6 +16,7 @@ import type { ITaskIntelligenceApi } from './task-intelligence/task-intelligence
 type TCliCommand =
   | 'capabilities'
   | 'config'
+  | 'context-resolve'
   | 'intelligence-discover'
   | 'intelligence-freshness-refresh'
   | 'intelligence-freshness-show'
@@ -42,6 +45,7 @@ interface ICliArguments {
 const CLI_COMMANDS: readonly TCliCommand[] = [
   'capabilities',
   'config',
+  'context-resolve',
   'intelligence-discover',
   'intelligence-freshness-refresh',
   'intelligence-freshness-show',
@@ -74,6 +78,10 @@ const PROJECT_INTELLIGENCE_COMMANDS: readonly TCliCommand[] = [
 const TASK_INTELLIGENCE_COMMANDS: readonly TCliCommand[] = [
   'task-classify',
   'task-contract-validate',
+];
+
+const CONTEXT_INTELLIGENCE_COMMANDS: readonly TCliCommand[] = [
+  'context-resolve',
 ];
 
 const checkIsCliCommand = (value: string): value is TCliCommand =>
@@ -132,6 +140,7 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
   const inputCommands: readonly TCliCommand[] = [
     'intelligence-graph-save',
     'intelligence-save',
+    'context-resolve',
     'task-classify',
     'task-contract-validate',
   ];
@@ -226,6 +235,14 @@ const checkIsTaskIntelligenceApi = (
   'classify' in value &&
   typeof value.classify === 'function';
 
+const checkIsContextIntelligenceApi = (
+  value: unknown,
+): value is IContextIntelligenceApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'resolve' in value &&
+  typeof value.resolve === 'function';
+
 const writeJson = (value: unknown, stream: NodeJS.WriteStream) => {
   stream.write(`${JSON.stringify(value, undefined, 2)}\n`);
 };
@@ -249,6 +266,35 @@ const executeCommand = async (
 
   if (command === 'capabilities') {
     return runtime.capabilities.list();
+  }
+
+  if (CONTEXT_INTELLIGENCE_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired('amy.context-intelligence');
+
+    if (!checkIsContextIntelligenceApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Context Intelligence capability API is incompatible',
+      });
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      return capability.api.resolve(value);
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Context Intelligence input at ${inputPath}`,
+      });
+    }
   }
 
   if (TASK_INTELLIGENCE_COMMANDS.includes(command)) {
@@ -379,19 +425,41 @@ const getExitCode = (error: AmyRuntimeError) => {
   return 1;
 };
 
+const createCliCapabilities = (
+  command: TCliCommand,
+  projectRoot: string,
+) => {
+  if (CONTEXT_INTELLIGENCE_COMMANDS.includes(command)) {
+    const projectIntelligence = createProjectIntelligenceCapability(projectRoot);
+
+    return [
+      projectIntelligence,
+      createContextIntelligenceCapability({
+        projectIntelligence: projectIntelligence.api,
+      }),
+    ];
+  }
+
+  if (PROJECT_INTELLIGENCE_COMMANDS.includes(command)) {
+    return [createProjectIntelligenceCapability(projectRoot)];
+  }
+
+  if (TASK_INTELLIGENCE_COMMANDS.includes(command)) {
+    return [createTaskIntelligenceCapability()];
+  }
+
+  return undefined;
+};
+
 export const runCli = async (args: readonly string[]) => {
   try {
     const cliArguments = parseCliArguments(args);
+    const cliCapabilities = createCliCapabilities(
+      cliArguments.command,
+      cliArguments.projectRoot,
+    );
     const runtime = await createAmyRuntime({
-      ...(PROJECT_INTELLIGENCE_COMMANDS.includes(cliArguments.command)
-        ? {
-            capabilities: [
-              createProjectIntelligenceCapability(cliArguments.projectRoot),
-            ],
-          }
-        : TASK_INTELLIGENCE_COMMANDS.includes(cliArguments.command)
-          ? { capabilities: [createTaskIntelligenceCapability()] }
-          : {}),
+      ...(cliCapabilities ? { capabilities: cliCapabilities } : {}),
       ...(cliArguments.pluginRoot
         ? { pluginRoot: cliArguments.pluginRoot }
         : {}),
