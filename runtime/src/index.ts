@@ -19,6 +19,10 @@ export {
   validateDecompositionInput,
   validateDecompositionPolicy,
 } from './decomposition/validate-decomposition.js';
+export { createVerificationCapability } from './verification/verification-capability.js';
+export { runVerificationPipeline } from './verification/verification-pipeline.js';
+export { VERIFICATION_VERSIONS } from './verification/verification-contract.js';
+export { validateVerificationInput } from './verification/validate-verification.js';
 export { AmyRuntimeError } from './errors/amy-runtime-error.js';
 export { loadRuntimeConfig } from './config/load-config.js';
 export { CapabilityRegistry } from './capabilities/capability-registry.js';
@@ -288,6 +292,30 @@ export type {
   TParallelismMode,
   TParallelismReasonCode,
 } from './decomposition/decomposition-contract.js';
+export type {
+  IMechanicalVerificationCheck,
+  IMechanicalVerificationResult,
+  IReviewFinding,
+  IReviewerReport,
+  IReviewVerificationResult,
+  ISemanticVerificationResult,
+  IVerificationApi,
+  IVerificationArtifactRefs,
+  IVerificationInput,
+  IVerificationResultData,
+  IVerifierCriterionResult,
+  IVerifierReport,
+  TMechanicalCheckKind,
+  TMechanicalCheckStatus,
+  TReviewFindingSeverity,
+  TVerificationCriterionKind,
+  TVerificationCriterionStatus,
+  TVerificationReasonCode,
+  TVerificationResult,
+  TVerificationStageStatus,
+  TVerificationStatus,
+} from './verification/verification-contract.js';
+
 export type {
   ICreateDecompositionCapabilityOptions,
 } from './decomposition/decomposition-capability.js';

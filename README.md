@@ -47,6 +47,7 @@ node runtime/dist/cli.js context-resolve --input <context-input.json> --project 
 node runtime/dist/cli.js compute-route --input <compute-input.json> --project <path>
 node runtime/dist/cli.js strategy-route --input <strategy-input.json> --project <path>
 node runtime/dist/cli.js decomposition-plan --input <decomposition-input.json> --project <path>
+node runtime/dist/cli.js verification-evaluate --input <verification-input.json> --project <path>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не
@@ -58,5 +59,6 @@ Runtime используется только явно. Существующие
 [Context Intelligence](references/context-intelligence.md) и
 [Compute Routing](references/compute-routing.md),
 [Agent Roles + Handoff](references/agent-roles.md) и
-[Strategy Routing](references/strategy-routing.md) и
-[Decomposition + DAG](references/decomposition.md).
+[Strategy Routing](references/strategy-routing.md),
+[Decomposition + DAG](references/decomposition.md) и
+[Verification Pipeline](references/verification.md).

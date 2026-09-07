@@ -188,10 +188,30 @@ scheduler.
 
 See [Decomposition + DAG](decomposition.md) for contracts and the Stage 9 Handoff.
 
+## Verification Pipeline
+
+Stage 10 adds an independent `amy.verification` capability. It consumes canonical
+Task Analysis, the Stage 8 Strategy Decision, explicit implementation/artifact
+refs, and mechanical verification evidence supplied by the host workflow. Runtime
+does not introduce a second shell executor: command execution and permission
+handling stay with the existing Codex/project workflow, while Runtime validates
+and evaluates the resulting evidence deterministically.
+
+When Strategy Routing requests semantic verification or conditional review, the
+pipeline produces canonical read-only Stage 7 handoffs for `verifier` and
+`reviewer`. Verifier reports must cover each task requirement and acceptance
+criterion with explicit evidence or a gap remains `unverified`; Reviewer findings
+only fail quality when marked `required`. Missing, skipped, unavailable, or failed
+verification execution is never treated as success. The Verifier role catalog now
+accepts an optional `context-packet` input so relevant specs can be supplied
+without creating a new context contract.
+
+See [Verification Pipeline](verification.md) for contracts and the Stage 10 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, semantic verification, retry/recovery, analytics,
+advanced orchestration, command execution, retry/recovery, completion guards, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.

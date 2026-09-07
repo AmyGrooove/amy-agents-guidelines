@@ -102,6 +102,7 @@ const ROLE_CATALOG: Readonly<Record<TAgentRole, Readonly<IAgentRoleDescriptor>>>
       id: 'verifier',
       inputs: [
         'task-analysis',
+        'context-packet',
         'implementation-result',
         'verification-evidence',
         'handoff',

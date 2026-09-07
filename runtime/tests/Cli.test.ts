@@ -476,6 +476,59 @@ describe('Cli', () => {
     assert.equal(JSON.parse(result.stdout).data.decision, 'planned');
   });
 
+  it('оценивает verification evidence только через явную CLI command', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'verification-input.json');
+    const input = {
+      artifacts: {
+        implementationResultRef: 'artifact:implementation',
+        taskAnalysisRef: 'artifact:task-analysis',
+      },
+      mechanicalChecks: [{
+        evidenceRefs: ['evidence:tests'],
+        id: 'tests',
+        kind: 'test',
+        label: 'Runtime tests',
+        status: 'passed',
+      }],
+      strategyDecision: {
+        data: {
+          confidence: 'high', escalation: 'none', execution: 'direct', exploration: 'none', fastPath: false,
+          planning: 'none', policyVersion: 1, reasonCodes: ['direct-execution'], review: 'none', verification: 'none',
+        },
+        kind: 'execution-strategy', schemaVersion: 1,
+      },
+      taskAnalysis: {
+        data: {
+          classification: {
+            confidence: 'high',
+            dimensions: {
+              blastRadius: 'local', complexity: 'low', coupling: 'low', expectedContextCost: 'low', novelty: 'unknown',
+              parallelizability: 'low', risk: 'unknown', scope: 'local', uncertainty: 'low', verificationCost: 'low',
+            },
+            evidenceGaps: ['novelty', 'project-risk'], mode: 'text-only', reasonCodes: ['scope-local'], schemaVersion: 1,
+          },
+          contract: {
+            affectedScope: { kind: 'local', targets: ['src/Button.tsx'] }, goal: 'Verify Button.', kind: 'task-contract',
+            schemaVersion: 1, uncertainties: [], verificationExpectations: ['Run tests'],
+          },
+        },
+        kind: 'task-analysis', schemaVersion: 1,
+      },
+      verificationId: 'cli-verification',
+    };
+
+    await writeFile(inputPath, JSON.stringify(input), 'utf8');
+
+    const result = runCli([
+      'verification-evaluate', '--input', inputPath, '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).kind, 'quality-result');
+    assert.equal(JSON.parse(result.stdout).data.status, 'passed');
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

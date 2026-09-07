@@ -19,6 +19,6 @@ export const createAgentRolesCapability = (): IAmyCapability<IAgentRolesApi> => 
     capabilityContract: RUNTIME_VERSIONS.capabilityContract,
     id: 'amy.agent-roles',
     runtimeApi: RUNTIME_VERSIONS.runtimeApi,
-    version: '1.0.0',
+    version: '1.1.0',
   },
 });

@@ -9,6 +9,7 @@ import { AmyRuntimeError } from './errors/amy-runtime-error.js';
 import { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 import { createTaskIntelligenceCapability } from './task-intelligence/task-intelligence-capability.js';
 import { createStrategyRoutingCapability } from './strategy-routing/strategy-routing-capability.js';
+import { createVerificationCapability } from './verification/verification-capability.js';
 
 import type { AmyRuntime } from './kernel/amy-runtime.js';
 import type { IComputeRoutingApi } from './compute-routing/compute-routing-contract.js';
@@ -18,6 +19,7 @@ import type { IPluginInventoryApi } from './compatibility/plugin-inventory.js';
 import type { IProjectIntelligenceApi } from './project-intelligence/project-intelligence-contract.js';
 import type { ITaskIntelligenceApi } from './task-intelligence/task-intelligence-contract.js';
 import type { IStrategyRoutingApi } from './strategy-routing/strategy-routing-contract.js';
+import type { IVerificationApi } from './verification/verification-contract.js';
 
 type TCliCommand =
   | 'capabilities'
@@ -39,7 +41,8 @@ type TCliCommand =
   | 'status'
   | 'strategy-route'
   | 'task-classify'
-  | 'task-contract-validate';
+  | 'task-contract-validate'
+  | 'verification-evaluate';
 
 interface ICliArguments {
   command: TCliCommand;
@@ -72,6 +75,7 @@ const CLI_COMMANDS: readonly TCliCommand[] = [
   'strategy-route',
   'task-classify',
   'task-contract-validate',
+  'verification-evaluate',
 ];
 
 const PROJECT_INTELLIGENCE_COMMANDS: readonly TCliCommand[] = [
@@ -106,6 +110,10 @@ const STRATEGY_ROUTING_COMMANDS: readonly TCliCommand[] = [
 
 const DECOMPOSITION_COMMANDS: readonly TCliCommand[] = [
   'decomposition-plan',
+];
+
+const VERIFICATION_COMMANDS: readonly TCliCommand[] = [
+  'verification-evaluate',
 ];
 
 const checkIsCliCommand = (value: string): value is TCliCommand =>
@@ -170,6 +178,7 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
     'strategy-route',
     'task-classify',
     'task-contract-validate',
+    'verification-evaluate',
   ];
 
   if (inputCommands.includes(command) !== Boolean(inputValue)) {
@@ -294,6 +303,14 @@ const checkIsDecompositionApi = (
   'plan' in value &&
   typeof value.plan === 'function';
 
+const checkIsVerificationApi = (
+  value: unknown,
+): value is IVerificationApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'verify' in value &&
+  typeof value.verify === 'function';
+
 const writeJson = (value: unknown, stream: NodeJS.WriteStream) => {
   stream.write(`${JSON.stringify(value, undefined, 2)}\n`);
 };
@@ -317,6 +334,35 @@ const executeCommand = async (
 
   if (command === 'capabilities') {
     return runtime.capabilities.list();
+  }
+
+  if (VERIFICATION_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired('amy.verification');
+
+    if (!checkIsVerificationApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Verification capability API is incompatible',
+      });
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      return capability.api.verify(value);
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Verification input at ${inputPath}`,
+      });
+    }
   }
 
   if (DECOMPOSITION_COMMANDS.includes(command)) {
@@ -603,6 +649,10 @@ export const runCli = async (args: readonly string[]) => {
         : {}),
       projectRoot: cliArguments.projectRoot,
     });
+
+    if (VERIFICATION_COMMANDS.includes(cliArguments.command)) {
+      runtime.capabilities.register(createVerificationCapability());
+    }
 
     if (DECOMPOSITION_COMMANDS.includes(cliArguments.command)) {
       runtime.capabilities.register(createDecompositionCapability());

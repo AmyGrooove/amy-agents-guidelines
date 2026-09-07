@@ -30,7 +30,7 @@ describe('AgentRoles', () => {
     const capability = createAgentRolesCapability();
 
     assert.equal(capability.descriptor.id, 'amy.agent-roles');
-    assert.equal(capability.descriptor.version, '1.0.0');
+    assert.equal(capability.descriptor.version, '1.1.0');
     assert.equal(capability.descriptor.dependencies, undefined);
     assert.equal(typeof capability.api.list, 'function');
     assert.equal(typeof capability.api.get, 'function');

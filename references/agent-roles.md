@@ -39,8 +39,9 @@ concrete task or DAG node.
   only bounded Scout, Worker, or Debugger work.
 - `debugger` diagnoses a concrete failing branch and may repair only delegated task
   scope.
-- `verifier` is read-only and checks requirements against implementation and
-  verification evidence.
+- `verifier` is read-only and checks requirements against implementation, relevant
+  context/specs, and verification evidence. Stage 10 extends its accepted inputs with
+  optional `context-packet` while preserving the Stage 7 handoff schema.
 - `reviewer` is read-only, conditional, and reserved for architecture/regression/
   maintainability review when later routing decides it is justified.
 
