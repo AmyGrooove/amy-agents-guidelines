@@ -131,6 +131,71 @@ describe('Cli', () => {
     assert.deepEqual(JSON.parse(router.stdout), { status: 'created' });
   });
 
+  it('явно управляет graph, freshness и impact без включения capability по умолчанию', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'knowledge.json');
+    const sourceRoot = join(projectRoot, 'runtime', 'src', 'capabilities');
+    const knowledge = {
+      architecture: { kind: 'architecture', schemaVersion: 1 },
+      modules: [
+        {
+          id: 'runtime.capabilities',
+          kind: 'module',
+          publicContracts: ['CapabilityRegistry'],
+          schemaVersion: 1,
+          sourceLocations: ['runtime/src/capabilities'],
+          specWorthy: {
+            confidence: 'high',
+            isSpecWorthy: true,
+            reasons: ['public-api'],
+          },
+        },
+      ],
+      project: { kind: 'project', schemaVersion: 1 },
+    };
+
+    await mkdir(sourceRoot, { recursive: true });
+    await writeFile(join(sourceRoot, 'index.ts'), 'export {};\n', 'utf8');
+    await writeFile(inputPath, JSON.stringify(knowledge), 'utf8');
+
+    const commonArgs = ['--project', projectRoot, '--plugin', pluginRoot];
+    const save = runCli([
+      'intelligence-save',
+      '--input',
+      inputPath,
+      ...commonArgs,
+    ]);
+    const graph = runCli(['intelligence-graph-build', ...commonArgs]);
+    const refresh = runCli([
+      'intelligence-freshness-refresh',
+      '--owner',
+      'module:runtime.capabilities',
+      ...commonArgs,
+    ]);
+    const freshness = runCli([
+      'intelligence-freshness-show',
+      '--owner',
+      'module:runtime.capabilities',
+      ...commonArgs,
+    ]);
+    const impact = runCli([
+      'intelligence-impact',
+      '--module',
+      'runtime.capabilities',
+      ...commonArgs,
+    ]);
+
+    assert.equal(save.status, 0, save.stderr);
+    assert.equal(graph.status, 0, graph.stderr);
+    assert.equal(JSON.parse(graph.stdout).schemaVersion, 1);
+    assert.equal(refresh.status, 0, refresh.stderr);
+    assert.equal(freshness.status, 0, freshness.stderr);
+    assert.equal(JSON.parse(freshness.stdout).state, 'trusted');
+    assert.equal(impact.status, 0, impact.stderr);
+    assert.equal(JSON.parse(impact.stdout).moduleId, 'runtime.capabilities');
+    assert.equal(JSON.parse(impact.stdout).risk, 'high');
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

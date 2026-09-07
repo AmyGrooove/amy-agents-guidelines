@@ -13,6 +13,12 @@ type TCliCommand =
   | 'capabilities'
   | 'config'
   | 'intelligence-discover'
+  | 'intelligence-freshness-refresh'
+  | 'intelligence-freshness-show'
+  | 'intelligence-graph-build'
+  | 'intelligence-graph-save'
+  | 'intelligence-graph-show'
+  | 'intelligence-impact'
   | 'intelligence-save'
   | 'intelligence-show'
   | 'intelligence-sync-router'
@@ -25,12 +31,20 @@ interface ICliArguments {
   projectRoot: string;
 
   inputPath?: string;
+  moduleId?: string;
+  owner?: string;
 }
 
 const CLI_COMMANDS: readonly TCliCommand[] = [
   'capabilities',
   'config',
   'intelligence-discover',
+  'intelligence-freshness-refresh',
+  'intelligence-freshness-show',
+  'intelligence-graph-build',
+  'intelligence-graph-save',
+  'intelligence-graph-show',
+  'intelligence-impact',
   'intelligence-save',
   'intelligence-show',
   'intelligence-sync-router',
@@ -40,6 +54,12 @@ const CLI_COMMANDS: readonly TCliCommand[] = [
 
 const PROJECT_INTELLIGENCE_COMMANDS: readonly TCliCommand[] = [
   'intelligence-discover',
+  'intelligence-freshness-refresh',
+  'intelligence-freshness-show',
+  'intelligence-graph-build',
+  'intelligence-graph-save',
+  'intelligence-graph-show',
+  'intelligence-impact',
   'intelligence-save',
   'intelligence-show',
   'intelligence-sync-router',
@@ -71,14 +91,20 @@ const getOptionValue = (args: readonly string[], name: string) => {
 const parseCliArguments = (args: readonly string[]): ICliArguments => {
   const command = args[0] ?? '';
   const inputValue = getOptionValue(args, '--input');
+  const moduleValue = getOptionValue(args, '--module');
+  const ownerValue = getOptionValue(args, '--owner');
   const pluginValue = getOptionValue(args, '--plugin');
   const projectValue = getOptionValue(args, '--project');
   const knownArguments = new Set([
     command,
     '--input',
+    '--module',
+    '--owner',
     '--plugin',
     '--project',
     inputValue,
+    moduleValue,
+    ownerValue,
     pluginValue,
     projectValue,
   ]);
@@ -92,14 +118,41 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
     });
   }
 
-  if (
-    (command === 'intelligence-save' && !inputValue) ||
-    (command !== 'intelligence-save' && inputValue)
-  ) {
+  const inputCommands: readonly TCliCommand[] = [
+    'intelligence-graph-save',
+    'intelligence-save',
+  ];
+
+  if (inputCommands.includes(command) !== Boolean(inputValue)) {
     throw new AmyRuntimeError({
       code: 'VALIDATION_FAILURE',
       details: { command, inputValue },
-      message: 'CLI option --input is required only for intelligence-save',
+      message:
+        'CLI option --input is required only for intelligence-save and intelligence-graph-save',
+    });
+  }
+
+  if (
+    (command === 'intelligence-impact' && !moduleValue) ||
+    (command !== 'intelligence-impact' && moduleValue)
+  ) {
+    throw new AmyRuntimeError({
+      code: 'VALIDATION_FAILURE',
+      details: { command, moduleValue },
+      message: 'CLI option --module is required only for intelligence-impact',
+    });
+  }
+
+  const freshnessCommands: readonly TCliCommand[] = [
+    'intelligence-freshness-refresh',
+    'intelligence-freshness-show',
+  ];
+
+  if (ownerValue && !freshnessCommands.includes(command)) {
+    throw new AmyRuntimeError({
+      code: 'VALIDATION_FAILURE',
+      details: { command, ownerValue },
+      message: 'CLI option --owner is supported only for freshness commands',
     });
   }
 
@@ -109,6 +162,8 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
   return {
     command,
     ...(inputPath ? { inputPath } : {}),
+    ...(moduleValue ? { moduleId: moduleValue } : {}),
+    ...(ownerValue ? { owner: ownerValue } : {}),
     ...(pluginRoot ? { pluginRoot } : {}),
     projectRoot: projectValue ? resolve(projectValue) : process.cwd(),
   };
@@ -129,6 +184,18 @@ const checkIsProjectIntelligenceApi = (
   value !== null &&
   'discover' in value &&
   typeof value.discover === 'function' &&
+  'assessFreshness' in value &&
+  typeof value.assessFreshness === 'function' &&
+  'refreshFreshness' in value &&
+  typeof value.refreshFreshness === 'function' &&
+  'rebuildGraph' in value &&
+  typeof value.rebuildGraph === 'function' &&
+  'loadGraph' in value &&
+  typeof value.loadGraph === 'function' &&
+  'saveGraph' in value &&
+  typeof value.saveGraph === 'function' &&
+  'analyzeImpact' in value &&
+  typeof value.analyzeImpact === 'function' &&
   'saveKnowledge' in value &&
   typeof value.saveKnowledge === 'function' &&
   'loadKnowledge' in value &&
@@ -144,6 +211,8 @@ const executeCommand = async (
   runtime: AmyRuntime,
   command: TCliCommand,
   inputPath?: string,
+  moduleId?: string,
+  owner?: string,
 ) => {
   if (command === 'config') {
     return runtime.config;
@@ -180,6 +249,26 @@ const executeCommand = async (
       return capability.api.loadKnowledge();
     }
 
+    if (command === 'intelligence-graph-build') {
+      return capability.api.rebuildGraph();
+    }
+
+    if (command === 'intelligence-graph-show') {
+      return capability.api.loadGraph();
+    }
+
+    if (command === 'intelligence-freshness-refresh') {
+      return capability.api.refreshFreshness(owner ? [owner] : undefined);
+    }
+
+    if (command === 'intelligence-freshness-show') {
+      return capability.api.assessFreshness(owner ? [owner] : undefined);
+    }
+
+    if (command === 'intelligence-impact') {
+      return capability.api.analyzeImpact(moduleId ?? '');
+    }
+
     if (command === 'intelligence-sync-router') {
       return capability.api.syncAgentsRouter();
     }
@@ -187,7 +276,9 @@ const executeCommand = async (
     try {
       const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
 
-      return capability.api.saveKnowledge(value);
+      return command === 'intelligence-graph-save'
+        ? capability.api.saveGraph(value)
+        : capability.api.saveKnowledge(value);
     } catch (error) {
       if (error instanceof AmyRuntimeError) {
         throw error;
@@ -254,6 +345,8 @@ export const runCli = async (args: readonly string[]) => {
       runtime,
       cliArguments.command,
       cliArguments.inputPath,
+      cliArguments.moduleId,
+      cliArguments.owner,
     );
 
     writeJson(result, process.stdout);

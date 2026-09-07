@@ -100,19 +100,20 @@ references, permissions, or canonical Codex behavior.
 
 ## Project Intelligence
 
-Stage 2 adds an independent `amy.project-intelligence` capability. Runtime does
+Stages 2–3 add an independent `amy.project-intelligence` capability. Runtime does
 not register it by default; its explicit factory and CLI commands provide
-deterministic discovery, versioned artifacts, validation, storage, lookup, and
-safe `AGENTS.md` routing. Semantic interpretation remains in the
-`maintain-project-intelligence` skill.
+deterministic discovery, versioned artifacts, validation, storage, lookup,
+freshness fingerprints, a lightweight project graph, impact analysis, and safe
+`AGENTS.md` routing. Semantic interpretation and evidence-backed graph
+enrichment remain in the `maintain-project-intelligence` skill.
 
-See [Project Intelligence](project-intelligence.md) for the contracts and Stage
-2 Handoff.
+See [Project Intelligence](project-intelligence.md) for the contracts and latest
+Stage Handoff.
 
 ## Intentionally absent
 
-Runtime does not implement semantic project reasoning, freshness or drift
-detection, knowledge graphs, context/task intelligence, task classification or
-decomposition, model selection, advanced orchestration, reviewer intelligence,
-analytics, dashboards, evolution, automatic skill rewriting, persistent
-adapters, long-term memory, or automatic skill routing.
+Runtime does not implement semantic project reasoning, LLM-based drift
+interpretation, context/task intelligence, task classification or decomposition,
+model selection, advanced orchestration, reviewer intelligence, analytics,
+dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
+memory, or automatic skill routing.

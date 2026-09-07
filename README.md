@@ -38,6 +38,9 @@ node runtime/dist/cli.js inventory
 node runtime/dist/cli.js config --project <path>
 node runtime/dist/cli.js intelligence-discover --project <path>
 node runtime/dist/cli.js intelligence-show --project <path>
+node runtime/dist/cli.js intelligence-graph-build --project <path>
+node runtime/dist/cli.js intelligence-freshness-show --project <path>
+node runtime/dist/cli.js intelligence-impact --project <path> --module <module-id>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не

@@ -11,6 +11,12 @@ export { RUNTIME_VERSIONS } from './versions.js';
 export { discoverProject } from './project-intelligence/discover-project.js';
 export { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 export { PROJECT_INTELLIGENCE_VERSIONS } from './project-intelligence/project-intelligence-contract.js';
+export {
+  buildProjectIntelligenceGraph,
+  fingerprintProjectIntelligenceKnowledge,
+  validateProjectIntelligenceGraph,
+} from './project-intelligence/project-intelligence-graph.js';
+export { validateProjectIntelligenceFreshnessSnapshot } from './project-intelligence/project-intelligence-freshness.js';
 export { validateSpecWorthinessDecision } from './project-intelligence/validate-project-intelligence.js';
 
 export type {
@@ -83,14 +89,35 @@ export type {
   IModuleKnowledge,
   IProjectDiscovery,
   IProjectIntelligenceApi,
+  IProjectIntelligenceChangedSource,
+  IProjectIntelligenceFreshnessAssessment,
+  IProjectIntelligenceFreshnessOwnerAssessment,
+  IProjectIntelligenceFreshnessOwnerSnapshot,
+  IProjectIntelligenceFreshnessSnapshot,
+  IProjectIntelligenceGraph,
+  IProjectIntelligenceGraphEdge,
+  IProjectIntelligenceGraphNode,
   IProjectIntelligenceIndex,
+  IProjectIntelligenceImpactAnalysis,
   IProjectIntelligenceKnowledge,
   IProjectIntelligenceModuleIndex,
   IProjectIntelligenceModuleSummary,
+  IProjectIntelligenceSourceFingerprint,
   IProjectKnowledge,
   ISpecWorthinessDecision,
   TAgentsRouterSyncResult,
   TModuleCandidateSignal,
+  TProjectIntelligenceChangeKind,
+  TProjectIntelligenceChangeRisk,
+  TProjectIntelligenceFreshnessReason,
+  TProjectIntelligenceFreshnessState,
+  TProjectIntelligenceGraphNodeKind,
+  TProjectIntelligenceGraphRelation,
+  TProjectIntelligenceGraphState,
+  TProjectIntelligenceOwner,
+  TProjectIntelligenceRiskReason,
+  TProjectIntelligenceSourceKind,
+  TProjectIntelligenceSourceRole,
   TSpecWorthinessConfidence,
   TSpecWorthinessReason,
 } from './project-intelligence/project-intelligence-contract.js';

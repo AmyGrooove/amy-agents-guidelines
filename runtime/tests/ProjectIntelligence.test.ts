@@ -31,11 +31,51 @@ interface IProjectDiscovery {
 }
 
 interface IProjectIntelligenceApi {
+  analyzeImpact(moduleId: string): Promise<{
+    canonicalExamples: readonly string[];
+    consumers: readonly string[];
+    dependencies: readonly string[];
+    graphState: string;
+    moduleId: string;
+    ownedSources: readonly string[];
+    publicApi: readonly string[];
+    relatedModules: readonly string[];
+    risk: string;
+    riskReasons: readonly string[];
+    tests: readonly string[];
+  }>;
+  assessFreshness(owners?: readonly string[]): Promise<{
+    owners: readonly {
+      changeKind: string;
+      changedSources: readonly { path: string; role: string }[];
+      owner: string;
+      reasons: readonly string[];
+      state: string;
+    }[];
+    state: string;
+  }>;
   discover(): Promise<IProjectDiscovery>;
   getModule(id: string): Promise<unknown>;
   listModules(): Promise<readonly { id: string }[]>;
+  loadGraph(): Promise<unknown>;
   loadKnowledge(): Promise<unknown>;
+  rebuildGraph(): Promise<{
+    edges: readonly { from: string; relation: string; to: string }[];
+    knowledgeFingerprint: string;
+    nodes: readonly {
+      id: string;
+      kind: string;
+      label?: string;
+      moduleId?: string;
+      owner?: string;
+      path?: string;
+      semanticRole?: string;
+    }[];
+    schemaVersion: number;
+  }>;
+  refreshFreshness(owners?: readonly string[]): Promise<unknown>;
   resolveSourceLocations(id?: string): Promise<readonly string[]>;
+  saveGraph(value: unknown): Promise<unknown>;
   saveKnowledge(value: unknown): Promise<unknown>;
   syncAgentsRouter(): Promise<{ reason?: string; status: string }>;
 }
@@ -54,6 +94,8 @@ interface IProjectIntelligenceModule {
   PROJECT_INTELLIGENCE_VERSIONS: {
     api: number;
     artifactSchema: number;
+    freshnessSchema: number;
+    graphSchema: number;
   };
   createProjectIntelligenceCapability(
     projectRoot: string,
@@ -139,13 +181,15 @@ describe('ProjectIntelligence', () => {
     assert.deepEqual(module.PROJECT_INTELLIGENCE_VERSIONS, {
       api: 1,
       artifactSchema: 1,
+      freshnessSchema: 1,
+      graphSchema: 1,
     });
 
     const projectRoot = await createTemporaryDirectory();
     const capability = module.createProjectIntelligenceCapability(projectRoot);
 
     assert.equal(capability.descriptor.id, 'amy.project-intelligence');
-    assert.equal(capability.descriptor.version, '1.0.0');
+    assert.equal(capability.descriptor.version, '1.1.0');
   });
 
   it('валидирует объяснимое yes/no spec-worthy решение отдельно от module spec', async () => {
@@ -488,6 +532,256 @@ describe('ProjectIntelligence', () => {
       ...firstModule,
       sourceLocations: ['runtime/src/capabilities'],
     });
+  });
+
+  it('строит lightweight graph из canonical knowledge и даёт explainable impact analysis', async () => {
+    const module = await loadProjectIntelligenceModule();
+    const projectRoot = await createTemporaryDirectory();
+    const api = module.createProjectIntelligenceCapability(projectRoot).api;
+    const knowledge = createKnowledge();
+    const capabilitiesModule = knowledge.modules[0];
+    const reactModule = knowledge.modules[1];
+
+    assert.ok(capabilitiesModule);
+    assert.ok(reactModule);
+    Object.assign(capabilitiesModule, {
+      dependencies: ['skills.react'],
+      examples: ['runtime/src/index.ts'],
+      publicContracts: ['IProjectIntelligenceApi'],
+      testing: ['runtime/tests/ProjectIntelligence.test.ts'],
+    });
+    Object.assign(reactModule, {
+      consumers: ['runtime.capabilities'],
+    });
+
+    await api.saveKnowledge(knowledge);
+    const graph = await api.rebuildGraph();
+
+    assert.equal(graph.schemaVersion, 1);
+    assert.match(graph.knowledgeFingerprint, /^[a-f0-9]{64}$/);
+    assert.ok(
+      graph.nodes.some(
+        ({ id, kind, moduleId }) =>
+          id === 'module:runtime.capabilities' &&
+          kind === 'module' &&
+          moduleId === 'runtime.capabilities',
+      ),
+    );
+    assert.ok(
+      graph.edges.some(
+        ({ from, relation, to }) =>
+          from === 'module:runtime.capabilities' &&
+          relation === 'depends_on' &&
+          to === 'module:skills.react',
+      ),
+    );
+
+    const impact = await api.analyzeImpact('runtime.capabilities');
+
+    assert.equal(impact.graphState, 'current');
+    assert.deepEqual(impact.dependencies, ['skills.react']);
+    assert.deepEqual(impact.consumers, []);
+    assert.deepEqual(impact.publicApi, ['IProjectIntelligenceApi']);
+    assert.deepEqual(impact.tests, ['runtime/tests/ProjectIntelligence.test.ts']);
+    assert.deepEqual(impact.canonicalExamples, ['runtime/src/index.ts']);
+    assert.deepEqual(impact.ownedSources, ['runtime/src/capabilities']);
+    assert.equal(impact.risk, 'high');
+    assert.ok(impact.riskReasons.includes('public-api'));
+  });
+
+  it('валидирует custom graph, dangling edges и knowledge freshness', async () => {
+    const module = await loadProjectIntelligenceModule();
+    const projectRoot = await createTemporaryDirectory();
+    const api = module.createProjectIntelligenceCapability(projectRoot).api;
+
+    await api.saveKnowledge(createKnowledge());
+    const graph = await api.rebuildGraph();
+    const architectureSource = {
+      id: 'source:architecture-reference',
+      kind: 'source',
+      owner: 'architecture',
+      path: 'docs/architecture.md',
+      semanticRole: 'architecture',
+    };
+
+    await api.saveGraph({
+      ...graph,
+      edges: [
+        ...graph.edges,
+        {
+          from: 'architecture',
+          relation: 'owns',
+          to: architectureSource.id,
+        },
+      ],
+      nodes: [...graph.nodes, architectureSource],
+    });
+
+    assert.ok(await api.loadGraph());
+    await assert.rejects(
+      api.saveGraph({
+        ...graph,
+        edges: [
+          ...graph.edges,
+          { from: 'module:missing', relation: 'depends_on', to: 'project' },
+        ],
+      }),
+      (error: unknown) =>
+        error instanceof AmyRuntimeError && error.code === 'VALIDATION_FAILURE',
+    );
+
+    await api.saveKnowledge({
+      ...createKnowledge(),
+      project: { ...createKnowledge().project, purpose: 'Changed purpose' },
+    });
+    const staleImpact = await api.analyzeImpact('runtime.capabilities');
+
+    assert.equal(staleImpact.graphState, 'stale');
+    assert.equal(staleImpact.risk, 'unknown');
+    assert.deepEqual(staleImpact.riskReasons, ['graph-stale']);
+  });
+
+  it('фиксирует fingerprints и отличает implementation drift от contract drift', async () => {
+    const module = await loadProjectIntelligenceModule();
+    const projectRoot = await createTemporaryDirectory();
+    const api = module.createProjectIntelligenceCapability(projectRoot).api;
+    const knowledge = createKnowledge();
+    const capabilitiesModule = knowledge.modules[0];
+
+    assert.ok(capabilitiesModule);
+    Object.assign(capabilitiesModule, {
+      sourceOfTruth: ['runtime/src/index.ts'],
+    });
+    await mkdir(join(projectRoot, 'runtime', 'src', 'capabilities'), {
+      recursive: true,
+    });
+    await writeFile(
+      join(projectRoot, 'runtime', 'src', 'capabilities', 'registry.ts'),
+      'export const registry = 1;\n',
+      'utf8',
+    );
+    await writeFile(
+      join(projectRoot, 'runtime', 'src', 'index.ts'),
+      'export const api = 1;\n',
+      'utf8',
+    );
+    await api.saveKnowledge(knowledge);
+
+    assert.deepEqual(await api.assessFreshness(['module:runtime.capabilities']), {
+      owners: [
+        {
+          changeKind: 'unknown',
+          changedSources: [],
+          owner: 'module:runtime.capabilities',
+          reasons: ['baseline-missing'],
+          state: 'unknown',
+        },
+      ],
+      state: 'unknown',
+    });
+
+    await api.refreshFreshness(['module:runtime.capabilities']);
+    const trusted = await api.assessFreshness([
+      'module:runtime.capabilities',
+    ]);
+
+    assert.equal(trusted.state, 'trusted');
+    assert.equal(trusted.owners[0]?.changeKind, 'none');
+
+    await writeFile(
+      join(projectRoot, 'runtime', 'src', 'capabilities', 'registry.ts'),
+      'export const registry = 2;\n',
+      'utf8',
+    );
+    const implementationDrift = await api.assessFreshness([
+      'module:runtime.capabilities',
+    ]);
+
+    assert.equal(implementationDrift.state, 'trusted');
+    assert.equal(implementationDrift.owners[0]?.changeKind, 'implementation');
+    assert.deepEqual(implementationDrift.owners[0]?.reasons, [
+      'implementation-drift',
+    ]);
+
+    await api.refreshFreshness(['module:runtime.capabilities']);
+    await writeFile(
+      join(projectRoot, 'runtime', 'src', 'index.ts'),
+      'export const api = 2;\n',
+      'utf8',
+    );
+    const contractDrift = await api.assessFreshness([
+      'module:runtime.capabilities',
+    ]);
+
+    assert.equal(contractDrift.state, 'stale');
+    assert.equal(contractDrift.owners[0]?.changeKind, 'contract');
+    assert.deepEqual(contractDrift.owners[0]?.reasons, ['contract-drift']);
+    assert.deepEqual(
+      contractDrift.owners[0]?.changedSources.map(({ path, role }) => ({
+        path,
+        role,
+      })),
+      [{ path: 'runtime/src/index.ts', role: 'contract' }],
+    );
+  });
+
+  it('поддерживает selective refresh и architecture drift через graph metadata', async () => {
+    const module = await loadProjectIntelligenceModule();
+    const projectRoot = await createTemporaryDirectory();
+    const api = module.createProjectIntelligenceCapability(projectRoot).api;
+
+    await mkdir(join(projectRoot, 'docs'), { recursive: true });
+    await writeFile(
+      join(projectRoot, 'docs', 'architecture.md'),
+      '# Architecture v1\n',
+      'utf8',
+    );
+    await api.saveKnowledge({
+      ...createKnowledge(),
+      project: { kind: 'project', schemaVersion: 1 },
+    });
+    const graph = await api.rebuildGraph();
+    const architectureSource = {
+      id: 'source:architecture-reference',
+      kind: 'source',
+      owner: 'architecture',
+      path: 'docs/architecture.md',
+      semanticRole: 'architecture',
+    };
+
+    await api.saveGraph({
+      ...graph,
+      edges: [
+        ...graph.edges,
+        {
+          from: 'architecture',
+          relation: 'owns',
+          to: architectureSource.id,
+        },
+      ],
+      nodes: [...graph.nodes, architectureSource],
+    });
+    await api.refreshFreshness(['architecture', 'project']);
+    await writeFile(
+      join(projectRoot, 'docs', 'architecture.md'),
+      '# Architecture v2\n',
+      'utf8',
+    );
+
+    const beforeRefresh = await api.assessFreshness(['architecture', 'project']);
+
+    assert.equal(beforeRefresh.state, 'stale');
+    assert.equal(beforeRefresh.owners[0]?.owner, 'architecture');
+    assert.equal(beforeRefresh.owners[0]?.changeKind, 'architecture');
+    assert.equal(beforeRefresh.owners[0]?.state, 'stale');
+
+    await api.refreshFreshness(['architecture']);
+    const afterRefresh = await api.assessFreshness(['architecture', 'project']);
+
+    assert.equal(afterRefresh.state, 'unknown');
+    assert.equal(afterRefresh.owners[0]?.state, 'trusted');
+    assert.equal(afterRefresh.owners[1]?.state, 'unknown');
+    assert.deepEqual(afterRefresh.owners[1]?.reasons, ['no-sources']);
   });
 
   it('добавляет idempotent router, сохраняя existing AGENTS instructions', async () => {
