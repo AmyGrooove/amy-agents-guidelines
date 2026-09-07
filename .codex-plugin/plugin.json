@@ -1,0 +1,36 @@
+{
+  "name": "amy-agents-guidelines",
+  "version": "1.0.3",
+  "description": "Automatically applies Amy's TypeScript development standards through focused Codex skills.",
+  "author": {
+    "name": "AmyGrooove",
+    "email": "vanyablya003@gmail.com"
+  },
+  "skills": "./skills/",
+  "keywords": [
+    "typescript",
+    "react",
+    "nestjs",
+    "development-standards"
+  ],
+  "interface": {
+    "displayName": "Amy Agents Guidelines",
+    "shortDescription": "Personal TypeScript development standards",
+    "longDescription": "Automatically applies focused development standards for TypeScript, React, Next.js, Vite, NestJS, and Mongoose projects.",
+    "developerName": "AmyGrooove",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Создай React-компонент по стандартам проекта.",
+      "Добавь NestJS endpoint по стандартам проекта.",
+      "Определи правильный слой для TypeScript-объекта."
+    ],
+    "brandColor": "#6366F1",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/icon.svg",
+    "logoDark": "./assets/icon.svg"
+  }
+}
