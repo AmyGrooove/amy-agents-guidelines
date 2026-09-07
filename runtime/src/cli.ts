@@ -1,30 +1,54 @@
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { createAmyRuntime } from './create-amy-runtime.js';
 import { AmyRuntimeError } from './errors/amy-runtime-error.js';
+import { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 
 import type { AmyRuntime } from './kernel/amy-runtime.js';
 import type { IPluginInventoryApi } from './compatibility/plugin-inventory.js';
+import type { IProjectIntelligenceApi } from './project-intelligence/project-intelligence-contract.js';
 
-type TCliCommand = 'capabilities' | 'config' | 'inventory' | 'status';
+type TCliCommand =
+  | 'capabilities'
+  | 'config'
+  | 'intelligence-discover'
+  | 'intelligence-save'
+  | 'intelligence-show'
+  | 'intelligence-sync-router'
+  | 'inventory'
+  | 'status';
 
 interface ICliArguments {
   command: TCliCommand;
   pluginRoot?: string;
   projectRoot: string;
+
+  inputPath?: string;
 }
 
 const CLI_COMMANDS: readonly TCliCommand[] = [
   'capabilities',
   'config',
+  'intelligence-discover',
+  'intelligence-save',
+  'intelligence-show',
+  'intelligence-sync-router',
   'inventory',
   'status',
+];
+
+const PROJECT_INTELLIGENCE_COMMANDS: readonly TCliCommand[] = [
+  'intelligence-discover',
+  'intelligence-save',
+  'intelligence-show',
+  'intelligence-sync-router',
 ];
 
 const checkIsCliCommand = (value: string): value is TCliCommand =>
   CLI_COMMANDS.some((command) => command === value);
 
-const getOption = (args: readonly string[], name: string) => {
+const getOptionValue = (args: readonly string[], name: string) => {
   const optionIndex = args.indexOf(name);
 
   if (optionIndex === -1) {
@@ -41,17 +65,22 @@ const getOption = (args: readonly string[], name: string) => {
     });
   }
 
-  return resolve(value);
+  return value;
 };
 
 const parseCliArguments = (args: readonly string[]): ICliArguments => {
   const command = args[0] ?? '';
+  const inputValue = getOptionValue(args, '--input');
+  const pluginValue = getOptionValue(args, '--plugin');
+  const projectValue = getOptionValue(args, '--project');
   const knownArguments = new Set([
     command,
+    '--input',
     '--plugin',
     '--project',
-    getOption(args, '--plugin'),
-    getOption(args, '--project'),
+    inputValue,
+    pluginValue,
+    projectValue,
   ]);
   const unknownArguments = args.filter((argument) => !knownArguments.has(argument));
 
@@ -63,12 +92,25 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
     });
   }
 
-  const pluginRoot = getOption(args, '--plugin');
+  if (
+    (command === 'intelligence-save' && !inputValue) ||
+    (command !== 'intelligence-save' && inputValue)
+  ) {
+    throw new AmyRuntimeError({
+      code: 'VALIDATION_FAILURE',
+      details: { command, inputValue },
+      message: 'CLI option --input is required only for intelligence-save',
+    });
+  }
+
+  const inputPath = inputValue ? resolve(inputValue) : undefined;
+  const pluginRoot = pluginValue ? resolve(pluginValue) : undefined;
 
   return {
     command,
+    ...(inputPath ? { inputPath } : {}),
     ...(pluginRoot ? { pluginRoot } : {}),
-    projectRoot: getOption(args, '--project') ?? process.cwd(),
+    projectRoot: projectValue ? resolve(projectValue) : process.cwd(),
   };
 };
 
@@ -80,6 +122,20 @@ const checkIsPluginInventoryApi = (
   'load' in value &&
   typeof value.load === 'function';
 
+const checkIsProjectIntelligenceApi = (
+  value: unknown,
+): value is IProjectIntelligenceApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'discover' in value &&
+  typeof value.discover === 'function' &&
+  'saveKnowledge' in value &&
+  typeof value.saveKnowledge === 'function' &&
+  'loadKnowledge' in value &&
+  typeof value.loadKnowledge === 'function' &&
+  'syncAgentsRouter' in value &&
+  typeof value.syncAgentsRouter === 'function';
+
 const writeJson = (value: unknown, stream: NodeJS.WriteStream) => {
   stream.write(`${JSON.stringify(value, undefined, 2)}\n`);
 };
@@ -87,6 +143,7 @@ const writeJson = (value: unknown, stream: NodeJS.WriteStream) => {
 const executeCommand = async (
   runtime: AmyRuntime,
   command: TCliCommand,
+  inputPath?: string,
 ) => {
   if (command === 'config') {
     return runtime.config;
@@ -100,6 +157,49 @@ const executeCommand = async (
 
   if (command === 'capabilities') {
     return runtime.capabilities.list();
+  }
+
+  if (PROJECT_INTELLIGENCE_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired(
+      'amy.project-intelligence',
+    );
+
+    if (!checkIsProjectIntelligenceApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Project Intelligence capability API is incompatible',
+      });
+    }
+
+    if (command === 'intelligence-discover') {
+      return capability.api.discover();
+    }
+
+    if (command === 'intelligence-show') {
+      return capability.api.loadKnowledge();
+    }
+
+    if (command === 'intelligence-sync-router') {
+      return capability.api.syncAgentsRouter();
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      return capability.api.saveKnowledge(value);
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Project Intelligence input at ${inputPath}`,
+      });
+    }
   }
 
   const capability = await runtime.resolveRequired('amy.plugin-inventory');
@@ -138,12 +238,23 @@ export const runCli = async (args: readonly string[]) => {
   try {
     const cliArguments = parseCliArguments(args);
     const runtime = await createAmyRuntime({
+      ...(PROJECT_INTELLIGENCE_COMMANDS.includes(cliArguments.command)
+        ? {
+            capabilities: [
+              createProjectIntelligenceCapability(cliArguments.projectRoot),
+            ],
+          }
+        : {}),
       ...(cliArguments.pluginRoot
         ? { pluginRoot: cliArguments.pluginRoot }
         : {}),
       projectRoot: cliArguments.projectRoot,
     });
-    const result = await executeCommand(runtime, cliArguments.command);
+    const result = await executeCommand(
+      runtime,
+      cliArguments.command,
+      cliArguments.inputPath,
+    );
 
     writeJson(result, process.stdout);
 

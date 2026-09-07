@@ -94,4 +94,53 @@ describe('Cli', () => {
     assert.equal(result.status, 2);
     assert.equal(JSON.parse(result.stderr).code, 'INVALID_CONFIGURATION');
   });
+
+  it('проводит Project Intelligence pipeline только через явные команды', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'knowledge.json');
+    const knowledge = {
+      architecture: { kind: 'architecture', schemaVersion: 1 },
+      modules: [],
+      project: {
+        kind: 'project',
+        purpose: 'CLI fixture',
+        schemaVersion: 1,
+      },
+    };
+
+    await writeFile(inputPath, JSON.stringify(knowledge), 'utf8');
+
+    const commonArgs = ['--project', projectRoot, '--plugin', pluginRoot];
+    const discovery = runCli(['intelligence-discover', ...commonArgs]);
+    const save = runCli([
+      'intelligence-save',
+      '--input',
+      inputPath,
+      ...commonArgs,
+    ]);
+    const show = runCli(['intelligence-show', ...commonArgs]);
+    const router = runCli(['intelligence-sync-router', ...commonArgs]);
+
+    assert.equal(discovery.status, 0, discovery.stderr);
+    assert.equal(JSON.parse(discovery.stdout).projectRoot, projectRoot);
+    assert.equal(save.status, 0, save.stderr);
+    assert.deepEqual(JSON.parse(save.stdout), knowledge);
+    assert.equal(show.status, 0, show.stderr);
+    assert.deepEqual(JSON.parse(show.stdout), knowledge);
+    assert.equal(router.status, 0, router.stderr);
+    assert.deepEqual(JSON.parse(router.stdout), { status: 'created' });
+  });
+
+  it('принимает relative path значения CLI options', () => {
+    const result = runCli([
+      'intelligence-discover',
+      '--project',
+      '.',
+      '--plugin',
+      '.',
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).projectRoot, pluginRoot);
+  });
 });

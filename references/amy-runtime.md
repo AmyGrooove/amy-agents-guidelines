@@ -8,7 +8,7 @@ skills through Runtime and does not start a background process.
 
 The small Runtime kernel composes configuration, the capability registry,
 runtime state, lifecycle events, and lifecycle control. It contains no React,
-Effector, NestJS, analytics, project analysis, or domain-skill behavior.
+Effector, NestJS, analytics, semantic project analysis, or domain-skill behavior.
 
 Capabilities expose a descriptor and a public API. They register before Runtime
 startup and can declare required and optional capability dependencies. Runtime
@@ -98,10 +98,21 @@ own SemVer version and dependency-major requirements.
 Stage 1 adds Runtime without changing existing skill instructions, activation,
 references, permissions, or canonical Codex behavior.
 
+## Project Intelligence
+
+Stage 2 adds an independent `amy.project-intelligence` capability. Runtime does
+not register it by default; its explicit factory and CLI commands provide
+deterministic discovery, versioned artifacts, validation, storage, lookup, and
+safe `AGENTS.md` routing. Semantic interpretation remains in the
+`maintain-project-intelligence` skill.
+
+See [Project Intelligence](project-intelligence.md) for the contracts and Stage
+2 Handoff.
+
 ## Intentionally absent
 
-Stage 1 does not implement project/context/task intelligence, automatic project
-specifications, knowledge graphs, task classification or decomposition, model
-selection, advanced orchestration, reviewer intelligence, analytics,
-dashboards, evolution, automatic skill rewriting, persistent adapters,
-long-term memory, or automatic skill routing.
+Runtime does not implement semantic project reasoning, freshness or drift
+detection, knowledge graphs, context/task intelligence, task classification or
+decomposition, model selection, advanced orchestration, reviewer intelligence,
+analytics, dashboards, evolution, automatic skill rewriting, persistent
+adapters, long-term memory, or automatic skill routing.

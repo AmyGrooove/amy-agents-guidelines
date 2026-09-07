@@ -36,9 +36,12 @@ node runtime/dist/cli.js status
 node runtime/dist/cli.js capabilities
 node runtime/dist/cli.js inventory
 node runtime/dist/cli.js config --project <path>
+node runtime/dist/cli.js intelligence-discover --project <path>
+node runtime/dist/cli.js intelligence-show --project <path>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не
 запускаются через него автоматически.
 
-Подробнее: [архитектура Amy Runtime](references/amy-runtime.md).
+Подробнее: [архитектура Amy Runtime](references/amy-runtime.md) и
+[Project Intelligence](references/project-intelligence.md).

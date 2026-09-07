@@ -8,6 +8,10 @@ export { RuntimeEventBus } from './events/runtime-event-bus.js';
 export { AmyRuntime } from './kernel/amy-runtime.js';
 export { MemoryStateStore } from './state/memory-state-store.js';
 export { RUNTIME_VERSIONS } from './versions.js';
+export { discoverProject } from './project-intelligence/discover-project.js';
+export { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
+export { PROJECT_INTELLIGENCE_VERSIONS } from './project-intelligence/project-intelligence-contract.js';
+export { validateSpecWorthinessDecision } from './project-intelligence/validate-project-intelligence.js';
 
 export type {
   IAmyRuntimeErrorProps,
@@ -73,3 +77,20 @@ export type {
   IAmyRuntimeStatus,
   TRuntimeLifecycle,
 } from './kernel/amy-runtime.js';
+export type {
+  IArchitectureKnowledge,
+  IModuleCandidate,
+  IModuleKnowledge,
+  IProjectDiscovery,
+  IProjectIntelligenceApi,
+  IProjectIntelligenceIndex,
+  IProjectIntelligenceKnowledge,
+  IProjectIntelligenceModuleIndex,
+  IProjectIntelligenceModuleSummary,
+  IProjectKnowledge,
+  ISpecWorthinessDecision,
+  TAgentsRouterSyncResult,
+  TModuleCandidateSignal,
+  TSpecWorthinessConfidence,
+  TSpecWorthinessReason,
+} from './project-intelligence/project-intelligence-contract.js';
