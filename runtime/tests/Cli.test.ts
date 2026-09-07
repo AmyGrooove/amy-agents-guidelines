@@ -422,6 +422,60 @@ describe('Cli', () => {
     assert.deepEqual(decision.data.reasonCodes, ['direct-execution', 'fast-path']);
   });
 
+  it('строит decomposition plan только через явную CLI command', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'decomposition-input.json');
+    const input = {
+      proposal: {
+        kind: 'decomposition-proposal',
+        proposalId: 'cli-plan',
+        schemaVersion: 1,
+        nodes: [
+          { dependencies: [], goal: 'Implement A.', id: 'a', outputs: ['a'], ownerRole: 'worker', readTargets: ['src/a'], writeTargets: ['src/a'] },
+          { dependencies: [], goal: 'Implement B.', id: 'b', outputs: ['b'], ownerRole: 'worker', readTargets: ['src/b'], writeTargets: ['src/b'] },
+        ],
+      },
+      source: {
+        kind: 'strategy',
+        strategyDecision: {
+          data: {
+            confidence: 'high', escalation: 'none', execution: 'worker', exploration: 'none', fastPath: false,
+            planning: 'decompose', policyVersion: 1, reasonCodes: ['decomposition-recommended', 'worker-recommended'],
+            review: 'none', verification: 'none',
+          },
+          kind: 'execution-strategy', schemaVersion: 1,
+        },
+      },
+      taskAnalysis: {
+        data: {
+          classification: {
+            confidence: 'high',
+            dimensions: {
+              blastRadius: 'multi-module', complexity: 'high', coupling: 'medium', expectedContextCost: 'high', novelty: 'medium',
+              parallelizability: 'high', risk: 'medium', scope: 'multi-module', uncertainty: 'medium', verificationCost: 'medium',
+            },
+            evidenceGaps: [], mode: 'text-only', reasonCodes: ['scope-multi-module'], schemaVersion: 1,
+          },
+          contract: {
+            affectedScope: { kind: 'multi-module', targets: ['src/a', 'src/b'] },
+            goal: 'Implement A and B.', kind: 'task-contract', schemaVersion: 1, uncertainties: [], verificationExpectations: ['Run tests'],
+          },
+        },
+        kind: 'task-analysis', schemaVersion: 1,
+      },
+    };
+
+    await writeFile(inputPath, JSON.stringify(input), 'utf8');
+
+    const result = runCli([
+      'decomposition-plan', '--input', inputPath, '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).kind, 'execution-plan');
+    assert.equal(JSON.parse(result.stdout).data.decision, 'planned');
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

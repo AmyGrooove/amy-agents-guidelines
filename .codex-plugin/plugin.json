@@ -1,7 +1,7 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "2.7.0",
-  "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, and Strategy Routing contracts.",
+  "version": "2.8.0",
+  "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, Strategy Routing, and bounded DAG contracts.",
   "author": {
     "name": "AmyGrooove",
     "email": "vanyablya003@gmail.com"
@@ -17,7 +17,7 @@
   "interface": {
     "displayName": "Amy Agents Guidelines",
     "shortDescription": "TypeScript standards with Amy Runtime",
-    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime with optional Project, Task, Context, Compute, Agent Role, and Strategy Routing contracts.",
+    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime with optional Project, Task, Context, Compute, Agent Role, Strategy Routing, and bounded DAG/decomposition contracts.",
     "developerName": "AmyGrooove",
     "category": "Productivity",
     "capabilities": [

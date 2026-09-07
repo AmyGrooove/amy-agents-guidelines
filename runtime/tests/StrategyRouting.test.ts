@@ -6,6 +6,7 @@ import {
   STRATEGY_ROUTING_VERSIONS,
   createStrategyRoutingCapability,
   routeStrategy,
+  validateStrategyRoutingDecision,
   validateStrategyRoutingInput,
 } from '../dist/index.js';
 
@@ -249,6 +250,23 @@ describe('StrategyRouting', () => {
     });
 
     assert.equal(decision.data.computeProfile, 'FAST');
+  });
+
+  it('валидирует canonical Strategy Decision для downstream stages', () => {
+    const decision = routeStrategy({
+      taskAnalysis: createTaskAnalysis(),
+    });
+
+    assert.deepEqual(validateStrategyRoutingDecision(decision), decision);
+
+    assert.throws(
+      () => validateStrategyRoutingDecision({
+        ...decision,
+        data: { ...decision.data, planning: 'spawn-everything' },
+      }),
+      (error: unknown) =>
+        error instanceof AmyRuntimeError && error.code === 'VALIDATION_FAILURE',
+    );
   });
 
   it('валидирует только canonical task-level routing evidence и отклоняет неизвестные поля', () => {

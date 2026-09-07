@@ -171,10 +171,27 @@ Task Analysis alone and declares no Runtime capability dependency.
 
 See [Strategy Routing](strategy-routing.md) for contracts and the Stage 8 Handoff.
 
+## Dynamic Decomposition + DAG
+
+Stage 9 adds an independent `amy.decomposition` capability. It consumes canonical
+Task Analysis plus either a Stage 8 Strategy Decision or a validated Worker
+handoff. Runtime never fabricates semantic subtasks: a requested decomposition
+without an explicit proposal returns `proposal-required`. Valid proposals become a
+bounded acyclic `execution-plan` DAG with ownership, dependencies, outputs,
+initial readiness, declarative failure/cancellation/replanning semantics, and a
+conservative parallelism recommendation.
+
+The default plan allows at most three nodes and delegation depth two;
+Worker-triggered decomposition is further constrained by the Stage 7 Worker child
+policy. Parallelism remains metadata only: Stage 9 does not spawn agents or run a
+scheduler.
+
+See [Decomposition + DAG](decomposition.md) for contracts and the Stage 9 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
-interpretation, automatic source exploration or agent execution, DAG construction or scheduling,
+interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
 advanced orchestration, semantic verification, retry/recovery, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { createAmyRuntime } from './create-amy-runtime.js';
 import { createComputeRoutingCapability } from './compute-routing/compute-routing-capability.js';
 import { createContextIntelligenceCapability } from './context-intelligence/context-intelligence-capability.js';
+import { createDecompositionCapability } from './decomposition/decomposition-capability.js';
 import { AmyRuntimeError } from './errors/amy-runtime-error.js';
 import { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 import { createTaskIntelligenceCapability } from './task-intelligence/task-intelligence-capability.js';
@@ -12,6 +13,7 @@ import { createStrategyRoutingCapability } from './strategy-routing/strategy-rou
 import type { AmyRuntime } from './kernel/amy-runtime.js';
 import type { IComputeRoutingApi } from './compute-routing/compute-routing-contract.js';
 import type { IContextIntelligenceApi } from './context-intelligence/context-intelligence-contract.js';
+import type { IDecompositionApi } from './decomposition/decomposition-contract.js';
 import type { IPluginInventoryApi } from './compatibility/plugin-inventory.js';
 import type { IProjectIntelligenceApi } from './project-intelligence/project-intelligence-contract.js';
 import type { ITaskIntelligenceApi } from './task-intelligence/task-intelligence-contract.js';
@@ -22,6 +24,7 @@ type TCliCommand =
   | 'config'
   | 'compute-route'
   | 'context-resolve'
+  | 'decomposition-plan'
   | 'intelligence-discover'
   | 'intelligence-freshness-refresh'
   | 'intelligence-freshness-show'
@@ -53,6 +56,7 @@ const CLI_COMMANDS: readonly TCliCommand[] = [
   'config',
   'compute-route',
   'context-resolve',
+  'decomposition-plan',
   'intelligence-discover',
   'intelligence-freshness-refresh',
   'intelligence-freshness-show',
@@ -98,6 +102,10 @@ const COMPUTE_ROUTING_COMMANDS: readonly TCliCommand[] = [
 
 const STRATEGY_ROUTING_COMMANDS: readonly TCliCommand[] = [
   'strategy-route',
+];
+
+const DECOMPOSITION_COMMANDS: readonly TCliCommand[] = [
+  'decomposition-plan',
 ];
 
 const checkIsCliCommand = (value: string): value is TCliCommand =>
@@ -158,6 +166,7 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
     'intelligence-save',
     'context-resolve',
     'compute-route',
+    'decomposition-plan',
     'strategy-route',
     'task-classify',
     'task-contract-validate',
@@ -277,6 +286,14 @@ const checkIsStrategyRoutingApi = (
   'route' in value &&
   typeof value.route === 'function';
 
+const checkIsDecompositionApi = (
+  value: unknown,
+): value is IDecompositionApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'plan' in value &&
+  typeof value.plan === 'function';
+
 const writeJson = (value: unknown, stream: NodeJS.WriteStream) => {
   stream.write(`${JSON.stringify(value, undefined, 2)}\n`);
 };
@@ -300,6 +317,35 @@ const executeCommand = async (
 
   if (command === 'capabilities') {
     return runtime.capabilities.list();
+  }
+
+  if (DECOMPOSITION_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired('amy.decomposition');
+
+    if (!checkIsDecompositionApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Decomposition capability API is incompatible',
+      });
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      return capability.api.plan(value);
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Decomposition input at ${inputPath}`,
+      });
+    }
   }
 
   if (STRATEGY_ROUTING_COMMANDS.includes(command)) {
@@ -557,6 +603,10 @@ export const runCli = async (args: readonly string[]) => {
         : {}),
       projectRoot: cliArguments.projectRoot,
     });
+
+    if (DECOMPOSITION_COMMANDS.includes(cliArguments.command)) {
+      runtime.capabilities.register(createDecompositionCapability());
+    }
 
     if (STRATEGY_ROUTING_COMMANDS.includes(cliArguments.command)) {
       runtime.capabilities.register(createStrategyRoutingCapability());

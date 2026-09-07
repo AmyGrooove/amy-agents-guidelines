@@ -5,7 +5,20 @@ export { validateAgentHandoff, validateAgentHandoffResult } from './agent-roles/
 export { createStrategyRoutingCapability } from './strategy-routing/strategy-routing-capability.js';
 export { routeStrategy } from './strategy-routing/strategy-router.js';
 export { STRATEGY_ROUTING_VERSIONS } from './strategy-routing/strategy-routing-contract.js';
-export { validateStrategyRoutingInput } from './strategy-routing/validate-strategy-routing.js';
+export {
+  validateStrategyRoutingDecision,
+  validateStrategyRoutingInput,
+} from './strategy-routing/validate-strategy-routing.js';
+export { createDecompositionCapability } from './decomposition/decomposition-capability.js';
+export { planDecomposition } from './decomposition/decomposition-planner.js';
+export {
+  DECOMPOSITION_VERSIONS,
+  DEFAULT_DECOMPOSITION_POLICY,
+} from './decomposition/decomposition-contract.js';
+export {
+  validateDecompositionInput,
+  validateDecompositionPolicy,
+} from './decomposition/validate-decomposition.js';
 export { AmyRuntimeError } from './errors/amy-runtime-error.js';
 export { loadRuntimeConfig } from './config/load-config.js';
 export { CapabilityRegistry } from './capabilities/capability-registry.js';
@@ -114,6 +127,7 @@ export type {
 export type {
   IRuntimeDataContract,
   TContextSelection,
+  TExecutionPlan,
   TExecutionResult,
   TExecutionStrategy,
   TProjectInformation,
@@ -246,3 +260,37 @@ export type {
   TAgentToolPolicy,
   TAgentWritePolicy,
 } from './agent-roles/agent-role-contract.js';
+
+export type {
+  IDecompositionApi,
+  IDecompositionDag,
+  IDecompositionDagNode,
+  IDecompositionInput,
+  IDecompositionLifecyclePolicy,
+  IDecompositionLimits,
+  IDecompositionNodeProposal,
+  IDecompositionPlanData,
+  IDecompositionPolicyConfig,
+  IDecompositionProposal,
+  IParallelismDecision,
+  IStrategyDecompositionSource,
+  IWorkerDecompositionSource,
+  TDecompositionDecision,
+  TDecompositionNodeRole,
+  TDecompositionPlan,
+  TDecompositionReasonCode,
+  TDecompositionSource,
+  TDecompositionTrigger,
+  TDagCancellationPolicy,
+  TDagFailurePolicy,
+  TDagNodeReadiness,
+  TDagReplanningPolicy,
+  TParallelismMode,
+  TParallelismReasonCode,
+} from './decomposition/decomposition-contract.js';
+export type {
+  ICreateDecompositionCapabilityOptions,
+} from './decomposition/decomposition-capability.js';
+export type {
+  IPlanDecompositionOptions,
+} from './decomposition/decomposition-planner.js';

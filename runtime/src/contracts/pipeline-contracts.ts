@@ -2,6 +2,7 @@ import type { TJsonValue } from '../state/state-store.js';
 
 export type TRuntimeDataContractKind =
   | 'context-selection'
+  | 'execution-plan'
   | 'execution-result'
   | 'execution-strategy'
   | 'project-information'
@@ -31,6 +32,10 @@ export type TTaskAnalysis<
 export type TExecutionStrategy<
   TData extends Readonly<Record<string, TJsonValue>>,
 > = IRuntimeDataContract<TData> & { kind: 'execution-strategy' };
+
+export type TExecutionPlan<
+  TData extends Readonly<Record<string, TJsonValue>>,
+> = IRuntimeDataContract<TData> & { kind: 'execution-plan' };
 
 export type TExecutionResult<
   TData extends Readonly<Record<string, TJsonValue>>,

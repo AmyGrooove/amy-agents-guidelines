@@ -2,6 +2,7 @@ import { AmyRuntimeError } from '../errors/amy-runtime-error.js';
 import { COMPUTE_PROFILES, COMPUTE_ROUTING_VERSIONS } from '../compute-routing/compute-routing-contract.js';
 import { CONTEXT_INTELLIGENCE_VERSIONS } from '../context-intelligence/context-intelligence-contract.js';
 import { validateTaskIntelligenceAnalysis } from '../task-intelligence/validate-task-intelligence.js';
+import { STRATEGY_ROUTING_VERSIONS } from './strategy-routing-contract.js';
 
 import type {
   IComputeRoutingDecision,
@@ -17,7 +18,18 @@ import type {
   TContextReasonCode,
 } from '../context-intelligence/context-intelligence-contract.js';
 import type { TTaskConfidence } from '../task-intelligence/task-intelligence-contract.js';
-import type { IStrategyRoutingInput } from './strategy-routing-contract.js';
+import type {
+  IStrategyRoutingData,
+  IStrategyRoutingInput,
+  TStrategyEscalation,
+  TStrategyExecution,
+  TStrategyExploration,
+  TStrategyPlanning,
+  TStrategyReasonCode,
+  TStrategyReview,
+  TStrategyRoutingDecision,
+  TStrategyVerification,
+} from './strategy-routing-contract.js';
 
 const CONTEXT_CONFIDENCE = new Set<TContextConfidence>(['high', 'low', 'medium']);
 const CONTEXT_EXPLORATION = new Set<TContextExploration>(['none', 'scout', 'source-read']);
@@ -65,6 +77,26 @@ const COMPUTE_REASON_CODES = new Set<TComputeReasonCode>([
   'standard-task',
 ]);
 const TASK_CONFIDENCE = new Set<TTaskConfidence>(['high', 'low', 'medium']);
+const STRATEGY_EXPLORATION = new Set<TStrategyExploration>(['none', 'scout', 'source-read']);
+const STRATEGY_PLANNING = new Set<TStrategyPlanning>(['decompose', 'none', 'plan']);
+const STRATEGY_EXECUTION = new Set<TStrategyExecution>(['direct', 'worker']);
+const STRATEGY_VERIFICATION = new Set<TStrategyVerification>(['none', 'verifier']);
+const STRATEGY_REVIEW = new Set<TStrategyReview>(['none', 'reviewer']);
+const STRATEGY_ESCALATION = new Set<TStrategyEscalation>(['compute', 'none']);
+const STRATEGY_REASON_CODES = new Set<TStrategyReasonCode>([
+  'compute-profile-provided',
+  'compute-unavailable',
+  'context-scout-required',
+  'context-source-read-required',
+  'decomposition-recommended',
+  'direct-execution',
+  'fast-path',
+  'low-task-confidence',
+  'planning-recommended',
+  'reviewer-risk-justified',
+  'verifier-risk-justified',
+  'worker-recommended',
+]);
 
 const checkIsRecord = (
   value: unknown,
@@ -300,5 +332,83 @@ export const validateStrategyRoutingInput = (
     ...(computeDecision ? { computeDecision } : {}),
     ...(contextResolution ? { contextResolution } : {}),
     taskAnalysis,
+  });
+};
+
+export const validateStrategyRoutingDecision = (
+  value: unknown,
+): Readonly<TStrategyRoutingDecision> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Strategy Routing decision must be an object');
+  }
+
+  assertAllowedKeys(value, ['data', 'kind', 'schemaVersion'], 'Strategy Routing decision');
+
+  if (
+    value.kind !== 'execution-strategy' ||
+    value.schemaVersion !== STRATEGY_ROUTING_VERSIONS.decisionSchema ||
+    !checkIsRecord(value.data)
+  ) {
+    throw createValidationError('Strategy Routing decision identity is invalid');
+  }
+
+  assertAllowedKeys(
+    value.data,
+    [
+      'computeProfile',
+      'confidence',
+      'escalation',
+      'execution',
+      'exploration',
+      'fastPath',
+      'planning',
+      'policyVersion',
+      'reasonCodes',
+      'review',
+      'verification',
+    ],
+    'Strategy Routing decision data',
+  );
+
+  if (
+    !TASK_CONFIDENCE.has(value.data.confidence as TTaskConfidence) ||
+    !STRATEGY_ESCALATION.has(value.data.escalation as TStrategyEscalation) ||
+    !STRATEGY_EXECUTION.has(value.data.execution as TStrategyExecution) ||
+    !STRATEGY_EXPLORATION.has(value.data.exploration as TStrategyExploration) ||
+    typeof value.data.fastPath !== 'boolean' ||
+    !STRATEGY_PLANNING.has(value.data.planning as TStrategyPlanning) ||
+    value.data.policyVersion !== STRATEGY_ROUTING_VERSIONS.policy ||
+    !STRATEGY_REVIEW.has(value.data.review as TStrategyReview) ||
+    !STRATEGY_VERIFICATION.has(value.data.verification as TStrategyVerification) ||
+    (value.data.computeProfile !== undefined &&
+      !COMPUTE_PROFILES.includes(value.data.computeProfile as TComputeProfile))
+  ) {
+    throw createValidationError('Strategy Routing decision data is invalid');
+  }
+
+  const data: IStrategyRoutingData = Object.freeze({
+    ...(value.data.computeProfile !== undefined
+      ? { computeProfile: value.data.computeProfile as TComputeProfile }
+      : {}),
+    confidence: value.data.confidence as TTaskConfidence,
+    escalation: value.data.escalation as TStrategyEscalation,
+    execution: value.data.execution as TStrategyExecution,
+    exploration: value.data.exploration as TStrategyExploration,
+    fastPath: value.data.fastPath,
+    planning: value.data.planning as TStrategyPlanning,
+    policyVersion: STRATEGY_ROUTING_VERSIONS.policy,
+    reasonCodes: validateStringList(
+      value.data.reasonCodes,
+      STRATEGY_REASON_CODES,
+      'Strategy Routing reason codes',
+    ),
+    review: value.data.review as TStrategyReview,
+    verification: value.data.verification as TStrategyVerification,
+  });
+
+  return Object.freeze({
+    data,
+    kind: 'execution-strategy' as const,
+    schemaVersion: STRATEGY_ROUTING_VERSIONS.decisionSchema,
   });
 };
