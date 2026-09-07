@@ -45,6 +45,7 @@ node runtime/dist/cli.js task-contract-validate --input <contract.json>
 node runtime/dist/cli.js task-classify --input <classification-input.json>
 node runtime/dist/cli.js context-resolve --input <context-input.json> --project <path>
 node runtime/dist/cli.js compute-route --input <compute-input.json> --project <path>
+node runtime/dist/cli.js strategy-route --input <strategy-input.json> --project <path>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не
@@ -54,5 +55,6 @@ Runtime используется только явно. Существующие
 [Project Intelligence](references/project-intelligence.md) и
 [Task Intelligence](references/task-intelligence.md) и
 [Context Intelligence](references/context-intelligence.md) и
-[Compute Routing](references/compute-routing.md) и
-[Agent Roles + Handoff](references/agent-roles.md).
+[Compute Routing](references/compute-routing.md),
+[Agent Roles + Handoff](references/agent-roles.md) и
+[Strategy Routing](references/strategy-routing.md).

@@ -154,10 +154,27 @@ remains an independent logical recommendation rather than a role or model alias.
 
 See [Agent Roles + Handoff](agent-roles.md) for contracts and the Stage 7 Handoff.
 
+## Strategy Routing + Fast Path
+
+Stage 8 adds an independent `amy.strategy-routing` capability. It consumes a
+canonical Task Analysis plus optional Context Resolution and task-level Compute
+Decision evidence, then returns a versioned `execution-strategy` contract with
+only high-level categorical directives: exploration, planning/decomposition
+recommendation, direct versus Worker execution, conditional Verifier/Reviewer
+selection, compute escalation, confidence, and structured reason codes.
+
+The router is deterministic and does not execute the strategy. A cheap targeted
+`source-read` can remain on Fast Path; Scout, Worker, Verifier, and Reviewer are
+selected only when concrete task/context/risk signals justify their cost.
+Optional upstream capabilities remain optional because Strategy Routing accepts
+Task Analysis alone and declares no Runtime capability dependency.
+
+See [Strategy Routing](strategy-routing.md) for contracts and the Stage 8 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
-interpretation, automatic source exploration, Scout activation, agent-role selection,
-decomposition, advanced orchestration, reviewer intelligence, analytics,
+interpretation, automatic source exploration or agent execution, DAG construction or scheduling,
+advanced orchestration, semantic verification, retry/recovery, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.

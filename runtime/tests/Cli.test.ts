@@ -365,6 +365,63 @@ describe('Cli', () => {
     });
   });
 
+  it('маршрутизирует execution strategy явно через CLI без default capability registration', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'strategy-input.json');
+    const taskAnalysis = {
+      data: {
+        classification: {
+          confidence: 'high',
+          dimensions: {
+            blastRadius: 'local',
+            complexity: 'low',
+            coupling: 'low',
+            expectedContextCost: 'low',
+            novelty: 'unknown',
+            parallelizability: 'low',
+            risk: 'unknown',
+            scope: 'local',
+            uncertainty: 'low',
+            verificationCost: 'low',
+          },
+          evidenceGaps: ['novelty', 'project-risk'],
+          mode: 'text-only',
+          reasonCodes: ['scope-local'],
+          schemaVersion: 1,
+        },
+        contract: {
+          affectedScope: { kind: 'local', targets: ['src/Button.tsx'] },
+          goal: 'Add disabled state.',
+          kind: 'task-contract',
+          schemaVersion: 1,
+          uncertainties: [],
+          verificationExpectations: ['Run tests'],
+        },
+      },
+      kind: 'task-analysis',
+      schemaVersion: 1,
+    };
+
+    await writeFile(inputPath, JSON.stringify({ taskAnalysis }), 'utf8');
+
+    const result = runCli([
+      'strategy-route',
+      '--input',
+      inputPath,
+      '--project',
+      projectRoot,
+      '--plugin',
+      pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    const decision = JSON.parse(result.stdout);
+    assert.equal(decision.kind, 'execution-strategy');
+    assert.equal(decision.data.fastPath, true);
+    assert.equal(decision.data.execution, 'direct');
+    assert.deepEqual(decision.data.reasonCodes, ['direct-execution', 'fast-path']);
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

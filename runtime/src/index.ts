@@ -2,6 +2,10 @@ export { createAgentRolesCapability } from './agent-roles/agent-roles-capability
 export { getAgentRole, listAgentRoles } from './agent-roles/agent-role-catalog.js';
 export { AGENT_ROLES, AGENT_ROLE_VERSIONS } from './agent-roles/agent-role-contract.js';
 export { validateAgentHandoff, validateAgentHandoffResult } from './agent-roles/validate-agent-handoff.js';
+export { createStrategyRoutingCapability } from './strategy-routing/strategy-routing-capability.js';
+export { routeStrategy } from './strategy-routing/strategy-router.js';
+export { STRATEGY_ROUTING_VERSIONS } from './strategy-routing/strategy-routing-contract.js';
+export { validateStrategyRoutingInput } from './strategy-routing/validate-strategy-routing.js';
 export { AmyRuntimeError } from './errors/amy-runtime-error.js';
 export { loadRuntimeConfig } from './config/load-config.js';
 export { CapabilityRegistry } from './capabilities/capability-registry.js';
@@ -205,6 +209,20 @@ export type {
   TTaskIntelligenceAnalysis,
   TTaskScope,
 } from './task-intelligence/task-intelligence-contract.js';
+
+export type {
+  IStrategyRoutingApi,
+  IStrategyRoutingData,
+  IStrategyRoutingInput,
+  TStrategyEscalation,
+  TStrategyExecution,
+  TStrategyExploration,
+  TStrategyPlanning,
+  TStrategyReasonCode,
+  TStrategyReview,
+  TStrategyRoutingDecision,
+  TStrategyVerification,
+} from './strategy-routing/strategy-routing-contract.js';
 
 export type {
   IAgentChildDelegationPolicy,
