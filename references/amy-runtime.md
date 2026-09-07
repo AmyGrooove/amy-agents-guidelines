@@ -144,6 +144,16 @@ reported unavailable. It does not select agent roles or execution strategy.
 
 See [Compute Routing](compute-routing.md) for contracts and the Stage 6 Handoff.
 
+## Agent Roles + Handoff
+
+Stage 7 adds an independent `amy.agent-roles` capability with a deterministic
+universal role catalog and strict assignment/result handoff contracts. Roles carry
+responsibility, I/O, read/write/tool, delegation, completion, and typical logical
+compute metadata, but Runtime does not select or spawn an agent. Compute Profile
+remains an independent logical recommendation rather than a role or model alias.
+
+See [Agent Roles + Handoff](agent-roles.md) for contracts and the Stage 7 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift

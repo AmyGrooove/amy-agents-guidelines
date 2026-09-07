@@ -54,4 +54,5 @@ Runtime используется только явно. Существующие
 [Project Intelligence](references/project-intelligence.md) и
 [Task Intelligence](references/task-intelligence.md) и
 [Context Intelligence](references/context-intelligence.md) и
-[Compute Routing](references/compute-routing.md).
+[Compute Routing](references/compute-routing.md) и
+[Agent Roles + Handoff](references/agent-roles.md).
