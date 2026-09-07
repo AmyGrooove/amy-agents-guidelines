@@ -1,0 +1,97 @@
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { afterEach, describe, it } from 'node:test';
+
+const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const cliPath = join(pluginRoot, 'runtime', 'dist', 'cli.js');
+const temporaryDirectories: string[] = [];
+
+const createTemporaryDirectory = async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'amy-cli-'));
+
+  temporaryDirectories.push(directory);
+
+  return directory;
+};
+
+const runCli = (args: readonly string[], cwd = pluginRoot) =>
+  spawnSync(process.execPath, [cliPath, ...args], {
+    cwd,
+    encoding: 'utf8',
+  });
+
+afterEach(async () => {
+  await Promise.all(
+    temporaryDirectories.splice(0).map((directory) =>
+      rm(directory, { force: true, recursive: true }),
+    ),
+  );
+});
+
+describe('Cli', () => {
+  it('возвращает status для текущего project root', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const result = runCli(['status', '--plugin', pluginRoot], projectRoot);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(result.stdout), {
+      lifecycle: 'started',
+      runtimeId: JSON.parse(result.stdout).runtimeId,
+    });
+  });
+
+  it('выводит capabilities, inventory и итоговую config', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const commonArgs = [
+      '--project',
+      projectRoot,
+      '--plugin',
+      pluginRoot,
+    ];
+    const capabilities = runCli(['capabilities', ...commonArgs]);
+    const inventory = runCli(['inventory', ...commonArgs]);
+    const config = runCli(['config', ...commonArgs]);
+
+    assert.equal(capabilities.status, 0, capabilities.stderr);
+    assert.deepEqual(
+      JSON.parse(capabilities.stdout).map(({ id }: { id: string }) => id),
+      ['amy.plugin-inventory'],
+    );
+    assert.equal(inventory.status, 0, inventory.stderr);
+    assert.equal(JSON.parse(inventory.stdout).plugin.name, 'amy-agents-guidelines');
+    assert.equal(config.status, 0, config.stderr);
+    assert.deepEqual(JSON.parse(config.stdout), {
+      capabilities: {},
+      schemaVersion: 1,
+    });
+  });
+
+  it('возвращает стабильный код для неизвестной команды', () => {
+    const result = runCli(['unknown']);
+
+    assert.equal(result.status, 2);
+    assert.equal(JSON.parse(result.stderr).code, 'VALIDATION_FAILURE');
+  });
+
+  it('возвращает стабильный код для невалидной конфигурации', async () => {
+    const projectRoot = await createTemporaryDirectory();
+
+    await mkdir(join(projectRoot, '.amy'));
+    await writeFile(join(projectRoot, '.amy', 'config.json'), '{}', 'utf8');
+
+    const result = runCli([
+      'config',
+      '--project',
+      projectRoot,
+      '--plugin',
+      pluginRoot,
+    ]);
+
+    assert.equal(result.status, 2);
+    assert.equal(JSON.parse(result.stderr).code, 'INVALID_CONFIGURATION');
+  });
+});

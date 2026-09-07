@@ -1,2 +1,5 @@
 node_modules/
+docs/superpowers/
+runtime/dist/
 runtime/.test-dist/
+runtime/.generated-check/

@@ -1,7 +1,7 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "1.0.3",
-  "description": "Automatically applies Amy's TypeScript development standards through focused Codex skills.",
+  "version": "2.0.1",
+  "description": "Applies Amy's TypeScript development standards and provides an explicitly invoked runtime foundation.",
   "author": {
     "name": "AmyGrooove",
     "email": "vanyablya003@gmail.com"
@@ -11,12 +11,13 @@
     "typescript",
     "react",
     "nestjs",
+    "agent-runtime",
     "development-standards"
   ],
   "interface": {
     "displayName": "Amy Agents Guidelines",
-    "shortDescription": "Personal TypeScript development standards",
-    "longDescription": "Automatically applies focused development standards for TypeScript, React, Next.js, Vite, NestJS, and Mongoose projects.",
+    "shortDescription": "TypeScript standards with an optional Runtime",
+    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime API and diagnostic CLI.",
     "developerName": "AmyGrooove",
     "category": "Productivity",
     "capabilities": [

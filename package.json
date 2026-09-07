@@ -1,0 +1,22 @@
+{
+  "name": "amy-agents-guidelines",
+  "version": "2.0.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('runtime/dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "check": "pnpm typecheck && pnpm test && pnpm check:generated",
+    "check:generated": "node scripts/check-generated.mjs",
+    "test:compile": "node -e \"require('node:fs').rmSync('runtime/.test-dist',{recursive:true,force:true})\" && tsc -p tsconfig.test.json",
+    "test": "pnpm build && pnpm test:compile && node scripts/run-tests.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "typescript": "^5.9.2"
+  },
+  "packageManager": "pnpm@11.23.0"
+}
