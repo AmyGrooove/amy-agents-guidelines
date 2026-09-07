@@ -110,10 +110,21 @@ enrichment remain in the `maintain-project-intelligence` skill.
 See [Project Intelligence](project-intelligence.md) for the contracts and latest
 Stage Handoff.
 
+## Task Intelligence
+
+Stage 4 adds an independent `amy.task-intelligence` capability. It validates a
+versioned Task Contract and produces deterministic categorical classification.
+Natural-language normalization remains in the `analyze-task` skill. Project
+Intelligence can be supplied only as explicit evidence; Task Intelligence never
+loads or refreshes it automatically.
+
+See [Task Intelligence](task-intelligence.md) for contracts and the Stage 4
+Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
-interpretation, context/task intelligence, task classification or decomposition,
-model selection, advanced orchestration, reviewer intelligence, analytics,
+interpretation, context resolution, Scout activation, model selection,
+decomposition, advanced orchestration, reviewer intelligence, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.

@@ -18,6 +18,10 @@ export {
 } from './project-intelligence/project-intelligence-graph.js';
 export { validateProjectIntelligenceFreshnessSnapshot } from './project-intelligence/project-intelligence-freshness.js';
 export { validateSpecWorthinessDecision } from './project-intelligence/validate-project-intelligence.js';
+export { createTaskIntelligenceCapability } from './task-intelligence/task-intelligence-capability.js';
+export { classifyTask } from './task-intelligence/task-classifier.js';
+export { TASK_INTELLIGENCE_VERSIONS } from './task-intelligence/task-intelligence-contract.js';
+export { validateTaskContract } from './task-intelligence/validate-task-intelligence.js';
 
 export type {
   IAmyRuntimeErrorProps,
@@ -121,3 +125,26 @@ export type {
   TSpecWorthinessConfidence,
   TSpecWorthinessReason,
 } from './project-intelligence/project-intelligence-contract.js';
+
+export type {
+  ITaskAffectedScope,
+  ITaskAnalysisData,
+  ITaskClassification,
+  ITaskClassificationDimensions,
+  ITaskClassificationInput,
+  ITaskContract,
+  ITaskIntelligenceApi,
+  ITaskProjectEvidence,
+  ITaskProjectModuleEvidence,
+  TTaskClassificationEvidenceGap,
+  TTaskClassificationMode,
+  TTaskClassificationReasonCode,
+  TTaskConfidence,
+  TTaskLevel,
+  TTaskProjectFreshnessState,
+  TTaskProjectGraphState,
+  TTaskProjectRisk,
+  TTaskProjectRiskReason,
+  TTaskIntelligenceAnalysis,
+  TTaskScope,
+} from './task-intelligence/task-intelligence-contract.js';

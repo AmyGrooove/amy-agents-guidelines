@@ -196,6 +196,50 @@ describe('Cli', () => {
     assert.equal(JSON.parse(impact.stdout).risk, 'high');
   });
 
+  it('валидирует и классифицирует Task Contract только через явные task-команды', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const contractPath = join(projectRoot, 'task-contract.json');
+    const classificationPath = join(projectRoot, 'task-classification.json');
+    const contract = {
+      affectedScope: { kind: 'local', targets: ['src/Button.tsx'] },
+      goal: 'Add disabled state.',
+      kind: 'task-contract',
+      schemaVersion: 1,
+      uncertainties: [],
+      verificationExpectations: ['Run tests'],
+    };
+
+    await writeFile(contractPath, JSON.stringify(contract), 'utf8');
+    await writeFile(
+      classificationPath,
+      JSON.stringify({ contract }),
+      'utf8',
+    );
+
+    const commonArgs = ['--project', projectRoot, '--plugin', pluginRoot];
+    const validated = runCli([
+      'task-contract-validate',
+      '--input',
+      contractPath,
+      ...commonArgs,
+    ]);
+    const classified = runCli([
+      'task-classify',
+      '--input',
+      classificationPath,
+      ...commonArgs,
+    ]);
+
+    assert.equal(validated.status, 0, validated.stderr);
+    assert.deepEqual(JSON.parse(validated.stdout), contract);
+    assert.equal(classified.status, 0, classified.stderr);
+    assert.equal(JSON.parse(classified.stdout).kind, 'task-analysis');
+    assert.equal(
+      JSON.parse(classified.stdout).data.classification.mode,
+      'text-only',
+    );
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',
