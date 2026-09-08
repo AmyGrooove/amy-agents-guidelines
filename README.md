@@ -48,6 +48,7 @@ node runtime/dist/cli.js compute-route --input <compute-input.json> --project <p
 node runtime/dist/cli.js strategy-route --input <strategy-input.json> --project <path>
 node runtime/dist/cli.js decomposition-plan --input <decomposition-input.json> --project <path>
 node runtime/dist/cli.js verification-evaluate --input <verification-input.json> --project <path>
+node runtime/dist/cli.js completion-evaluate --input <completion-input.json> --project <path>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не
@@ -61,4 +62,5 @@ Runtime используется только явно. Существующие
 [Agent Roles + Handoff](references/agent-roles.md) и
 [Strategy Routing](references/strategy-routing.md),
 [Decomposition + DAG](references/decomposition.md) и
-[Verification Pipeline](references/verification.md).
+[Verification Pipeline](references/verification.md) и
+[Completion Protocol](references/completion.md).

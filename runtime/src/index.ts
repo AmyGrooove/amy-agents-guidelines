@@ -19,10 +19,17 @@ export {
   validateDecompositionInput,
   validateDecompositionPolicy,
 } from './decomposition/validate-decomposition.js';
+export { createCompletionCapability } from './completion/completion-capability.js';
+export { runCompletionProtocol } from './completion/completion-protocol.js';
+export { validateCompletionInput } from './completion/validate-completion.js';
+export { COMPLETION_VERSIONS, DEFAULT_COMPLETION_POLICY } from './completion/completion-contract.js';
 export { createVerificationCapability } from './verification/verification-capability.js';
 export { runVerificationPipeline } from './verification/verification-pipeline.js';
 export { VERIFICATION_VERSIONS } from './verification/verification-contract.js';
-export { validateVerificationInput } from './verification/validate-verification.js';
+export {
+  validateVerificationInput,
+  validateVerificationResult,
+} from './verification/validate-verification.js';
 export { AmyRuntimeError } from './errors/amy-runtime-error.js';
 export { loadRuntimeConfig } from './config/load-config.js';
 export { CapabilityRegistry } from './capabilities/capability-registry.js';
@@ -292,6 +299,25 @@ export type {
   TParallelismMode,
   TParallelismReasonCode,
 } from './decomposition/decomposition-contract.js';
+export type {
+  ICompletionApi,
+  ICompletionEvidence,
+  ICompletionExecutionEvidence,
+  ICompletionGuardInput,
+  ICompletionGuardResult,
+  ICompletionInput,
+  ICompletionIntegrationEvidence,
+  ICompletionResultData,
+  ICompletionVerificationEvidence,
+  TCompletionConfidence,
+  TCompletionGuardDecision,
+  TCompletionIntegrationStatus,
+  TCompletionReasonCode,
+  TCompletionResult,
+  TCompletionStatus,
+  TCompletionWorkStatus,
+} from './completion/completion-contract.js';
+
 export type {
   IMechanicalVerificationCheck,
   IMechanicalVerificationResult,

@@ -208,10 +208,27 @@ without creating a new context contract.
 
 See [Verification Pipeline](verification.md) for contracts and the Stage 10 Handoff.
 
+## Completion Protocol + Stop Guards
+
+Stage 11 adds the independent deterministic `amy.completion` capability. It
+consumes canonical Task Analysis, the Stage 10 `quality-result`, and explicit
+execution/integration evidence from the host workflow. It does not rerun
+verification. Instead it compiles a canonical Completion Evidence record and a
+bounded declarative guard decision.
+
+`complete` is possible only when execution is completed, integration is either
+completed or explicitly not required, Verification is `passed`, and no explicit
+unresolved issue remains. Verification gaps remain `unverified`; pending required
+Verifier/Reviewer work remains `incomplete`; failures remain failures. Guard
+`retry` means only that a retry is still allowed by the configured budget. Stage
+11 never performs blind recovery or escalation.
+
+See [Completion Protocol](completion.md) for contracts and the Stage 11 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, command execution, retry/recovery, completion guards, analytics,
+advanced orchestration, command execution, retry/recovery, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.

@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { createAmyRuntime } from './create-amy-runtime.js';
+import { createCompletionCapability } from './completion/completion-capability.js';
 import { createComputeRoutingCapability } from './compute-routing/compute-routing-capability.js';
 import { createContextIntelligenceCapability } from './context-intelligence/context-intelligence-capability.js';
 import { createDecompositionCapability } from './decomposition/decomposition-capability.js';
@@ -12,6 +13,7 @@ import { createStrategyRoutingCapability } from './strategy-routing/strategy-rou
 import { createVerificationCapability } from './verification/verification-capability.js';
 
 import type { AmyRuntime } from './kernel/amy-runtime.js';
+import type { ICompletionApi } from './completion/completion-contract.js';
 import type { IComputeRoutingApi } from './compute-routing/compute-routing-contract.js';
 import type { IContextIntelligenceApi } from './context-intelligence/context-intelligence-contract.js';
 import type { IDecompositionApi } from './decomposition/decomposition-contract.js';
@@ -24,6 +26,7 @@ import type { IVerificationApi } from './verification/verification-contract.js';
 type TCliCommand =
   | 'capabilities'
   | 'config'
+  | 'completion-evaluate'
   | 'compute-route'
   | 'context-resolve'
   | 'decomposition-plan'
@@ -57,6 +60,7 @@ interface ICliArguments {
 const CLI_COMMANDS: readonly TCliCommand[] = [
   'capabilities',
   'config',
+  'completion-evaluate',
   'compute-route',
   'context-resolve',
   'decomposition-plan',
@@ -116,6 +120,10 @@ const VERIFICATION_COMMANDS: readonly TCliCommand[] = [
   'verification-evaluate',
 ];
 
+const COMPLETION_COMMANDS: readonly TCliCommand[] = [
+  'completion-evaluate',
+];
+
 const checkIsCliCommand = (value: string): value is TCliCommand =>
   CLI_COMMANDS.some((command) => command === value);
 
@@ -170,6 +178,7 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
   }
 
   const inputCommands: readonly TCliCommand[] = [
+    'completion-evaluate',
     'intelligence-graph-save',
     'intelligence-save',
     'context-resolve',
@@ -311,6 +320,14 @@ const checkIsVerificationApi = (
   'verify' in value &&
   typeof value.verify === 'function';
 
+const checkIsCompletionApi = (
+  value: unknown,
+): value is ICompletionApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'complete' in value &&
+  typeof value.complete === 'function';
+
 const writeJson = (value: unknown, stream: NodeJS.WriteStream) => {
   stream.write(`${JSON.stringify(value, undefined, 2)}\n`);
 };
@@ -334,6 +351,35 @@ const executeCommand = async (
 
   if (command === 'capabilities') {
     return runtime.capabilities.list();
+  }
+
+  if (COMPLETION_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired('amy.completion');
+
+    if (!checkIsCompletionApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Completion capability API is incompatible',
+      });
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      return capability.api.complete(value);
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Completion input at ${inputPath}`,
+      });
+    }
   }
 
   if (VERIFICATION_COMMANDS.includes(command)) {
@@ -649,6 +695,10 @@ export const runCli = async (args: readonly string[]) => {
         : {}),
       projectRoot: cliArguments.projectRoot,
     });
+
+    if (COMPLETION_COMMANDS.includes(cliArguments.command)) {
+      runtime.capabilities.register(createCompletionCapability());
+    }
 
     if (VERIFICATION_COMMANDS.includes(cliArguments.command)) {
       runtime.capabilities.register(createVerificationCapability());

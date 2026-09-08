@@ -529,6 +529,75 @@ describe('Cli', () => {
     assert.equal(JSON.parse(result.stdout).data.status, 'passed');
   });
 
+
+  it('оценивает completion evidence только через явную CLI command', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const verificationPath = join(projectRoot, 'verification-input.json');
+    const completionPath = join(projectRoot, 'completion-input.json');
+    const taskAnalysis = {
+      data: {
+        classification: {
+          confidence: 'high',
+          dimensions: {
+            blastRadius: 'local', complexity: 'low', coupling: 'low', expectedContextCost: 'low', novelty: 'unknown',
+            parallelizability: 'low', risk: 'unknown', scope: 'local', uncertainty: 'low', verificationCost: 'low',
+          },
+          evidenceGaps: ['novelty', 'project-risk'], mode: 'text-only', reasonCodes: ['scope-local'], schemaVersion: 1,
+        },
+        contract: {
+          affectedScope: { kind: 'local', targets: ['src/Button.tsx'] }, goal: 'Complete Button.', kind: 'task-contract',
+          schemaVersion: 1, uncertainties: [], verificationExpectations: ['Run tests'],
+        },
+      },
+      kind: 'task-analysis', schemaVersion: 1,
+    };
+    const verificationInput = {
+      artifacts: {
+        implementationResultRef: 'artifact:implementation',
+        taskAnalysisRef: 'artifact:task-analysis',
+      },
+      mechanicalChecks: [{
+        evidenceRefs: ['evidence:tests'], id: 'tests', kind: 'test', label: 'Runtime tests', status: 'passed',
+      }],
+      strategyDecision: {
+        data: {
+          confidence: 'high', escalation: 'none', execution: 'direct', exploration: 'none', fastPath: false,
+          planning: 'none', policyVersion: 1, reasonCodes: ['direct-execution'], review: 'none', verification: 'none',
+        },
+        kind: 'execution-strategy', schemaVersion: 1,
+      },
+      taskAnalysis,
+      verificationId: 'cli-completion-verification',
+    };
+
+    await writeFile(verificationPath, JSON.stringify(verificationInput), 'utf8');
+    const verification = runCli([
+      'verification-evaluate', '--input', verificationPath, '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+    assert.equal(verification.status, 0, verification.stderr);
+
+    await writeFile(completionPath, JSON.stringify({
+      completionId: 'cli-completion',
+      execution: {
+        evidenceRefs: ['evidence:implementation'], status: 'completed', unresolvedIssues: [],
+      },
+      integration: {
+        evidenceRefs: [], reason: 'No integration step is required.', status: 'not-required',
+      },
+      taskAnalysis,
+      verificationResult: JSON.parse(verification.stdout),
+    }), 'utf8');
+
+    const result = runCli([
+      'completion-evaluate', '--input', completionPath, '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).kind, 'quality-result');
+    assert.equal(JSON.parse(result.stdout).data.status, 'complete');
+    assert.equal(JSON.parse(result.stdout).data.guard.decision, 'complete');
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

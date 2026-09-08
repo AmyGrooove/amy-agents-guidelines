@@ -1,4 +1,4 @@
-import { validateAgentHandoffResult } from '../agent-roles/validate-agent-handoff.js';
+import { validateAgentHandoff, validateAgentHandoffResult } from '../agent-roles/validate-agent-handoff.js';
 import { AmyRuntimeError } from '../errors/amy-runtime-error.js';
 import { validateStrategyRoutingDecision } from '../strategy-routing/validate-strategy-routing.js';
 import { validateTaskIntelligenceAnalysis } from '../task-intelligence/validate-task-intelligence.js';
@@ -6,10 +6,14 @@ import { VERIFICATION_VERSIONS } from './verification-contract.js';
 
 import type {
   IMechanicalVerificationCheck,
+  IMechanicalVerificationResult,
   IReviewFinding,
+  IReviewVerificationResult,
   IReviewerReport,
+  ISemanticVerificationResult,
   IVerificationArtifactRefs,
   IVerificationInput,
+  TVerificationResult,
   IVerifierCriterionResult,
   IVerifierReport,
   TMechanicalCheckKind,
@@ -17,6 +21,9 @@ import type {
   TReviewFindingSeverity,
   TVerificationCriterionKind,
   TVerificationCriterionStatus,
+  TVerificationReasonCode,
+  TVerificationStageStatus,
+  TVerificationStatus,
 } from './verification-contract.js';
 
 const MECHANICAL_KINDS = new Set<TMechanicalCheckKind>([
@@ -43,6 +50,36 @@ const CRITERION_STATUSES = new Set<TVerificationCriterionStatus>([
   'unknown',
 ]);
 const REVIEW_SEVERITIES = new Set<TReviewFindingSeverity>(['advisory', 'required']);
+const VERIFICATION_STAGE_STATUSES = new Set<TVerificationStageStatus>([
+  'failed',
+  'not-required',
+  'passed',
+  'pending',
+  'unverified',
+]);
+const VERIFICATION_STATUSES = new Set<TVerificationStatus>([
+  'failed',
+  'passed',
+  'pending',
+  'unverified',
+]);
+const VERIFICATION_REASON_CODES = new Set<TVerificationReasonCode>([
+  'mechanical-check-failed',
+  'mechanical-check-gap',
+  'mechanical-checks-passed',
+  'mechanical-not-requested',
+  'review-finding-required',
+  'review-not-required',
+  'review-passed',
+  'review-pending',
+  'review-unverified',
+  'semantic-criterion-failed',
+  'semantic-criterion-gap',
+  'semantic-not-required',
+  'semantic-passed',
+  'semantic-pending',
+  'semantic-unverified',
+]);
 
 const checkIsRecord = (
   value: unknown,
@@ -328,5 +365,169 @@ export const validateVerificationInput = (
     taskAnalysis: validateTaskIntelligenceAnalysis(value.taskAnalysis),
     verificationId: validateNonEmptyString(value.verificationId, 'Verification id'),
     ...(verifierReport ? { verifierReport } : {}),
+  });
+};
+
+const validateVerificationReasonCodes = (
+  value: unknown,
+  label: string,
+): readonly TVerificationReasonCode[] => {
+  if (!Array.isArray(value)) {
+    throw createValidationError(`${label} must be an array`);
+  }
+
+  const codes = value.map((item) => {
+    if (typeof item !== 'string' || !VERIFICATION_REASON_CODES.has(item as TVerificationReasonCode)) {
+      throw createValidationError(`${label} contains an invalid reason code`);
+    }
+    return item as TVerificationReasonCode;
+  });
+
+  if (codes.length === 0 || new Set(codes).size !== codes.length) {
+    throw createValidationError(`${label} must contain unique reason codes`);
+  }
+
+  return Object.freeze([...codes]);
+};
+
+const validateVerificationStageStatus = (
+  value: unknown,
+  label: string,
+): TVerificationStageStatus => {
+  if (!VERIFICATION_STAGE_STATUSES.has(value as TVerificationStageStatus)) {
+    throw createValidationError(`${label} is invalid`);
+  }
+
+  return value as TVerificationStageStatus;
+};
+
+const validateMechanicalVerificationResult = (
+  value: unknown,
+): Readonly<IMechanicalVerificationResult> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Mechanical verification result must be an object');
+  }
+
+  assertAllowedKeys(value, ['checks', 'reasonCodes', 'status'], 'Mechanical verification result');
+
+  return Object.freeze({
+    checks: validateMechanicalChecks(value.checks),
+    reasonCodes: validateVerificationReasonCodes(
+      value.reasonCodes,
+      'Mechanical verification reasonCodes',
+    ),
+    status: validateVerificationStageStatus(value.status, 'Mechanical verification status'),
+  });
+};
+
+const validateSemanticVerificationResult = (
+  value: unknown,
+): Readonly<ISemanticVerificationResult> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Semantic verification result must be an object');
+  }
+
+  assertAllowedKeys(value, ['criteria', 'handoff', 'reasonCodes', 'status'], 'Semantic verification result');
+  if (!Array.isArray(value.criteria)) {
+    throw createValidationError('Semantic verification criteria must be an array');
+  }
+
+  const handoff = value.handoff === undefined ? undefined : validateAgentHandoff(value.handoff);
+  if (handoff && handoff.targetRole !== 'verifier') {
+    throw createValidationError('Semantic verification handoff must target verifier');
+  }
+
+  return Object.freeze({
+    criteria: Object.freeze(value.criteria.map(validateCriterion)),
+    ...(handoff ? { handoff } : {}),
+    reasonCodes: validateVerificationReasonCodes(
+      value.reasonCodes,
+      'Semantic verification reasonCodes',
+    ),
+    status: validateVerificationStageStatus(value.status, 'Semantic verification status'),
+  });
+};
+
+const validateReviewVerificationResult = (
+  value: unknown,
+): Readonly<IReviewVerificationResult> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Review verification result must be an object');
+  }
+
+  assertAllowedKeys(value, ['findings', 'handoff', 'reasonCodes', 'status'], 'Review verification result');
+  if (!Array.isArray(value.findings)) {
+    throw createValidationError('Review verification findings must be an array');
+  }
+
+  const handoff = value.handoff === undefined ? undefined : validateAgentHandoff(value.handoff);
+  if (handoff && handoff.targetRole !== 'reviewer') {
+    throw createValidationError('Review verification handoff must target reviewer');
+  }
+
+  return Object.freeze({
+    findings: Object.freeze(value.findings.map(validateFinding)),
+    ...(handoff ? { handoff } : {}),
+    reasonCodes: validateVerificationReasonCodes(
+      value.reasonCodes,
+      'Review verification reasonCodes',
+    ),
+    status: validateVerificationStageStatus(value.status, 'Review verification status'),
+  });
+};
+
+export const validateVerificationResult = (
+  value: unknown,
+): Readonly<TVerificationResult> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Verification result must be an object');
+  }
+
+  assertAllowedKeys(value, ['data', 'kind', 'schemaVersion'], 'Verification result');
+  if (
+    value.kind !== 'quality-result' ||
+    value.schemaVersion !== VERIFICATION_VERSIONS.resultSchema ||
+    !checkIsRecord(value.data)
+  ) {
+    throw createValidationError('Verification result identity is invalid');
+  }
+
+  assertAllowedKeys(
+    value.data,
+    ['mechanical', 'policyVersion', 'reasonCodes', 'review', 'semantic', 'status', 'verificationId'],
+    'Verification result data',
+  );
+  if (value.data.policyVersion !== VERIFICATION_VERSIONS.policy) {
+    throw createValidationError('Verification result policyVersion is unsupported');
+  }
+  if (!VERIFICATION_STATUSES.has(value.data.status as TVerificationStatus)) {
+    throw createValidationError('Verification result status is invalid');
+  }
+
+  const mechanical = validateMechanicalVerificationResult(value.data.mechanical);
+  const semantic = validateSemanticVerificationResult(value.data.semantic);
+  const review = validateReviewVerificationResult(value.data.review);
+  const reasonCodes = validateVerificationReasonCodes(
+    value.data.reasonCodes,
+    'Verification result reasonCodes',
+  );
+  const nestedReasonCodes = [...mechanical.reasonCodes, ...semantic.reasonCodes, ...review.reasonCodes];
+
+  if (nestedReasonCodes.some((code) => !reasonCodes.includes(code))) {
+    throw createValidationError('Verification result reasonCodes must include all stage reason codes');
+  }
+
+  return Object.freeze({
+    data: Object.freeze({
+      mechanical,
+      policyVersion: VERIFICATION_VERSIONS.policy,
+      reasonCodes,
+      review,
+      semantic,
+      status: value.data.status as TVerificationStatus,
+      verificationId: validateNonEmptyString(value.data.verificationId, 'Verification result verificationId'),
+    }),
+    kind: 'quality-result' as const,
+    schemaVersion: VERIFICATION_VERSIONS.resultSchema,
   });
 };
