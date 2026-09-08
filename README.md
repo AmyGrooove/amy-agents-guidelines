@@ -70,4 +70,5 @@ Runtime используется только явно. Существующие
 [Observability + Decision Provenance](references/observability.md) и
 [Data Storage + Privacy](references/data-storage.md) и
 [Outcome + Failure Intelligence](references/outcome-intelligence.md) и
-[Eval System](references/eval-system.md).
+[Eval System](references/eval-system.md) и
+[Analytics Engine + Task Archetypes](references/analytics.md).

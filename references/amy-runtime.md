@@ -315,10 +315,30 @@ structural boundary for downstream consumers of Stage 15 outcome evidence.
 
 See [Eval System](eval-system.md) for contracts and the Stage 16 Handoff.
 
+## Analytics Engine + Task Archetypes
+
+Stage 17 adds the independent optional `amy.analytics` capability. It aggregates
+host-provided canonical Task/Strategy/Outcome/Eval snapshots into bounded
+descriptive metrics, named time/policy/archetype segments, failure distributions,
+and sample-size confidence. Missing measurements stay missing rather than being
+reconstructed.
+
+Task archetype discovery uses a small deterministic bilingual keyword policy and
+returns `insufficient-sample` for tiny corpora. Generated findings preserve
+`metric → observation → hypothesis → recommendation` explicitly, set
+`causalClaim: false`, and only recommend collecting or inspecting evidence. The
+capability has no storage dependency and is not registered automatically.
+
+Stage 16 Eval results now have canonical `validateEvalCaseResult()` and
+`validateEvalRunResult()` downstream validators so Analytics reuses Eval semantics
+instead of inventing a second scoring taxonomy.
+
+See [Analytics Engine + Task Archetypes](analytics.md) for contracts and the Stage 17 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, command execution, automatic recovery execution, analytics, dashboards, evolution, automatic skill
+advanced orchestration, command execution, automatic recovery execution, dashboards, mechanism-health analytics, evolution, automatic skill
 rewriting, long-term memory, automatic
 storage scheduling, or automatic skill routing.

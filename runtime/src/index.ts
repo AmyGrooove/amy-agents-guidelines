@@ -33,6 +33,16 @@ export {
   DATA_STORAGE_VERSIONS,
   DEFAULT_DATA_STORAGE_POLICY,
 } from './data-storage/data-storage-contract.js';
+export { createAnalyticsCapability } from './analytics/analytics-capability.js';
+export { analyzeAmyData } from './analytics/analytics-engine.js';
+export { discoverTaskArchetypes } from './analytics/task-archetypes.js';
+export { ANALYTICS_LIMITS, ANALYTICS_VERSIONS } from './analytics/analytics-contract.js';
+export {
+  validateAnalyticsEvalRunSample,
+  validateAnalyticsInput,
+  validateAnalyticsTaskSample,
+  validateTaskArchetypeDiscoveryInput,
+} from './analytics/validate-analytics.js';
 export { createEvalSystemCapability } from './eval-system/eval-system-capability.js';
 export { evaluateEvalCase } from './eval-system/eval-scorer.js';
 export { compareEvalVariants, runEvalCorpus } from './eval-system/eval-runner.js';
@@ -45,6 +55,8 @@ export {
   validateEvalCorpus,
   validateEvalObservation,
   validateEvalRunInput,
+  validateEvalRunResult,
+  validateEvalCaseResult,
   validateEvalUsage,
   validateEvalVariant,
 } from './eval-system/validate-eval-system.js';
@@ -106,6 +118,31 @@ export {
   validateTaskContract,
   validateTaskIntelligenceAnalysis,
 } from './task-intelligence/validate-task-intelligence.js';
+
+export type {
+  IAnalyticsApi,
+  IAnalyticsEvalRunSample,
+  IAnalyticsFailureClassSummary,
+  IAnalyticsFinding,
+  IAnalyticsInput,
+  IAnalyticsMetric,
+  IAnalyticsReport,
+  IAnalyticsSegmentDefinition,
+  IAnalyticsSegmentReport,
+  IAnalyticsTaskSample,
+  IAnalyticsUsage,
+  IAnalyticsWindow,
+  ITaskArchetypeAssignment,
+  ITaskArchetypeDiscovery,
+  ITaskArchetypeDiscoveryInput,
+  ITaskArchetypeSummary,
+  TAnalyticsConfidence,
+  TAnalyticsMetricId,
+  TAnalyticsMetricUnit,
+  TTaskArchetype,
+  TTaskArchetypeDiscoveryStatus,
+  TTaskArchetypeReasonCode,
+} from './analytics/analytics-contract.js';
 
 export type {
   IComputeAssignment,

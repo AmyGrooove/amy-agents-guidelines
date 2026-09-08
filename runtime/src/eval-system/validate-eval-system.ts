@@ -13,16 +13,22 @@ import type {
   IEvalBudget,
   IEvalCase,
   IEvalCaseEvaluationInput,
+  IEvalCaseResult,
+  IEvalCheckResult,
   IEvalComparisonInput,
   IEvalCorpus,
   IEvalObservation,
   IEvalRunInput,
+  IEvalRunResult,
   IEvalScoringPolicy,
   IEvalUsage,
   IEvalVariant,
+  TEvalCaseStatus,
+  TEvalCheckStatus,
   TEvalCorpusKind,
   TEvalExpectation,
   TEvalExpectationKind,
+  TEvalRunStatus,
 } from './eval-system-contract.js';
 
 const CORPUS_KINDS = new Set<TEvalCorpusKind>(['failure', 'real-task', 'regression']);
@@ -66,6 +72,9 @@ const STRATEGY_PLANNINGS = new Set(['decompose', 'none', 'plan']);
 const STRATEGY_REVIEWS = new Set(['none', 'reviewer']);
 const STRATEGY_VERIFICATIONS = new Set(['none', 'verifier']);
 const VERIFICATION_STATUSES = new Set(['failed', 'passed', 'pending', 'unverified']);
+const EVAL_CHECK_STATUSES = new Set<TEvalCheckStatus>(['failed', 'passed']);
+const EVAL_CASE_STATUSES = new Set<TEvalCaseStatus>(['error', 'failed', 'passed']);
+const EVAL_RUN_STATUSES = new Set<TEvalRunStatus>(['budget-exhausted', 'completed']);
 
 const checkIsRecord = (
   value: unknown,
@@ -507,5 +516,258 @@ export const validateEvalComparisonInput = (
     candidate,
     comparisonId: validateString(value.comparisonId, 'Eval comparison comparisonId'),
     corpus: validateEvalCorpus(value.corpus),
+  });
+};
+
+
+const validateEvalCheckResult = (
+  value: unknown,
+  index: number,
+): Readonly<IEvalCheckResult> => {
+  const label = `Eval case result checks[${index}]`;
+
+  if (!checkIsRecord(value)) {
+    throw createValidationError(`${label} must be an object`);
+  }
+
+  assertAllowedKeys(
+    value,
+    ['actual', 'expectationId', 'expected', 'kind', 'required', 'status', 'weight'],
+    label,
+  );
+
+  if (
+    typeof value.kind !== 'string' ||
+    !EXPECTATION_KINDS.has(value.kind as TEvalExpectationKind) ||
+    typeof value.required !== 'boolean' ||
+    typeof value.status !== 'string' ||
+    !EVAL_CHECK_STATUSES.has(value.status as TEvalCheckStatus)
+  ) {
+    throw createValidationError(`${label} identity is invalid`);
+  }
+
+  const kind = value.kind as TEvalExpectationKind;
+  const expected = validateExpectationExpected(kind, value.expected);
+  let actual: boolean | string | undefined;
+
+  if (value.actual !== undefined) {
+    if (kind === 'strategy-fast-path') {
+      if (typeof value.actual !== 'boolean') {
+        throw createValidationError(`${label} actual must be boolean`);
+      }
+      actual = value.actual;
+    } else {
+      if (typeof value.actual !== 'string') {
+        throw createValidationError(`${label} actual must be a string`);
+      }
+      actual = value.actual;
+    }
+  }
+
+  return Object.freeze({
+    ...(actual === undefined ? {} : { actual }),
+    expectationId: validateString(value.expectationId, `${label} expectationId`),
+    expected,
+    kind,
+    required: value.required,
+    status: value.status as TEvalCheckStatus,
+    weight: validateNumber(value.weight, `${label} weight`, EVAL_SYSTEM_LIMITS.maxWeight, {
+      integer: true,
+      min: 1,
+    }),
+  });
+};
+
+export const validateEvalCaseResult = (
+  value: unknown,
+): Readonly<IEvalCaseResult> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Eval case result must be an object');
+  }
+
+  assertAllowedKeys(
+    value,
+    ['caseId', 'checks', 'error', 'kind', 'schemaVersion', 'score', 'status', 'usage'],
+    'Eval case result',
+  );
+
+  if (
+    value.kind !== 'eval-case-result' ||
+    value.schemaVersion !== EVAL_SYSTEM_VERSIONS.resultSchema ||
+    typeof value.status !== 'string' ||
+    !EVAL_CASE_STATUSES.has(value.status as TEvalCaseStatus) ||
+    !Array.isArray(value.checks) ||
+    value.checks.length > EVAL_SYSTEM_LIMITS.maxExpectationsPerCase
+  ) {
+    throw createValidationError('Eval case result identity is invalid');
+  }
+
+  const status = value.status as TEvalCaseStatus;
+  const checks = value.checks.map(validateEvalCheckResult);
+  const expectationIds = checks.map(({ expectationId }) => expectationId);
+
+  if (new Set(expectationIds).size !== expectationIds.length) {
+    throw createValidationError('Eval case result expectation ids must be unique');
+  }
+  if (status !== 'error' && checks.length === 0) {
+    throw createValidationError('Non-error eval case result must contain checks');
+  }
+  if (status === 'error') {
+    if (value.error === undefined) {
+      throw createValidationError('Error eval case result must contain error');
+    }
+  } else if (value.error !== undefined) {
+    throw createValidationError('Non-error eval case result must not contain error');
+  }
+
+  return Object.freeze({
+    caseId: validateString(value.caseId, 'Eval case result caseId'),
+    checks: Object.freeze(checks),
+    ...(value.error === undefined
+      ? {}
+      : { error: validateString(value.error, 'Eval case result error') }),
+    kind: 'eval-case-result' as const,
+    schemaVersion: EVAL_SYSTEM_VERSIONS.resultSchema,
+    score: validateNumber(value.score, 'Eval case result score', 100),
+    status,
+    usage: validateEvalUsage(value.usage),
+  });
+};
+
+const approximatelyEqual = (left: number, right: number) =>
+  Math.abs(left - right) <= 0.000001;
+
+const validateEvalRunUsage = (value: unknown): Readonly<IEvalUsage> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Eval run usage must be an object');
+  }
+
+  assertAllowedKeys(value, ['costUnits', 'durationMs', 'tokens'], 'Eval run usage');
+
+  return Object.freeze({
+    costUnits: validateNumber(
+      value.costUnits,
+      'Eval run usage costUnits',
+      EVAL_SYSTEM_LIMITS.maxBudgetCostUnits * 2,
+    ),
+    durationMs: validateNumber(
+      value.durationMs,
+      'Eval run usage durationMs',
+      EVAL_SYSTEM_LIMITS.maxBudgetDurationMs * 2,
+      { integer: true },
+    ),
+    tokens: validateNumber(
+      value.tokens,
+      'Eval run usage tokens',
+      EVAL_SYSTEM_LIMITS.maxBudgetTokens * 2,
+      { integer: true },
+    ),
+  });
+};
+
+export const validateEvalRunResult = (
+  value: unknown,
+): Readonly<IEvalRunResult> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Eval run result must be an object');
+  }
+
+  assertAllowedKeys(
+    value,
+    [
+      'caseResults',
+      'corpusId',
+      'executedCaseCount',
+      'kind',
+      'runId',
+      'schemaVersion',
+      'score',
+      'skippedCaseIds',
+      'status',
+      'usage',
+      'variantId',
+    ],
+    'Eval run result',
+  );
+
+  if (
+    value.kind !== 'eval-run-result' ||
+    value.schemaVersion !== EVAL_SYSTEM_VERSIONS.resultSchema ||
+    typeof value.status !== 'string' ||
+    !EVAL_RUN_STATUSES.has(value.status as TEvalRunStatus) ||
+    !Array.isArray(value.caseResults) ||
+    value.caseResults.length > EVAL_SYSTEM_LIMITS.maxCasesPerCorpus ||
+    !Number.isInteger(value.executedCaseCount) ||
+    (value.executedCaseCount as number) < 0
+  ) {
+    throw createValidationError('Eval run result identity is invalid');
+  }
+
+  const caseResults = value.caseResults.map(validateEvalCaseResult);
+
+  if (value.executedCaseCount !== caseResults.length) {
+    throw createValidationError('Eval run result executed case count does not match case results');
+  }
+
+  const skippedCaseIds = validateStringList(
+    value.skippedCaseIds,
+    'Eval run result skippedCaseIds',
+    EVAL_SYSTEM_LIMITS.maxCasesPerCorpus,
+  );
+  const caseIds = caseResults.map(({ caseId }) => caseId);
+
+  if (new Set(caseIds).size !== caseIds.length) {
+    throw createValidationError('Eval run result case ids must be unique');
+  }
+  if (skippedCaseIds.some((caseId) => caseIds.includes(caseId))) {
+    throw createValidationError('Eval run result executed and skipped case ids must not overlap');
+  }
+  if (value.status === 'completed' && skippedCaseIds.length > 0) {
+    throw createValidationError('Completed eval run result must not contain skipped cases');
+  }
+
+  const score = validateNumber(value.score, 'Eval run result score', 100);
+  const expectedScore = caseResults.length === 0
+    ? 0
+    : Math.round(
+        (caseResults.reduce((total, result) => total + result.score, 0) /
+          caseResults.length) *
+          100,
+      ) / 100;
+
+  if (!approximatelyEqual(score, expectedScore)) {
+    throw createValidationError('Eval run result score does not match case results');
+  }
+
+  const usage = validateEvalRunUsage(value.usage);
+  const summedUsage = caseResults.reduce(
+    (total, result) => ({
+      costUnits: total.costUnits + result.usage.costUnits,
+      durationMs: total.durationMs + result.usage.durationMs,
+      tokens: total.tokens + result.usage.tokens,
+    }),
+    { costUnits: 0, durationMs: 0, tokens: 0 },
+  );
+
+  if (
+    !approximatelyEqual(usage.costUnits, summedUsage.costUnits) ||
+    usage.durationMs !== summedUsage.durationMs ||
+    usage.tokens !== summedUsage.tokens
+  ) {
+    throw createValidationError('Eval run result usage does not match case results');
+  }
+
+  return Object.freeze({
+    caseResults: Object.freeze(caseResults),
+    corpusId: validateString(value.corpusId, 'Eval run result corpusId'),
+    executedCaseCount: caseResults.length,
+    kind: 'eval-run-result' as const,
+    runId: validateString(value.runId, 'Eval run result runId'),
+    schemaVersion: EVAL_SYSTEM_VERSIONS.resultSchema,
+    score,
+    skippedCaseIds,
+    status: value.status as TEvalRunStatus,
+    usage,
+    variantId: validateString(value.variantId, 'Eval run result variantId'),
   });
 };
