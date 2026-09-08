@@ -16,6 +16,7 @@ import type {
   IEvalCaseResult,
   IEvalCheckResult,
   IEvalComparisonInput,
+  IEvalComparisonResult,
   IEvalCorpus,
   IEvalObservation,
   IEvalRunInput,
@@ -28,6 +29,8 @@ import type {
   TEvalCorpusKind,
   TEvalExpectation,
   TEvalExpectationKind,
+  TEvalComparisonStatus,
+  TEvalComparisonWinner,
   TEvalRunStatus,
 } from './eval-system-contract.js';
 
@@ -75,6 +78,8 @@ const VERIFICATION_STATUSES = new Set(['failed', 'passed', 'pending', 'unverifie
 const EVAL_CHECK_STATUSES = new Set<TEvalCheckStatus>(['failed', 'passed']);
 const EVAL_CASE_STATUSES = new Set<TEvalCaseStatus>(['error', 'failed', 'passed']);
 const EVAL_RUN_STATUSES = new Set<TEvalRunStatus>(['budget-exhausted', 'completed']);
+const EVAL_COMPARISON_STATUSES = new Set<TEvalComparisonStatus>(['completed', 'inconclusive']);
+const EVAL_COMPARISON_WINNERS = new Set<TEvalComparisonWinner>(['baseline', 'candidate', 'inconclusive', 'tie']);
 
 const checkIsRecord = (
   value: unknown,
@@ -769,5 +774,127 @@ export const validateEvalRunResult = (
     status: value.status as TEvalRunStatus,
     usage,
     variantId: validateString(value.variantId, 'Eval run result variantId'),
+  });
+};
+
+
+export const validateEvalComparisonResult = (
+  value: unknown,
+): Readonly<IEvalComparisonResult> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Eval comparison result must be an object');
+  }
+
+  assertAllowedKeys(
+    value,
+    [
+      'baseline',
+      'candidate',
+      'comparisonId',
+      'improvedCaseIds',
+      'kind',
+      'regressedCaseIds',
+      'schemaVersion',
+      'scoreDelta',
+      'status',
+      'winner',
+    ],
+    'Eval comparison result',
+  );
+
+  if (
+    value.kind !== 'eval-comparison-result' ||
+    value.schemaVersion !== EVAL_SYSTEM_VERSIONS.comparisonSchema ||
+    typeof value.status !== 'string' ||
+    !EVAL_COMPARISON_STATUSES.has(value.status as TEvalComparisonStatus) ||
+    typeof value.winner !== 'string' ||
+    !EVAL_COMPARISON_WINNERS.has(value.winner as TEvalComparisonWinner)
+  ) {
+    throw createValidationError('Eval comparison result identity is invalid');
+  }
+
+  const baseline = validateEvalRunResult(value.baseline);
+  const candidate = validateEvalRunResult(value.candidate);
+  const improvedCaseIds = validateStringList(
+    value.improvedCaseIds,
+    'Eval comparison result improvedCaseIds',
+    EVAL_SYSTEM_LIMITS.maxCasesPerCorpus,
+  );
+  const regressedCaseIds = validateStringList(
+    value.regressedCaseIds,
+    'Eval comparison result regressedCaseIds',
+    EVAL_SYSTEM_LIMITS.maxCasesPerCorpus,
+  );
+
+  if (baseline.corpusId !== candidate.corpusId) {
+    throw createValidationError('Eval comparison result runs must use the same corpus');
+  }
+  if (baseline.variantId === candidate.variantId) {
+    throw createValidationError('Eval comparison result variants must be distinct');
+  }
+
+  const completed = baseline.status === 'completed' && candidate.status === 'completed';
+  if (completed) {
+    const baselineCaseIds = baseline.caseResults.map(({ caseId }) => caseId).sort();
+    const candidateCaseIds = candidate.caseResults.map(({ caseId }) => caseId).sort();
+    if (JSON.stringify(baselineCaseIds) !== JSON.stringify(candidateCaseIds)) {
+      throw createValidationError('Completed eval comparison runs must contain the same case ids');
+    }
+  }
+
+  if (improvedCaseIds.some((caseId) => regressedCaseIds.includes(caseId))) {
+    throw createValidationError('Eval comparison improved and regressed case ids must not overlap');
+  }
+
+  const baselineScores = new Map(baseline.caseResults.map(({ caseId, score }) => [caseId, score] as const));
+  const candidateScores = new Map(candidate.caseResults.map(({ caseId, score }) => [caseId, score] as const));
+  const expectedImproved: string[] = [];
+  const expectedRegressed: string[] = [];
+
+  for (const [caseId, baselineScore] of baselineScores) {
+    const candidateScore = candidateScores.get(caseId);
+    if (candidateScore === undefined) continue;
+    if (candidateScore > baselineScore) expectedImproved.push(caseId);
+    if (candidateScore < baselineScore) expectedRegressed.push(caseId);
+  }
+
+  const normalize = (items: readonly string[]) => [...items].sort();
+  if (
+    JSON.stringify(normalize(improvedCaseIds)) !== JSON.stringify(normalize(expectedImproved)) ||
+    JSON.stringify(normalize(regressedCaseIds)) !== JSON.stringify(normalize(expectedRegressed))
+  ) {
+    throw createValidationError('Eval comparison case deltas do not match run results');
+  }
+
+  const scoreDelta = validateNumber(value.scoreDelta, 'Eval comparison result score delta', 100, { min: -100 });
+  const expectedScoreDelta = Math.round((candidate.score - baseline.score) * 100) / 100;
+  if (!approximatelyEqual(scoreDelta, expectedScoreDelta)) {
+    throw createValidationError('Eval comparison result score delta does not match run results');
+  }
+
+  const expectedStatus: TEvalComparisonStatus = completed ? 'completed' : 'inconclusive';
+  const expectedWinner: TEvalComparisonWinner = !completed
+    ? 'inconclusive'
+    : scoreDelta > 0
+      ? 'candidate'
+      : scoreDelta < 0
+        ? 'baseline'
+        : 'tie';
+
+  if (value.status !== expectedStatus || value.winner !== expectedWinner) {
+    throw createValidationError('Eval comparison result status or winner does not match run results');
+  }
+
+  return Object.freeze({
+    baseline,
+    candidate,
+    comparisonId: validateString(value.comparisonId, 'Eval comparison result comparisonId'),
+    improvedCaseIds,
+    kind: 'eval-comparison-result' as const,
+    regressedCaseIds,
+    schemaVersion: EVAL_SYSTEM_VERSIONS.comparisonSchema,
+    scoreDelta,
+    status: expectedStatus,
+    winner: expectedWinner,
   });
 };

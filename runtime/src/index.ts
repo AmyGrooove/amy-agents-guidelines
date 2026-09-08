@@ -44,6 +44,20 @@ export {
   validateAnalyticsTaskSample,
   validateTaskArchetypeDiscoveryInput,
 } from './analytics/validate-analytics.js';
+export { createEvolutionCapability } from './evolution/evolution-capability.js';
+export { analyzeCounterfactuals } from './evolution/counterfactual-analysis.js';
+export { compareShadowStrategy } from './evolution/shadow-routing.js';
+export { createImprovementProposal, recordImprovementDecision } from './evolution/improvement-proposal.js';
+export { EVOLUTION_LIMITS, EVOLUTION_VERSIONS } from './evolution/evolution-contract.js';
+export {
+  validateCounterfactualAnalysis,
+  validateCounterfactualAnalysisInput,
+  validateImprovementDecisionInput,
+  validateImprovementProposal,
+  validateImprovementProposalInput,
+  validateShadowStrategyComparison,
+  validateShadowStrategyInput,
+} from './evolution/validate-evolution.js';
 export { createEvalSystemCapability } from './eval-system/eval-system-capability.js';
 export { evaluateEvalCase } from './eval-system/eval-scorer.js';
 export { compareEvalVariants, runEvalCorpus } from './eval-system/eval-runner.js';
@@ -53,6 +67,7 @@ export {
   validateEvalCase,
   validateEvalCaseEvaluationInput,
   validateEvalComparisonInput,
+  validateEvalComparisonResult,
   validateEvalCorpus,
   validateEvalObservation,
   validateEvalRunInput,
@@ -161,6 +176,28 @@ export type {
   TTaskArchetypeDiscoveryStatus,
   TTaskArchetypeReasonCode,
 } from './analytics/analytics-contract.js';
+
+export type {
+  ICounterfactualAnalysis,
+  ICounterfactualAnalysisInput,
+  ICounterfactualHypothesis,
+  IEvolutionApi,
+  IImprovementDecision,
+  IImprovementDecisionInput,
+  IImprovementProposal,
+  IImprovementProposalInput,
+  IShadowStrategyComparison,
+  IShadowStrategyDifference,
+  IShadowStrategyInput,
+  TEvolutionCostMetric,
+  TEvolutionCounterfactualDimension,
+  TEvolutionCounterfactualReasonCode,
+  TEvolutionProposalReasonCode,
+  TEvolutionRecommendation,
+  TEvolutionTarget,
+  TEvolutionUserDecision,
+  TShadowStrategyDimension,
+} from './evolution/evolution-contract.js';
 
 export type {
   IComputeAssignment,

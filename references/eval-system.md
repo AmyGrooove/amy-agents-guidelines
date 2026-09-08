@@ -128,6 +128,14 @@ corpus and the same explicit budget. It reports:
 Budget-exhausted comparisons are `inconclusive`. Comparison never changes
 production routing or applies the candidate configuration.
 
+## Stage 19 downstream validation
+
+Controlled Evolution consumes Eval comparison evidence through the canonical
+`validateEvalComparisonResult()` boundary. The validator reuses
+`validateEvalRunResult()` for both variants and verifies per-case delta ids, score
+delta, comparison status, and winner before an Eval result can influence an
+Improvement Proposal. This adds no new Eval execution path.
+
 ## Deliberate limits
 
 Stage 16 does not add:

@@ -345,10 +345,27 @@ routing.
 
 See [Analytics Engine + Task Archetypes + Mechanism Health](analytics.md) for contracts and the Stage 18 Handoff.
 
+## Controlled Evolution
+
+Stage 19 adds the independent optional `amy.evolution` capability. It reuses Stage
+18 Analytics health evidence, Stage 16 Eval comparison evidence, and canonical Stage
+8 Strategy decisions to create bounded non-causal counterfactual hypotheses, safe
+shadow strategy comparisons, Improvement Proposals, and explicit user-decision
+receipts.
+
+Evolution never executes a shadow candidate, never mutates production policy, and
+contains no apply API. Shadow comparison accepts a host-produced candidate instead
+of duplicating the Stage 8 router. Counterfactual analysis uses only comparable
+Stage 18 routing cohorts with measured cost and reliability. The capability is not
+registered automatically and has no mandatory Storage/Analytics/Eval registration
+dependency.
+
+See [Controlled Evolution](evolution.md) for contracts and the Stage 19 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, command execution, automatic recovery execution, dashboards, controlled evolution, automatic skill
+advanced orchestration, command execution, automatic recovery execution, dashboards, automatic skill
 rewriting, long-term memory, automatic
-storage scheduling, automatic skill routing, or automatic production policy mutation.
+storage scheduling, automatic skill routing, shadow execution, or automatic production policy mutation.
