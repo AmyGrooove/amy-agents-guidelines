@@ -1,4 +1,5 @@
 import { ANALYTICS_VERSIONS } from './analytics-contract.js';
+import { selectAnalyticsSegments } from './analytics-selection.js';
 import {
   discoverValidatedTaskArchetypes,
   getAnalyticsConfidence,
@@ -51,38 +52,6 @@ const metric = (
     unit,
     value,
   });
-};
-
-const matchesWindow = (observedAt: string, window: Readonly<IAnalyticsWindow> | undefined) => {
-  if (!window) return true;
-
-  const observed = Date.parse(observedAt);
-  if (window.fromInclusive !== undefined && observed < Date.parse(window.fromInclusive)) return false;
-  if (window.toExclusive !== undefined && observed >= Date.parse(window.toExclusive)) return false;
-
-  return true;
-};
-
-const policyKey = ({ owner, version }: Readonly<IObservabilityPolicyRef>) => `${owner}:${version}`;
-
-const matchesPolicies = (
-  samplePolicies: readonly Readonly<IObservabilityPolicyRef>[],
-  filterPolicies: readonly Readonly<IObservabilityPolicyRef>[] | undefined,
-) => {
-  if (!filterPolicies || filterPolicies.length === 0) return true;
-
-  const available = new Set(samplePolicies.map(policyKey));
-  return filterPolicies.every((policy) => available.has(policyKey(policy)));
-};
-
-const matchesArchetypes = (
-  sampleId: string,
-  assignments: ReadonlyMap<string, TTaskArchetype>,
-  archetypes: readonly TTaskArchetype[] | undefined,
-) => {
-  if (!archetypes || archetypes.length === 0) return true;
-  const archetype = assignments.get(sampleId);
-  return archetype !== undefined && archetypes.includes(archetype);
 };
 
 const summarizeFailures = (
@@ -221,35 +190,23 @@ const createSegmentReport = (
   });
 };
 
-const getAssignments = (
-  assignments: readonly Readonly<ITaskArchetypeAssignment>[],
-): ReadonlyMap<string, TTaskArchetype> =>
-  new Map(assignments.map(({ archetype, sampleId }) => [sampleId, archetype] as const));
-
 const buildReport = (input: Readonly<IAnalyticsInput>): Readonly<IAnalyticsReport> => {
-  const windowedTaskSamples = input.taskSamples.filter(({ observedAt }) => matchesWindow(observedAt, input.window));
-  const windowedEvalRunSamples = input.evalRunSamples.filter(({ observedAt }) => matchesWindow(observedAt, input.window));
-  const overallDiscovery = discoverValidatedTaskArchetypes(windowedTaskSamples);
-  const assignments = getAssignments(overallDiscovery.assignments);
-
-  const segmentReports = input.segments.map((segment: Readonly<IAnalyticsSegmentDefinition>) => {
-    const taskSamples = windowedTaskSamples.filter((sample) =>
-      matchesPolicies(sample.policyRefs, segment.policyRefs) &&
-      matchesArchetypes(sample.sampleId, assignments, segment.archetypes),
-    );
-    const evalRunSamples = segment.archetypes
-      ? []
-      : windowedEvalRunSamples.filter((sample) => matchesPolicies(sample.policyRefs, segment.policyRefs));
-
-    return createSegmentReport(segment.segmentId, taskSamples, evalRunSamples);
-  });
+  const selection = selectAnalyticsSegments(input);
 
   return Object.freeze({
     kind: 'analytics-report' as const,
-    overall: createSegmentReport('overall', windowedTaskSamples, windowedEvalRunSamples),
+    overall: createSegmentReport(
+      selection.overall.segmentId,
+      selection.overall.taskSamples,
+      selection.overall.evalRunSamples,
+    ),
     reportId: input.reportId,
     schemaVersion: ANALYTICS_VERSIONS.reportSchema,
-    segments: Object.freeze(segmentReports),
+    segments: Object.freeze(selection.segments.map((segment) => createSegmentReport(
+      segment.segmentId,
+      segment.taskSamples,
+      segment.evalRunSamples,
+    ))),
     ...(input.window === undefined ? {} : { window: input.window }),
   });
 };

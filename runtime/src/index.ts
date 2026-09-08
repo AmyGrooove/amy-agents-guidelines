@@ -35,6 +35,7 @@ export {
 } from './data-storage/data-storage-contract.js';
 export { createAnalyticsCapability } from './analytics/analytics-capability.js';
 export { analyzeAmyData } from './analytics/analytics-engine.js';
+export { analyzeMechanismHealth } from './analytics/mechanism-health.js';
 export { discoverTaskArchetypes } from './analytics/task-archetypes.js';
 export { ANALYTICS_LIMITS, ANALYTICS_VERSIONS } from './analytics/analytics-contract.js';
 export {
@@ -122,11 +123,23 @@ export {
 export type {
   IAnalyticsApi,
   IAnalyticsEvalRunSample,
+  IAnalyticsExecutionObservation,
   IAnalyticsFailureClassSummary,
   IAnalyticsFinding,
+  IAnalyticsHealthReport,
+  IAnalyticsHealthSegmentReport,
   IAnalyticsInput,
+  IAnalyticsMechanismHealth,
+  IAnalyticsMechanismOutcomeSummary,
+  IAnalyticsMechanismRecoverySummary,
+  IAnalyticsMechanismSignalSummary,
+  IAnalyticsMechanismUsageSummary,
+  IAnalyticsMechanismUse,
   IAnalyticsMetric,
   IAnalyticsReport,
+  IAnalyticsRoutingChoiceSummary,
+  IAnalyticsRoutingCohort,
+  IAnalyticsRoutingExecutionSummary,
   IAnalyticsSegmentDefinition,
   IAnalyticsSegmentReport,
   IAnalyticsTaskSample,
@@ -137,8 +150,13 @@ export type {
   ITaskArchetypeDiscoveryInput,
   ITaskArchetypeSummary,
   TAnalyticsConfidence,
+  TAnalyticsHealthAssessment,
+  TAnalyticsHealthReasonCode,
+  TAnalyticsMechanismKind,
+  TAnalyticsMechanismSignal,
   TAnalyticsMetricId,
   TAnalyticsMetricUnit,
+  TAnalyticsRoutingHealthDimension,
   TTaskArchetype,
   TTaskArchetypeDiscoveryStatus,
   TTaskArchetypeReasonCode,

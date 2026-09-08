@@ -171,54 +171,158 @@ Stage 17 does not add:
 - mechanism/skill/agent health scoring (Stage 18);
 - counterfactual or shadow routing (Stage 19).
 
+## Stage 18 — Mechanism & Routing Health Analytics
+
+Stage 18 extends the existing optional `amy.analytics` capability. It deliberately
+reuses Stage 17 snapshots, segmentation, task archetypes, Outcome Failure Taxonomy,
+Strategy decisions, and sample-size confidence instead of introducing another data
+pipeline or health service.
+
+### Additional task observations
+
+`IAnalyticsTaskSample` remains backward compatible. Two new fields are optional:
+
+- `mechanisms`: bounded versioned observations for used `skill` or `agent`
+  mechanisms. Each observation records `id`, `version`, positive `invocationCount`,
+  optional attributable usage, and explicit bounded evidence signals;
+- `execution`: compact measurements that are not reconstructed from prompts:
+  `reasoningEffort`, `workerCount`, and `contextItems` when the host can report them.
+
+Canonical mechanism signals are:
+
+- `caught-issue`;
+- `recovered-failure`;
+- `unnecessary-invocation`;
+- `useful-evidence`;
+- `user-correction`.
+
+Agent mechanism ids are validated against the canonical Stage 7 role catalog.
+Skill ids stay host/plugin identifiers. Missing observations stay missing; Analytics
+does not guess that an unreported skill or agent was used.
+
+### Mechanism health
+
+`analyzeMechanismHealth()` and `IAnalyticsApi.analyzeHealth()` return a versioned
+`IAnalyticsHealthReport`. Mechanisms are grouped by `(kind, id, version)` and expose:
+
+- task and invocation counts;
+- task-archetype distribution;
+- outcome rates;
+- retries and escalations;
+- failure-class distribution;
+- attributable cost/tokens/duration when reported;
+- evidence-signal rates;
+- sample-size confidence;
+- a non-causal health assessment with structured reason codes.
+
+The first health policy is intentionally conservative:
+
+- fewer than five tasks → `insufficient-evidence`;
+- material explicit unnecessary-invocation evidence → `routing-fit-suspected`;
+- failure concentrated in one sufficiently sampled archetype while comparable
+  archetypes do materially better → `routing-fit-suspected`;
+- consistently high failure across at least two sufficiently sampled archetypes →
+  `mechanism-risk-suspected`;
+- otherwise → `no-clear-risk`.
+
+Every mechanism health result contains `causalClaim: false`. These statuses are
+investigation priorities, not proof that a mechanism or Router caused an outcome.
+
+### Router + Compute health
+
+Health reports build routing cohorts only from comparable tasks. A cohort key uses:
+
+```text
+task archetype
++ scope
++ complexity
++ risk
++ Strategy policy version
+```
+
+Within a cohort Amy can compare observed choices for:
+
+- compute profile;
+- reasoning effort;
+- Scout / no Scout;
+- Verifier / no Verifier;
+- Reviewer / no Reviewer;
+- direct / Worker execution;
+- reported worker count;
+- reported context item count.
+
+Each choice summary keeps outcome rates, retries, average task cost/tokens/duration,
+average worker count, average context items, sample size, and confidence together.
+This makes cost/reliability trade-offs inspectable without comparing unrelated task
+types or claiming causality.
+
+Stage 18 reuses the exact Stage 17 time/policy/archetype selection helper for both
+analytics reports. Named health segments therefore cannot silently diverge from the
+existing analytics segmentation semantics.
+
+### Deliberate limits
+
+Stage 18 does not add:
+
+- a new capability id, storage backend, telemetry stream, dashboard, or CLI command;
+- automatic mechanism invocation discovery from raw prompts;
+- automatic production routing or compute changes;
+- causal inference or statistical significance tests;
+- an LLM/embedding health classifier;
+- task-to-Eval linkage that does not already exist;
+- Controlled Evolution, counterfactual execution, or Shadow Router behavior.
+
+
 # Stage Handoff
 
-- **Stage:** 17 — Analytics Engine + Task Archetypes.
-- **Verdict:** `implement`, using a deterministic snapshot-based analytics layer
-  rather than a storage-coupled analytics subsystem.
-- **Implemented:** optional `amy.analytics`; validated task/eval analytics samples;
-  half-open time windows; named policy/archetype segments; descriptive outcome,
-  recovery, routing, usage, and Eval metrics; sample-size confidence; failure-class
-  distribution; deterministic bilingual task-archetype discovery; explicit
-  insufficient-sample state; non-causal findings with investigative-only
-  recommendations; canonical Stage 16 Eval result validators; Runtime exports,
-  tests, docs, plugin version `2.16.0`.
-- **Canonical interfaces/contracts:** `IAnalyticsApi`, `IAnalyticsInput`,
-  `IAnalyticsTaskSample`, `IAnalyticsEvalRunSample`, `IAnalyticsWindow`,
-  `IAnalyticsSegmentDefinition`, `IAnalyticsReport`, `IAnalyticsSegmentReport`,
-  `IAnalyticsMetric`, `IAnalyticsFinding`, `IAnalyticsFailureClassSummary`,
-  `ITaskArchetypeDiscovery`, `ITaskArchetypeAssignment`,
-  `ITaskArchetypeSummary`, `TTaskArchetype`, `ANALYTICS_VERSIONS`,
-  `ANALYTICS_LIMITS`, `validateAnalyticsInput()`, `analyzeAmyData()`,
-  `discoverTaskArchetypes()`, plus Stage 16 `validateEvalCaseResult()` and
-  `validateEvalRunResult()`.
-- **Key architecture decisions:** analytics is host-snapshot based and storage
-  independent; existing Stage 4/8/15/16 contracts are validated rather than copied;
-  segmentation uses explicit policy provenance/time/archetype filters; missing data
-  remains missing; confidence is categorical sample-size evidence only; archetype
-  discovery stays simple and optional; every generated finding explicitly forbids a
-  causal claim; no production policy is mutated.
-- **Verification results:** Stage 16 baseline from its handoff was `161/161` tests
-  across `22` suites. Stage 17 focused tests pass `7/7`; the full compiled runner
-  passes `168/168` tests across `23` suites. Production and test typechecks pass,
-  production/test compilation passes, `runtime/dist` matches TypeScript sources,
-  manifest/package version parity is `2.16.0`, and the inventory CLI smoke check
-  passes with Node `22.16.0`, global TypeScript `5.8.3`, and `@types/node` `24.0.4`.
-  `pnpm` is unavailable in the sandbox, so equivalent direct `tsc`/Node checks were
-  used. A configured marketplace/install sync is not available in this sandbox.
-  The packaged source archive is integrity-checked and excludes generated output,
-  `node_modules`, caches, and temporary files.
-- **Technical debt:** analytics ingestion is a host responsibility; production
-  token/cost metrics exist only when the host reports them; policy refs are compact
-  provenance summaries rather than replayable historical policies; archetypes are
-  keyword heuristics; no statistical intervals; no direct task-to-eval linkage for
-  archetype-filtered Eval metrics.
-- **Limits:** no CLI/dashboard/storage query layer, no embeddings, no LLM analytics,
-  no causal inference, no automatic routing changes, no mechanism health scoring,
-  no counterfactual execution.
-- **Next-stage constraints:** Stage 18 should reuse Analytics segments/metrics,
-  Outcome Failure Taxonomy, Strategy/Decision Provenance, and Eval results to assess
-  Skill/Agent/Router/Compute health. It must answer whether a mechanism is weak or
-  merely misrouted, compare only similar task segments, keep sample size/confidence
-  visible, and must not mutate production routing.
-- **Expected next Roadmap v2 stage:** 18 — Mechanism & Routing Health Analytics.
+- **Stage:** 18 — Mechanism & Routing Health Analytics.
+- **Verdict:** `implement`, as a backward-compatible extension of the canonical
+  optional `amy.analytics` capability rather than a new subsystem.
+- **Implemented:** optional versioned skill/agent mechanism observations; compact
+  execution measurements; deterministic mechanism-health aggregation by
+  kind/id/version; skill/agent outcome, retry/escalation, failure, attributable
+  usage and evidence-signal summaries; conservative non-causal mechanism-vs-routing
+  assessments; comparable routing cohorts; compute/reasoning/Scout/Verifier/
+  Reviewer/execution/worker-count/context-size choice summaries; shared Stage 17
+  window/policy/archetype selection; Runtime exports, tests, docs, plugin version
+  `2.17.0`.
+- **Canonical interfaces/contracts:** existing `IAnalyticsApi` now includes
+  `analyzeHealth()`; `IAnalyticsTaskSample` optionally includes `mechanisms` and
+  `execution`; `IAnalyticsMechanismUse`, `IAnalyticsExecutionObservation`,
+  `IAnalyticsHealthReport`, `IAnalyticsHealthSegmentReport`,
+  `IAnalyticsMechanismHealth`, `IAnalyticsMechanismOutcomeSummary`,
+  `IAnalyticsMechanismRecoverySummary`, `IAnalyticsMechanismUsageSummary`,
+  `IAnalyticsMechanismSignalSummary`, `IAnalyticsRoutingCohort`,
+  `IAnalyticsRoutingChoiceSummary`, `IAnalyticsRoutingExecutionSummary`,
+  `TAnalyticsHealthAssessment`, `TAnalyticsHealthReasonCode`,
+  `TAnalyticsMechanismSignal`, `TAnalyticsRoutingHealthDimension`,
+  `analyzeMechanismHealth()`; `ANALYTICS_VERSIONS.api = 2`,
+  `inputSchema = 2`, `healthPolicy = 1`, `healthReportSchema = 1`.
+- **Key architecture decisions:** reuse `amy.analytics`; host snapshots remain the
+  ingestion boundary; existing Stage 17 inputs remain valid; agent ids reuse the
+  canonical role catalog; missing measurements are not reconstructed; health
+  comparisons are scoped to comparable task cohorts and Strategy policy versions;
+  assessment thresholds are conservative hypotheses with `causalClaim: false`;
+  no production policy mutation; one shared selector prevents segmentation drift.
+- **Verification results:** production and test TypeScript checks passed; build passed;
+  full Runtime suite passed `172/172` tests across `23/23` suites; generated output
+  matched TypeScript sources; CLI `inventory` smoke passed; package/manifest version
+  parity, JSON parsing and local Markdown-link checks passed. `pnpm` was unavailable
+  in the execution environment, so the equivalent commands were run directly with
+  Node.js `22.16.0` and the available TypeScript toolchain instead of `pnpm check`.
+- **Technical debt:** mechanism/version/signal attribution is still host-provided;
+  reasoning effort, worker count and context size exist only when reported;
+  skill-specific verifier failures are represented through canonical failure classes
+  plus explicit signals rather than a new taxonomy; health thresholds are simple
+  deterministic heuristics; no statistical intervals; no canonical task-to-Eval
+  linkage; Eval-run evidence therefore remains Stage 17 aggregate evidence rather
+  than mechanism-linked evidence.
+- **Limits:** no CLI/dashboard/storage query layer, no raw prompt mining, no
+  embeddings/LLM health classifier, no causal inference, no automatic router/compute
+  changes, no automatic skill/agent rewriting, no counterfactual execution.
+- **Next-stage constraints:** Stage 19 Controlled Evolution should consume these
+  descriptive health results and Stage 16 Eval comparison as evidence for proposals,
+  but must preserve `observation → hypothesis → proposed change → eval → explicit
+  user decision`; counterfactual/shadow decisions must not execute alternatives or
+  mutate production silently.
+- **Expected next Roadmap v2 stage:** 19 — Controlled Evolution.

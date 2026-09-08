@@ -22,7 +22,7 @@ const createTaskAnalysis = (goal: string, scope: 'local' | 'module' = 'local') =
   });
 };
 
-const createStrategy = (_taskAnalysis: any, fastPath: boolean) => ({
+const createStrategy = (_taskAnalysis: any, fastPath: boolean, computeProfile?: 'FAST' | 'STANDARD' | 'ADVANCED' | 'DEEP' | 'EXPERT') => ({
   data: {
     confidence: 'high',
     escalation: 'none',
@@ -36,6 +36,7 @@ const createStrategy = (_taskAnalysis: any, fastPath: boolean) => ({
       : ['context-scout-required', 'reviewer-risk-justified', 'verifier-risk-justified'],
     review: fastPath ? 'none' : 'reviewer',
     verification: fastPath ? 'none' : 'verifier',
+    ...(computeProfile ? { computeProfile } : {}),
   },
   kind: 'execution-strategy',
   schemaVersion: 1,
@@ -86,6 +87,9 @@ const createSample = ({
   sampleId,
   fastPath = false,
   usage,
+  execution,
+  mechanisms,
+  computeProfile,
 }: {
   goal: string;
   observedAt: string;
@@ -94,15 +98,20 @@ const createSample = ({
   sampleId: string;
   fastPath?: boolean;
   usage?: { costUnits?: number; durationMs?: number; tokens?: number };
+  execution?: { contextItems?: number; reasoningEffort?: string; workerCount?: number };
+  mechanisms?: readonly any[];
+  computeProfile?: 'FAST' | 'STANDARD' | 'ADVANCED' | 'DEEP' | 'EXPERT';
 }) => {
   const taskAnalysis = createTaskAnalysis(goal);
 
   return {
     ...(outcome ? { outcomeAssessment: outcome } : {}),
+    ...(execution ? { execution } : {}),
+    ...(mechanisms ? { mechanisms } : {}),
     observedAt,
     policyRefs: [{ owner: 'strategy-routing', version: policyVersion }],
     sampleId,
-    strategyDecision: createStrategy(taskAnalysis, fastPath),
+    strategyDecision: createStrategy(taskAnalysis, fastPath, computeProfile),
     taskAnalysis,
     ...(usage ? { usage } : {}),
   };
@@ -166,15 +175,18 @@ const metric = (segment: any, id: string) => {
 describe('Analytics', () => {
   it('exports an independent optional analytics capability and versioned contracts', () => {
     assert.deepEqual(runtimeExports.ANALYTICS_VERSIONS, {
-      api: 1,
+      api: 2,
       archetypePolicy: 1,
       archetypeSchema: 1,
-      inputSchema: 1,
+      healthPolicy: 1,
+      healthReportSchema: 1,
+      inputSchema: 2,
       metricPolicy: 1,
       reportSchema: 1,
     });
     assert.equal(typeof runtimeExports.createAnalyticsCapability, 'function');
     assert.equal(typeof runtimeExports.analyzeAmyData, 'function');
+    assert.equal(typeof runtimeExports.analyzeMechanismHealth, 'function');
     assert.equal(typeof runtimeExports.discoverTaskArchetypes, 'function');
     assert.equal(typeof runtimeExports.validateAnalyticsInput, 'function');
     assert.equal(typeof runtimeExports.validateEvalRunResult, 'function');
@@ -183,10 +195,244 @@ describe('Analytics', () => {
     const capability = createCapability();
 
     assert.equal(capability.descriptor.id, 'amy.analytics');
-    assert.equal(capability.descriptor.version, '1.0.0');
+    assert.equal(capability.descriptor.version, '1.1.0');
     assert.equal(capability.descriptor.dependencies, undefined);
     assert.equal(typeof capability.api.analyze, 'function');
+    assert.equal(typeof capability.api.analyzeHealth, 'function');
     assert.equal(typeof capability.api.discoverArchetypes, 'function');
+  });
+
+
+  it('validates optional mechanism and execution observations without breaking Stage 17 task samples', () => {
+    const validateAnalyticsTaskSample = runtimeExports.validateAnalyticsTaskSample as (value: unknown) => any;
+    const legacy = createSample({
+      goal: 'Add a small feature.',
+      observedAt: '2026-09-03T10:00:00.000Z',
+      policyVersion: 1,
+      sampleId: 'legacy-stage-17',
+    });
+
+    assert.equal(validateAnalyticsTaskSample(legacy).mechanisms, undefined);
+
+    const observed = validateAnalyticsTaskSample({
+      ...legacy,
+      execution: { contextItems: 9, reasoningEffort: 'medium', workerCount: 2 },
+      mechanisms: [
+        {
+          id: 'develop-react-component',
+          invocationCount: 1,
+          kind: 'skill',
+          signals: ['useful-evidence'],
+          usage: { costUnits: 1, durationMs: 20, tokens: 100 },
+          version: '1.4.0',
+        },
+        {
+          id: 'reviewer',
+          invocationCount: 1,
+          kind: 'agent',
+          signals: ['caught-issue'],
+          version: '1',
+        },
+      ],
+    });
+
+    assert.deepEqual(observed.execution, { contextItems: 9, reasoningEffort: 'medium', workerCount: 2 });
+    assert.deepEqual(observed.mechanisms.map(({ kind, id, version }: any) => [kind, id, version]), [
+      ['skill', 'develop-react-component', '1.4.0'],
+      ['agent', 'reviewer', '1'],
+    ]);
+
+    assert.throws(
+      () => validateAnalyticsTaskSample({
+        ...legacy,
+        mechanisms: [{ id: 'not-a-role', invocationCount: 1, kind: 'agent', signals: [], version: '1' }],
+      }),
+      /agent mechanism id/i,
+    );
+  });
+
+
+  it('summarizes skill and agent health with versioned usage, outcomes, signals, and routing-fit hypotheses', () => {
+    const analyzeMechanismHealth = runtimeExports.analyzeMechanismHealth as (value: unknown) => any;
+    const samples = [
+      ...Array.from({ length: 5 }, (_, index) => createSample({
+        goal: `Add feature ${index} to React component.`,
+        mechanisms: [{
+          id: 'develop-react-component',
+          invocationCount: 1,
+          kind: 'skill',
+          signals: ['useful-evidence'],
+          usage: { costUnits: 1 },
+          version: '1.4.0',
+        }],
+        observedAt: `2026-09-0${index + 1}T10:00:00.000Z`,
+        outcome: createOutcome(`feature-health-${index}`, 'success'),
+        policyVersion: 1,
+        sampleId: `feature-health-${index}`,
+      })),
+      ...Array.from({ length: 5 }, (_, index) => createSample({
+        goal: `Fix bug ${index} in React component.`,
+        mechanisms: [
+          {
+            id: 'develop-react-component',
+            invocationCount: 1,
+            kind: 'skill',
+            signals: index < 2 ? ['user-correction'] : [],
+            usage: { costUnits: 3 },
+            version: '1.4.0',
+          },
+          {
+            id: 'verifier',
+            invocationCount: 1,
+            kind: 'agent',
+            signals: index < 3 ? ['caught-issue'] : index === 4 ? ['unnecessary-invocation'] : [],
+            version: '1',
+          },
+        ],
+        observedAt: `2026-09-${String(index + 10).padStart(2, '0')}T10:00:00.000Z`,
+        outcome: createOutcome(`bug-health-${index}`, 'failure', 'implementation', 1),
+        policyVersion: 1,
+        sampleId: `bug-health-${index}`,
+      })),
+    ];
+
+    const report = analyzeMechanismHealth({
+      evalRunSamples: [],
+      reportId: 'mechanism-health',
+      segments: [],
+      taskSamples: samples,
+    });
+
+    const skill = report.overall.mechanisms.find(({ kind, id }: any) => kind === 'skill' && id === 'develop-react-component');
+    assert.ok(skill);
+    assert.equal(skill.version, '1.4.0');
+    assert.equal(skill.taskCount, 10);
+    assert.equal(skill.invocationCount, 10);
+    assert.equal(skill.outcomes.failureRate, 0.5);
+    assert.equal(skill.outcomes.successRate, 0.5);
+    assert.equal(skill.recovery.avgRetries, 0.5);
+    assert.equal(skill.usage.avgCostUnits, 2);
+    assert.deepEqual(skill.failureClasses.map(({ failureClass, count }: any) => [failureClass, count]), [['implementation', 5]]);
+    assert.equal(skill.signals.find(({ signal }: any) => signal === 'user-correction').rate, 0.2);
+    assert.equal(skill.assessment, 'routing-fit-suspected');
+    assert.equal(skill.causalClaim, false);
+
+    const verifier = report.overall.mechanisms.find(({ kind, id }: any) => kind === 'agent' && id === 'verifier');
+    assert.ok(verifier);
+    assert.equal(verifier.taskCount, 5);
+    assert.equal(verifier.signals.find(({ signal }: any) => signal === 'caught-issue').rate, 0.6);
+    assert.equal(verifier.signals.find(({ signal }: any) => signal === 'unnecessary-invocation').rate, 0.2);
+  });
+
+
+  it('compares router and compute choices only inside comparable task cohorts', () => {
+    const analyzeMechanismHealth = runtimeExports.analyzeMechanismHealth as (value: unknown) => any;
+    const samples = [
+      ...Array.from({ length: 3 }, (_, index) => createSample({
+        computeProfile: 'FAST',
+        execution: { contextItems: 3, reasoningEffort: 'low', workerCount: 0 },
+        fastPath: true,
+        goal: `Add feature ${index} to local form.`,
+        observedAt: `2026-09-0${index + 1}T12:00:00.000Z`,
+        outcome: createOutcome(`fast-${index}`, 'success'),
+        policyVersion: 1,
+        sampleId: `fast-${index}`,
+        usage: { costUnits: 1, durationMs: 10, tokens: 100 },
+      })),
+      ...Array.from({ length: 3 }, (_, index) => createSample({
+        computeProfile: 'DEEP',
+        execution: { contextItems: 12, reasoningEffort: 'high', workerCount: 2 },
+        goal: `Add feature ${index + 3} to local form.`,
+        observedAt: `2026-09-0${index + 4}T12:00:00.000Z`,
+        outcome: createOutcome(`deep-${index}`, 'failure', 'routing', 1),
+        policyVersion: 1,
+        sampleId: `deep-${index}`,
+        usage: { costUnits: 5, durationMs: 50, tokens: 500 },
+      })),
+      createSample({
+        computeProfile: 'FAST',
+        execution: { contextItems: 2, reasoningEffort: 'low', workerCount: 0 },
+        fastPath: true,
+        goal: 'Add unit tests for parser.',
+        observedAt: '2026-09-08T12:00:00.000Z',
+        outcome: createOutcome('testing-control', 'success'),
+        policyVersion: 1,
+        sampleId: 'testing-control',
+      }),
+    ];
+
+    const report = analyzeMechanismHealth({
+      evalRunSamples: [],
+      reportId: 'routing-health',
+      segments: [],
+      taskSamples: samples,
+    });
+
+    assert.equal(report.overall.routingCohorts.length, 2);
+    const featureCohort = report.overall.routingCohorts.find(({ archetype }: any) => archetype === 'feature-modification');
+    assert.ok(featureCohort);
+    assert.equal(featureCohort.sampleSize, 6);
+
+    const fast = featureCohort.choices.find(({ dimension, choice }: any) => dimension === 'compute-profile' && choice === 'FAST');
+    const deep = featureCohort.choices.find(({ dimension, choice }: any) => dimension === 'compute-profile' && choice === 'DEEP');
+    assert.equal(fast.outcomes.successRate, 1);
+    assert.equal(fast.usage.avgCostUnits, 1);
+    assert.equal(fast.execution.avgContextItems, 3);
+    assert.equal(fast.execution.avgWorkerCount, 0);
+    assert.equal(deep.outcomes.failureRate, 1);
+    assert.equal(deep.recovery.avgRetries, 1);
+    assert.equal(deep.usage.avgCostUnits, 5);
+    assert.equal(deep.execution.avgContextItems, 12);
+    assert.equal(deep.execution.avgWorkerCount, 2);
+
+    assert.ok(featureCohort.choices.some(({ dimension, choice }: any) => dimension === 'reasoning-effort' && choice === 'high'));
+    assert.ok(featureCohort.choices.some(({ dimension, choice }: any) => dimension === 'scout' && choice === 'with'));
+    assert.ok(featureCohort.choices.some(({ dimension, choice }: any) => dimension === 'worker-count' && choice === '2'));
+    assert.ok(featureCohort.choices.some(({ dimension, choice }: any) => dimension === 'context-items' && choice === '12'));
+    assert.equal(featureCohort.causalClaim, false);
+  });
+
+
+  it('reuses Stage 17 time, policy, and archetype segmentation for health reports', () => {
+    const analyzeMechanismHealth = runtimeExports.analyzeMechanismHealth as (value: unknown) => any;
+    const mechanism = [{
+      id: 'develop-typescript-object',
+      invocationCount: 1,
+      kind: 'skill',
+      signals: [],
+      version: '2.0.0',
+    }];
+    const report = analyzeMechanismHealth({
+      evalRunSamples: [],
+      reportId: 'health-segments',
+      segments: [
+        {
+          archetypes: ['bug-investigation'],
+          policyRefs: [{ owner: 'strategy-routing', version: 1 }],
+          segmentId: 'v1-bugs',
+        },
+        {
+          policyRefs: [{ owner: 'strategy-routing', version: 2 }],
+          segmentId: 'v2',
+        },
+      ],
+      taskSamples: [
+        createSample({ goal: 'Fix bug one.', mechanisms: mechanism, observedAt: '2026-09-01T10:00:00.000Z', policyVersion: 1, sampleId: 'seg-bug-1' }),
+        createSample({ goal: 'Fix bug two.', mechanisms: mechanism, observedAt: '2026-09-02T10:00:00.000Z', policyVersion: 1, sampleId: 'seg-bug-2' }),
+        createSample({ goal: 'Add feature one.', mechanisms: mechanism, observedAt: '2026-09-03T10:00:00.000Z', policyVersion: 2, sampleId: 'seg-feature-1' }),
+        createSample({ goal: 'Add feature two.', mechanisms: mechanism, observedAt: '2026-09-04T10:00:00.000Z', policyVersion: 2, sampleId: 'seg-feature-2' }),
+        createSample({ goal: 'Fix old bug.', mechanisms: mechanism, observedAt: '2026-08-01T10:00:00.000Z', policyVersion: 1, sampleId: 'seg-old' }),
+      ],
+      window: {
+        fromInclusive: '2026-09-01T00:00:00.000Z',
+        toExclusive: '2026-09-05T00:00:00.000Z',
+      },
+    });
+
+    assert.equal(report.overall.sampleSize, 4);
+    assert.equal(report.segments.find(({ segmentId }: any) => segmentId === 'v1-bugs').sampleSize, 2);
+    assert.equal(report.segments.find(({ segmentId }: any) => segmentId === 'v2').sampleSize, 2);
+    assert.equal(report.segments.find(({ segmentId }: any) => segmentId === 'v1-bugs').mechanisms[0].taskCount, 2);
   });
 
   it('computes descriptive task, outcome, routing, usage, and eval metrics with sample confidence', () => {

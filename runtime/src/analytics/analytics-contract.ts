@@ -5,19 +5,27 @@ import type {
   TOutcomeFailureClass,
 } from '../outcome-intelligence/outcome-intelligence-contract.js';
 import type { TStrategyRoutingDecision } from '../strategy-routing/strategy-routing-contract.js';
-import type { TTaskIntelligenceAnalysis } from '../task-intelligence/task-intelligence-contract.js';
+import type {
+  TTaskIntelligenceAnalysis,
+  TTaskLevel,
+  TTaskScope,
+} from '../task-intelligence/task-intelligence-contract.js';
 
 export const ANALYTICS_VERSIONS = Object.freeze({
-  api: 1,
+  api: 2,
   archetypePolicy: 1,
   archetypeSchema: 1,
-  inputSchema: 1,
+  healthPolicy: 1,
+  healthReportSchema: 1,
+  inputSchema: 2,
   metricPolicy: 1,
   reportSchema: 1,
 });
 
 export const ANALYTICS_LIMITS = Object.freeze({
   maxEvalRunSamples: 1_000,
+  maxMechanismsPerTask: 64,
+  maxMechanismInvocations: 1_000,
   maxPolicyRefsPerSample: 32,
   maxSegments: 32,
   maxStringLength: 1_000,
@@ -26,6 +34,33 @@ export const ANALYTICS_LIMITS = Object.freeze({
 });
 
 export type TAnalyticsConfidence = 'high' | 'insufficient' | 'low' | 'medium';
+export type TAnalyticsMechanismKind = 'agent' | 'skill';
+export type TAnalyticsMechanismSignal =
+  | 'caught-issue'
+  | 'recovered-failure'
+  | 'unnecessary-invocation'
+  | 'useful-evidence'
+  | 'user-correction';
+export type TAnalyticsHealthAssessment =
+  | 'insufficient-evidence'
+  | 'mechanism-risk-suspected'
+  | 'no-clear-risk'
+  | 'routing-fit-suspected';
+export type TAnalyticsRoutingHealthDimension =
+  | 'compute-profile'
+  | 'context-items'
+  | 'execution'
+  | 'reasoning-effort'
+  | 'reviewer'
+  | 'scout'
+  | 'verifier'
+  | 'worker-count';
+export type TAnalyticsHealthReasonCode =
+  | 'failure-concentrated-by-archetype'
+  | 'failure-consistent-across-archetypes'
+  | 'insufficient-sample'
+  | 'no-clear-risk-signal'
+  | 'unnecessary-invocation-observed';
 export type TTaskArchetype =
   | 'api-propagation'
   | 'bug-investigation'
@@ -76,15 +111,126 @@ export interface IAnalyticsUsage {
   tokens?: number;
 }
 
+export interface IAnalyticsExecutionObservation {
+  contextItems?: number;
+  reasoningEffort?: string;
+  workerCount?: number;
+}
+
+export interface IAnalyticsMechanismUse {
+  id: string;
+  invocationCount: number;
+  kind: TAnalyticsMechanismKind;
+  signals: readonly TAnalyticsMechanismSignal[];
+  version: string;
+
+  usage?: Readonly<IAnalyticsUsage>;
+}
+
 export interface IAnalyticsTaskSample {
   observedAt: string;
   policyRefs: readonly Readonly<IObservabilityPolicyRef>[];
   sampleId: string;
   taskAnalysis: Readonly<TTaskIntelligenceAnalysis>;
 
+  execution?: Readonly<IAnalyticsExecutionObservation>;
+  mechanisms?: readonly Readonly<IAnalyticsMechanismUse>[];
   outcomeAssessment?: Readonly<IOutcomeAssessment>;
   strategyDecision?: Readonly<TStrategyRoutingDecision>;
   usage?: Readonly<IAnalyticsUsage>;
+}
+
+
+export interface IAnalyticsMechanismOutcomeSummary {
+  failureRate: number | null;
+  partialSuccessRate: number | null;
+  sampleSize: number;
+  successRate: number | null;
+  unknownRate: number | null;
+  unverifiedRate: number | null;
+}
+
+export interface IAnalyticsMechanismRecoverySummary {
+  avgEscalations: number | null;
+  avgRetries: number | null;
+  sampleSize: number;
+}
+
+export interface IAnalyticsMechanismUsageSummary {
+  avgCostUnits: number | null;
+  avgDurationMs: number | null;
+  avgTokens: number | null;
+}
+
+export interface IAnalyticsMechanismSignalSummary {
+  confidence: TAnalyticsConfidence;
+  count: number;
+  rate: number;
+  signal: TAnalyticsMechanismSignal;
+}
+
+export interface IAnalyticsMechanismHealth {
+  archetypes: readonly Readonly<ITaskArchetypeSummary>[];
+  assessment: TAnalyticsHealthAssessment;
+  causalClaim: false;
+  confidence: TAnalyticsConfidence;
+  failureClasses: readonly Readonly<IAnalyticsFailureClassSummary>[];
+  id: string;
+  invocationCount: number;
+  kind: TAnalyticsMechanismKind;
+  outcomes: Readonly<IAnalyticsMechanismOutcomeSummary>;
+  reasonCodes: readonly TAnalyticsHealthReasonCode[];
+  recovery: Readonly<IAnalyticsMechanismRecoverySummary>;
+  signals: readonly Readonly<IAnalyticsMechanismSignalSummary>[];
+  taskCount: number;
+  usage: Readonly<IAnalyticsMechanismUsageSummary>;
+  version: string;
+}
+
+
+export interface IAnalyticsRoutingExecutionSummary {
+  avgContextItems: number | null;
+  avgWorkerCount: number | null;
+}
+
+export interface IAnalyticsRoutingChoiceSummary {
+  choice: string;
+  confidence: TAnalyticsConfidence;
+  dimension: TAnalyticsRoutingHealthDimension;
+  execution: Readonly<IAnalyticsRoutingExecutionSummary>;
+  outcomes: Readonly<IAnalyticsMechanismOutcomeSummary>;
+  recovery: Readonly<IAnalyticsMechanismRecoverySummary>;
+  sampleSize: number;
+  usage: Readonly<IAnalyticsMechanismUsageSummary>;
+}
+
+export interface IAnalyticsRoutingCohort {
+  archetype: TTaskArchetype;
+  causalClaim: false;
+  choices: readonly Readonly<IAnalyticsRoutingChoiceSummary>[];
+  cohortId: string;
+  complexity: TTaskLevel;
+  confidence: TAnalyticsConfidence;
+  policyVersion: number;
+  risk: TTaskLevel;
+  sampleSize: number;
+  scope: TTaskScope;
+}
+
+export interface IAnalyticsHealthSegmentReport {
+  mechanisms: readonly Readonly<IAnalyticsMechanismHealth>[];
+  routingCohorts: readonly Readonly<IAnalyticsRoutingCohort>[];
+  sampleSize: number;
+  segmentId: string;
+}
+
+export interface IAnalyticsHealthReport {
+  kind: 'analytics-health-report';
+  overall: Readonly<IAnalyticsHealthSegmentReport>;
+  reportId: string;
+  schemaVersion: number;
+  segments: readonly Readonly<IAnalyticsHealthSegmentReport>[];
+  window?: Readonly<IAnalyticsWindow>;
 }
 
 export interface IAnalyticsEvalRunSample {
@@ -190,6 +336,7 @@ export interface IAnalyticsReport {
 
 export interface IAnalyticsApi {
   analyze(value: unknown): Readonly<IAnalyticsReport>;
+  analyzeHealth(value: unknown): Readonly<IAnalyticsHealthReport>;
   discoverArchetypes(value: unknown): Readonly<ITaskArchetypeDiscovery>;
   validateInput(value: unknown): Readonly<IAnalyticsInput>;
 }

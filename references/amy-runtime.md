@@ -333,12 +333,22 @@ Stage 16 Eval results now have canonical `validateEvalCaseResult()` and
 `validateEvalRunResult()` downstream validators so Analytics reuses Eval semantics
 instead of inventing a second scoring taxonomy.
 
-See [Analytics Engine + Task Archetypes](analytics.md) for contracts and the Stage 17 Handoff.
+Stage 18 extends the same optional `amy.analytics` capability instead of adding a
+second analytics subsystem. Task snapshots may now carry optional versioned
+skill/agent mechanism observations and compact execution measurements. Health
+analysis aggregates mechanism usage, outcomes, recovery, failures, cost and explicit
+evidence signals, then compares routing/compute choices only inside comparable
+cohorts derived from task archetype, scope, complexity, risk, and strategy policy
+version. Assessments are deterministic hypotheses (`routing-fit-suspected`,
+`mechanism-risk-suspected`, etc.), always non-causal, and never mutate production
+routing.
+
+See [Analytics Engine + Task Archetypes + Mechanism Health](analytics.md) for contracts and the Stage 18 Handoff.
 
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, command execution, automatic recovery execution, dashboards, mechanism-health analytics, evolution, automatic skill
+advanced orchestration, command execution, automatic recovery execution, dashboards, controlled evolution, automatic skill
 rewriting, long-term memory, automatic
-storage scheduling, or automatic skill routing.
+storage scheduling, automatic skill routing, or automatic production policy mutation.

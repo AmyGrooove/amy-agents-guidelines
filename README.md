@@ -71,4 +71,4 @@ Runtime используется только явно. Существующие
 [Data Storage + Privacy](references/data-storage.md) и
 [Outcome + Failure Intelligence](references/outcome-intelligence.md) и
 [Eval System](references/eval-system.md) и
-[Analytics Engine + Task Archetypes](references/analytics.md).
+[Analytics Engine + Task Archetypes + Mechanism Health](references/analytics.md).

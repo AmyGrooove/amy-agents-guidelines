@@ -1,3 +1,4 @@
+import { AGENT_ROLES } from '../agent-roles/agent-role-contract.js';
 import { AmyRuntimeError } from '../errors/amy-runtime-error.js';
 import { validateEvalRunResult } from '../eval-system/validate-eval-system.js';
 import { validateOutcomeAssessment } from '../outcome-intelligence/validate-outcome-intelligence.js';
@@ -10,12 +11,15 @@ import {
 import type { IObservabilityPolicyRef } from '../observability/observability-contract.js';
 import type {
   IAnalyticsEvalRunSample,
+  IAnalyticsExecutionObservation,
   IAnalyticsInput,
+  IAnalyticsMechanismUse,
   IAnalyticsSegmentDefinition,
   IAnalyticsTaskSample,
   IAnalyticsUsage,
   IAnalyticsWindow,
   ITaskArchetypeDiscoveryInput,
+  TAnalyticsMechanismSignal,
   TTaskArchetype,
 } from './analytics-contract.js';
 
@@ -128,6 +132,129 @@ const validatePolicyRefs = (
   return Object.freeze(refs);
 };
 
+
+const MECHANISM_SIGNALS = new Set<TAnalyticsMechanismSignal>([
+  'caught-issue',
+  'recovered-failure',
+  'unnecessary-invocation',
+  'useful-evidence',
+  'user-correction',
+]);
+
+const validateInteger = (
+  value: unknown,
+  label: string,
+  minimum: number,
+  maximum = Number.MAX_SAFE_INTEGER,
+): number => {
+  if (!Number.isInteger(value) || (value as number) < minimum || (value as number) > maximum) {
+    throw createValidationError(`${label} must be an integer between ${minimum} and ${maximum}`);
+  }
+
+  return value as number;
+};
+
+const validateExecutionObservation = (
+  value: unknown,
+): Readonly<IAnalyticsExecutionObservation> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Analytics execution observation must be an object');
+  }
+
+  assertAllowedKeys(
+    value,
+    ['contextItems', 'reasoningEffort', 'workerCount'],
+    'Analytics execution observation',
+  );
+
+  if (Object.keys(value).length === 0) {
+    throw createValidationError('Analytics execution observation must contain at least one measurement');
+  }
+
+  return Object.freeze({
+    ...(value.contextItems === undefined
+      ? {}
+      : { contextItems: validateInteger(value.contextItems, 'Analytics execution contextItems', 0) }),
+    ...(value.reasoningEffort === undefined
+      ? {}
+      : { reasoningEffort: validateString(value.reasoningEffort, 'Analytics execution reasoningEffort') }),
+    ...(value.workerCount === undefined
+      ? {}
+      : { workerCount: validateInteger(value.workerCount, 'Analytics execution workerCount', 0) }),
+  });
+};
+
+const validateMechanismUse = (
+  value: unknown,
+  index: number,
+): Readonly<IAnalyticsMechanismUse> => {
+  const label = `Analytics mechanism use[${index}]`;
+
+  if (!checkIsRecord(value)) {
+    throw createValidationError(`${label} must be an object`);
+  }
+
+  assertAllowedKeys(value, ['id', 'invocationCount', 'kind', 'signals', 'usage', 'version'], label);
+
+  if (value.kind !== 'agent' && value.kind !== 'skill') {
+    throw createValidationError(`${label} kind must be agent or skill`);
+  }
+
+  const id = validateString(value.id, `${label} id`);
+  if (value.kind === 'agent' && !AGENT_ROLES.includes(id as (typeof AGENT_ROLES)[number])) {
+    throw createValidationError(`${label} agent mechanism id must be a canonical agent role`);
+  }
+
+  if (!Array.isArray(value.signals) || value.signals.length > MECHANISM_SIGNALS.size) {
+    throw createValidationError(`${label} signals must be a bounded array`);
+  }
+
+  const signals = value.signals.map((signal) => {
+    if (typeof signal !== 'string' || !MECHANISM_SIGNALS.has(signal as TAnalyticsMechanismSignal)) {
+      throw createValidationError(`${label} contains an unsupported signal`);
+    }
+
+    return signal as TAnalyticsMechanismSignal;
+  });
+
+  if (new Set(signals).size !== signals.length) {
+    throw createValidationError(`${label} signals must not contain duplicates`);
+  }
+
+  return Object.freeze({
+    id,
+    invocationCount: validateInteger(
+      value.invocationCount,
+      `${label} invocationCount`,
+      1,
+      ANALYTICS_LIMITS.maxMechanismInvocations,
+    ),
+    kind: value.kind,
+    signals: Object.freeze(signals),
+    ...(value.usage === undefined ? {} : { usage: validateUsage(value.usage) }),
+    version: validateString(value.version, `${label} version`),
+  });
+};
+
+const validateMechanisms = (
+  value: unknown,
+): readonly Readonly<IAnalyticsMechanismUse>[] => {
+  if (!Array.isArray(value) || value.length > ANALYTICS_LIMITS.maxMechanismsPerTask) {
+    throw createValidationError(
+      `Analytics task sample mechanisms must contain at most ${ANALYTICS_LIMITS.maxMechanismsPerTask} items`,
+    );
+  }
+
+  const mechanisms = value.map(validateMechanismUse);
+  const keys = mechanisms.map(({ id, kind, version }) => `${kind}:${id}:${version}`);
+
+  if (new Set(keys).size !== keys.length) {
+    throw createValidationError('Analytics task sample mechanisms must not contain duplicate mechanism versions');
+  }
+
+  return Object.freeze(mechanisms);
+};
+
 const validateUsage = (value: unknown): Readonly<IAnalyticsUsage> => {
   if (!checkIsRecord(value)) {
     throw createValidationError('Analytics task sample usage must be an object');
@@ -162,6 +289,8 @@ export const validateAnalyticsTaskSample = (
   assertAllowedKeys(
     value,
     [
+      'execution',
+      'mechanisms',
       'observedAt',
       'outcomeAssessment',
       'policyRefs',
@@ -174,6 +303,8 @@ export const validateAnalyticsTaskSample = (
   );
 
   return Object.freeze({
+    ...(value.execution === undefined ? {} : { execution: validateExecutionObservation(value.execution) }),
+    ...(value.mechanisms === undefined ? {} : { mechanisms: validateMechanisms(value.mechanisms) }),
     observedAt: validateTimestamp(value.observedAt, 'Analytics task sample observedAt'),
     ...(value.outcomeAssessment === undefined
       ? {}
