@@ -68,4 +68,5 @@ Runtime используется только явно. Существующие
 [Completion Protocol](references/completion.md) и
 [Retry + Escalation](references/recovery.md) и
 [Observability + Decision Provenance](references/observability.md) и
-[Data Storage + Privacy](references/data-storage.md).
+[Data Storage + Privacy](references/data-storage.md) и
+[Outcome + Failure Intelligence](references/outcome-intelligence.md).

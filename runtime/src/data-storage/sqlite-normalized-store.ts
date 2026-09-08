@@ -8,6 +8,26 @@ import type { IDataStorageRawRecord } from './data-storage-contract.js';
 
 type TDatabaseSync = import('node:sqlite').DatabaseSync;
 
+type TNormalizedOutcomeFailure = Readonly<{
+  evidenceRefs: readonly string[];
+  failureClass: string;
+  failureId: string;
+  source: string;
+  summary: string;
+  value: Readonly<Record<string, unknown>>;
+}>;
+
+type TNormalizedOutcome = Readonly<{
+  confidence: string;
+  escalationCount: number;
+  failures: readonly TNormalizedOutcomeFailure[];
+  outcomeId: string;
+  retryCount: number;
+  status: string;
+  taskId: string;
+  value: Readonly<Record<string, unknown>>;
+}>;
+
 const checkIsRecord = (
   value: unknown,
 ): value is Readonly<Record<string, unknown>> =>
@@ -18,6 +38,115 @@ const checkIsCorruptionError = (error: unknown) =>
 
 const createCorruptionSuffix = (timestamp: string) =>
   timestamp.replace(/[^0-9A-Za-z-]/g, '-');
+
+const MIGRATION_SQL = Object.freeze({
+  1: `
+    CREATE TABLE IF NOT EXISTS runtime_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      captured_at TEXT NOT NULL,
+      event_timestamp TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      runtime_id TEXT NOT NULL,
+      payload_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_runtime_events_captured_at
+      ON runtime_events(captured_at);
+    CREATE INDEX IF NOT EXISTS idx_runtime_events_type_timestamp
+      ON runtime_events(event_type, event_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_runtime_events_runtime_timestamp
+      ON runtime_events(runtime_id, event_timestamp);
+
+    CREATE TABLE IF NOT EXISTS observability_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      captured_at TEXT NOT NULL,
+      record_timestamp TEXT NOT NULL,
+      record_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      subject_kind TEXT NOT NULL,
+      subject_id TEXT NOT NULL,
+      decision_kind TEXT,
+      telemetry_event TEXT,
+      record_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_observability_records_captured_at
+      ON observability_records(captured_at);
+    CREATE INDEX IF NOT EXISTS idx_observability_records_kind_timestamp
+      ON observability_records(kind, record_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_observability_records_subject_timestamp
+      ON observability_records(subject_kind, subject_id, record_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_observability_records_record_id
+      ON observability_records(record_id);
+  `,
+  2: `
+    CREATE TABLE IF NOT EXISTS outcomes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      captured_at TEXT NOT NULL,
+      assessed_at TEXT NOT NULL,
+      outcome_id TEXT NOT NULL,
+      task_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      confidence TEXT NOT NULL,
+      retry_count INTEGER NOT NULL,
+      escalation_count INTEGER NOT NULL,
+      assessment_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_outcomes_captured_at
+      ON outcomes(captured_at);
+    CREATE INDEX IF NOT EXISTS idx_outcomes_outcome_id
+      ON outcomes(outcome_id);
+    CREATE INDEX IF NOT EXISTS idx_outcomes_task_assessed_at
+      ON outcomes(task_id, assessed_at);
+    CREATE INDEX IF NOT EXISTS idx_outcomes_status_assessed_at
+      ON outcomes(status, assessed_at);
+
+    CREATE TABLE IF NOT EXISTS failures (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      captured_at TEXT NOT NULL,
+      assessed_at TEXT NOT NULL,
+      outcome_id TEXT NOT NULL,
+      task_id TEXT NOT NULL,
+      failure_id TEXT NOT NULL,
+      failure_class TEXT NOT NULL,
+      source TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      evidence_refs_json TEXT NOT NULL,
+      failure_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_failures_captured_at
+      ON failures(captured_at);
+    CREATE INDEX IF NOT EXISTS idx_failures_outcome_id
+      ON failures(outcome_id);
+    CREATE INDEX IF NOT EXISTS idx_failures_task_class_assessed_at
+      ON failures(task_id, failure_class, assessed_at);
+    CREATE INDEX IF NOT EXISTS idx_failures_class_assessed_at
+      ON failures(failure_class, assessed_at);
+  `,
+});
+
+const applyMigration = (
+  database: TDatabaseSync,
+  version: 1 | 2,
+  appliedAt: string,
+) => {
+  database.exec('BEGIN IMMEDIATE');
+
+  try {
+    database.exec(MIGRATION_SQL[version]);
+    database
+      .prepare(
+        'INSERT INTO amy_storage_migrations(version, applied_at) VALUES (?, ?)',
+      )
+      .run(version, appliedAt);
+    database.exec('COMMIT');
+  } catch (error) {
+    database.exec('ROLLBACK');
+    throw error;
+  }
+};
 
 const migrateDatabase = (database: TDatabaseSync, appliedAt: string) => {
   database.exec(`
@@ -37,61 +166,11 @@ const migrateDatabase = (database: TDatabaseSync, appliedAt: string) => {
     );
   }
 
-  if (currentVersion === DATA_STORAGE_VERSIONS.sqliteSchema) {
-    return;
+  if (currentVersion < 1) {
+    applyMigration(database, 1, appliedAt);
   }
-
-  database.exec('BEGIN IMMEDIATE');
-
-  try {
-    database.exec(`
-      CREATE TABLE IF NOT EXISTS runtime_events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        captured_at TEXT NOT NULL,
-        event_timestamp TEXT NOT NULL,
-        event_type TEXT NOT NULL,
-        runtime_id TEXT NOT NULL,
-        payload_json TEXT NOT NULL
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_runtime_events_captured_at
-        ON runtime_events(captured_at);
-      CREATE INDEX IF NOT EXISTS idx_runtime_events_type_timestamp
-        ON runtime_events(event_type, event_timestamp);
-      CREATE INDEX IF NOT EXISTS idx_runtime_events_runtime_timestamp
-        ON runtime_events(runtime_id, event_timestamp);
-
-      CREATE TABLE IF NOT EXISTS observability_records (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        captured_at TEXT NOT NULL,
-        record_timestamp TEXT NOT NULL,
-        record_id TEXT NOT NULL,
-        kind TEXT NOT NULL,
-        subject_kind TEXT NOT NULL,
-        subject_id TEXT NOT NULL,
-        decision_kind TEXT,
-        telemetry_event TEXT,
-        record_json TEXT NOT NULL
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_observability_records_captured_at
-        ON observability_records(captured_at);
-      CREATE INDEX IF NOT EXISTS idx_observability_records_kind_timestamp
-        ON observability_records(kind, record_timestamp);
-      CREATE INDEX IF NOT EXISTS idx_observability_records_subject_timestamp
-        ON observability_records(subject_kind, subject_id, record_timestamp);
-      CREATE INDEX IF NOT EXISTS idx_observability_records_record_id
-        ON observability_records(record_id);
-    `);
-    database
-      .prepare(
-        'INSERT INTO amy_storage_migrations(version, applied_at) VALUES (?, ?)',
-      )
-      .run(DATA_STORAGE_VERSIONS.sqliteSchema, appliedAt);
-    database.exec('COMMIT');
-  } catch (error) {
-    database.exec('ROLLBACK');
-    throw error;
+  if (currentVersion < 2) {
+    applyMigration(database, 2, appliedAt);
   }
 };
 
@@ -139,6 +218,74 @@ const getObservabilityRecord = (event: Readonly<IRuntimeEvent>) => {
     subjectKind: subject.kind,
     telemetryEvent: typeof record.event === 'string' ? record.event : null,
   };
+};
+
+const getOutcomeFailure = (
+  value: unknown,
+): Readonly<TNormalizedOutcomeFailure> | undefined => {
+  if (!checkIsRecord(value)) return undefined;
+
+  if (
+    value.kind !== 'failure-intelligence' ||
+    typeof value.failureId !== 'string' ||
+    typeof value.failureClass !== 'string' ||
+    typeof value.source !== 'string' ||
+    typeof value.summary !== 'string' ||
+    !Array.isArray(value.evidenceRefs) ||
+    !value.evidenceRefs.every((ref) => typeof ref === 'string')
+  ) {
+    return undefined;
+  }
+
+  return Object.freeze({
+    evidenceRefs: Object.freeze([...value.evidenceRefs] as string[]),
+    failureClass: value.failureClass,
+    failureId: value.failureId,
+    source: value.source,
+    summary: value.summary,
+    value,
+  });
+};
+
+const getOutcomeAssessment = (
+  event: Readonly<IRuntimeEvent>,
+): Readonly<TNormalizedOutcome> | undefined => {
+  if (event.type !== 'outcome.assessed') return undefined;
+
+  const assessment = event.payload.assessment;
+
+  if (!checkIsRecord(assessment) || !checkIsRecord(assessment.attempts)) {
+    return undefined;
+  }
+  if (
+    assessment.kind !== 'outcome-assessment' ||
+    typeof assessment.outcomeId !== 'string' ||
+    typeof assessment.taskId !== 'string' ||
+    typeof assessment.status !== 'string' ||
+    typeof assessment.confidence !== 'string' ||
+    !Number.isSafeInteger(assessment.attempts.retryCount) ||
+    !Number.isSafeInteger(assessment.attempts.escalationCount) ||
+    !Array.isArray(assessment.failures)
+  ) {
+    return undefined;
+  }
+
+  const failures = assessment.failures.map(getOutcomeFailure);
+
+  if (failures.some((failure) => failure === undefined)) {
+    return undefined;
+  }
+
+  return Object.freeze({
+    confidence: assessment.confidence,
+    escalationCount: assessment.attempts.escalationCount as number,
+    failures: Object.freeze(failures as readonly TNormalizedOutcomeFailure[]),
+    outcomeId: assessment.outcomeId,
+    retryCount: assessment.attempts.retryCount as number,
+    status: assessment.status,
+    taskId: assessment.taskId,
+    value: assessment,
+  });
 };
 
 export class SqliteNormalizedStore {
@@ -203,6 +350,66 @@ export class SqliteNormalizedStore {
             );
         }
 
+        const outcome = getOutcomeAssessment(record.event);
+
+        if (outcome) {
+          database
+            .prepare(`
+              INSERT INTO outcomes(
+                captured_at,
+                assessed_at,
+                outcome_id,
+                task_id,
+                status,
+                confidence,
+                retry_count,
+                escalation_count,
+                assessment_json
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `)
+            .run(
+              record.capturedAt,
+              record.event.timestamp,
+              outcome.outcomeId,
+              outcome.taskId,
+              outcome.status,
+              outcome.confidence,
+              outcome.retryCount,
+              outcome.escalationCount,
+              JSON.stringify(outcome.value),
+            );
+
+          const insertFailure = database.prepare(`
+            INSERT INTO failures(
+              captured_at,
+              assessed_at,
+              outcome_id,
+              task_id,
+              failure_id,
+              failure_class,
+              source,
+              summary,
+              evidence_refs_json,
+              failure_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `);
+
+          for (const failure of outcome.failures) {
+            insertFailure.run(
+              record.capturedAt,
+              record.event.timestamp,
+              outcome.outcomeId,
+              outcome.taskId,
+              failure.failureId,
+              failure.failureClass,
+              failure.source,
+              failure.summary,
+              JSON.stringify(failure.evidenceRefs),
+              JSON.stringify(failure.value),
+            );
+          }
+        }
+
         database.exec('COMMIT');
       } catch (error) {
         database.exec('ROLLBACK');
@@ -216,6 +423,16 @@ export class SqliteNormalizedStore {
       database.exec('BEGIN IMMEDIATE');
 
       try {
+        const failureChanges = Number(
+          database
+            .prepare('DELETE FROM failures WHERE captured_at < ?')
+            .run(before).changes,
+        );
+        const outcomeChanges = Number(
+          database
+            .prepare('DELETE FROM outcomes WHERE captured_at < ?')
+            .run(before).changes,
+        );
         const observabilityChanges = Number(
           database
             .prepare('DELETE FROM observability_records WHERE captured_at < ?')
@@ -229,7 +446,7 @@ export class SqliteNormalizedStore {
 
         database.exec('COMMIT');
 
-        return observabilityChanges + runtimeChanges;
+        return failureChanges + outcomeChanges + observabilityChanges + runtimeChanges;
       } catch (error) {
         database.exec('ROLLBACK');
         throw error;

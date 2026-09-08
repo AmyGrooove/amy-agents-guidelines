@@ -4,6 +4,7 @@ export type TRuntimeEventType =
   | 'capability.failed'
   | 'capability.resolved'
   | 'observability.recorded'
+  | 'outcome.assessed'
   | 'runtime.started'
   | 'runtime.stopped';
 

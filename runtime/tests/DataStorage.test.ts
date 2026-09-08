@@ -64,10 +64,10 @@ describe('DataStorage', () => {
       api: 1,
       policy: 1,
       rawRecordSchema: 1,
-      sqliteSchema: 1,
+      sqliteSchema: 2,
     });
     assert.equal(capability.descriptor.id, 'amy.data-storage');
-    assert.equal(capability.descriptor.version, '1.0.0');
+    assert.equal(capability.descriptor.version, '1.1.0');
 
     const receipt = await capability.api.capture(
       createObservabilityEvent('2026-09-08T08:59:59.000Z'),
@@ -94,7 +94,7 @@ describe('DataStorage', () => {
     );
 
     const database = new DatabaseSync(join(rootDirectory, 'amy.sqlite'));
-    const migration = database.prepare('SELECT version FROM amy_storage_migrations').get();
+    const migrations = database.prepare('SELECT version FROM amy_storage_migrations ORDER BY version').all() as { version: number }[];
     const eventRow = database.prepare(
       'SELECT event_type, runtime_id, payload_json FROM runtime_events',
     ).get() as Record<string, unknown>;
@@ -102,7 +102,7 @@ describe('DataStorage', () => {
       'SELECT record_id, kind, decision_kind, subject_kind, subject_id FROM observability_records',
     ).get() as Record<string, unknown>;
 
-    assert.equal((migration as { version: number }).version, 1);
+    assert.deepEqual(migrations.map(({ version }) => version), [1, 2]);
     assert.equal(eventRow.event_type, 'observability.recorded');
     assert.equal(eventRow.runtime_id, 'runtime-stage-14');
     assert.match(String(eventRow.payload_json), /Bearer \[redacted\]/);
@@ -114,6 +114,86 @@ describe('DataStorage', () => {
       subject_kind: 'task',
     });
     database.close();
+  });
+
+  it('upgrades an existing Stage 14 SQLite schema without losing normalized records', async () => {
+    const rootDirectory = await createTemporaryDirectory();
+    const databasePath = join(rootDirectory, 'amy.sqlite');
+    const legacy = new DatabaseSync(databasePath);
+    legacy.exec(`
+      CREATE TABLE amy_storage_migrations (
+        version INTEGER PRIMARY KEY,
+        applied_at TEXT NOT NULL
+      );
+      INSERT INTO amy_storage_migrations(version, applied_at)
+      VALUES (1, '2026-09-08T08:00:00.000Z');
+
+      CREATE TABLE runtime_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        captured_at TEXT NOT NULL,
+        event_timestamp TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        runtime_id TEXT NOT NULL,
+        payload_json TEXT NOT NULL
+      );
+      CREATE TABLE observability_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        captured_at TEXT NOT NULL,
+        record_timestamp TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        subject_kind TEXT NOT NULL,
+        subject_id TEXT NOT NULL,
+        decision_kind TEXT,
+        telemetry_event TEXT,
+        record_json TEXT NOT NULL
+      );
+      INSERT INTO runtime_events(
+        captured_at,
+        event_timestamp,
+        event_type,
+        runtime_id,
+        payload_json
+      ) VALUES (
+        '2026-09-08T08:00:00.000Z',
+        '2026-09-08T08:00:00.000Z',
+        'runtime.started',
+        'runtime-stage-14',
+        '{}'
+      );
+    `);
+    legacy.close();
+
+    const capability = createDataStorageCapability({
+      now: () => '2026-09-08T09:05:00.000Z',
+      rootDirectory,
+    });
+    const receipt = await capability.api.capture({
+      payload: {},
+      runtimeId: 'runtime-stage-15',
+      schemaVersion: 1,
+      timestamp: '2026-09-08T09:05:00.000Z',
+      type: 'runtime.started',
+    });
+
+    assert.equal(receipt.status, 'stored');
+    const upgraded = new DatabaseSync(databasePath);
+    const migrations = upgraded.prepare(
+      'SELECT version FROM amy_storage_migrations ORDER BY version',
+    ).all() as { version: number }[];
+    const tables = upgraded.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type = 'table' AND name IN ('outcomes', 'failures')
+      ORDER BY name
+    `).all() as { name: string }[];
+    const runtimeCount = upgraded.prepare(
+      'SELECT COUNT(*) AS count FROM runtime_events',
+    ).get() as { count: number };
+
+    assert.deepEqual(migrations.map(({ version }) => version), [1, 2]);
+    assert.deepEqual(tables.map(({ name }) => name), ['failures', 'outcomes']);
+    assert.equal(runtimeCount.count, 2);
+    upgraded.close();
   });
 
   it('omits raw content by default and stores only redacted raw content after explicit opt-in', async () => {

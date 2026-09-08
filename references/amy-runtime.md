@@ -278,10 +278,29 @@ reporting, and SQLite quarantine/recreation are deterministic storage concerns.
 See [Data Storage + Privacy](data-storage.md) for contracts and the Stage 14
 Handoff.
 
+## Outcome + Failure Intelligence
+
+Stage 15 adds the independent deterministic `amy.outcome-intelligence` capability.
+It compiles canonical Completion results, optional Recovery plans, and explicit
+bounded post-task signals into a versioned Outcome Assessment with real outcome
+status, evidence refs, retry/escalation counts, unresolved issues, and Failure
+Intelligence. Missing verification remains `unverified`; missing Completion evidence
+remains `unknown`; tests-passed alone is never treated as task success.
+
+The capability also provides a conservative deterministic User Correction Detector
+that distinguishes correction/new-task/ambiguous follow-ups and emits only a generic
+semantic correction signal plus an opaque evidence ref. `recordOutcomeAssessment()`
+reuses `RuntimeEventBus`; optional Data Storage schema 2 projects
+`outcome.assessed` into normalized `outcomes` and `failures` tables. Neither outcome
+analysis nor persistence is registered automatically.
+
+See [Outcome + Failure Intelligence](outcome-intelligence.md) for contracts and the
+Stage 15 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, command execution, automatic recovery execution, outcome analysis, analytics,
-dashboards, evolution, automatic skill rewriting, long-term memory, automatic
+advanced orchestration, command execution, automatic recovery execution, analytics, dashboards, evolution, automatic skill
+rewriting, long-term memory, automatic
 storage scheduling, or automatic skill routing.

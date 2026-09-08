@@ -1,7 +1,8 @@
 # Data Storage + Privacy
 
 Stage 14 adds a small optional persistent data boundary without changing Amy's
-execution path. Storage is downstream of the existing Runtime event bus:
+execution path. Stage 15 extends only its normalized projection for canonical
+Outcome/Failure Intelligence. Storage is downstream of the existing Runtime event bus:
 
 ```text
 Runtime / Observability events
@@ -38,7 +39,7 @@ Version ownership is independent:
 - API: `1`;
 - privacy/storage policy: `1`;
 - raw JSONL record schema: `1`;
-- SQLite schema: `1`.
+- SQLite schema: `2` (Stage 14 baseline: `1`; Stage 15 adds migration `2`).
 
 The capability has no required Amy capability dependency. `Observability` remains
 usable without storage, and storage can also capture ordinary Runtime lifecycle
@@ -75,7 +76,8 @@ built-in `node:sqlite`. It stores:
 
 - normalized `runtime_events` for all current Runtime event types;
 - an `observability_records` projection for `observability.recorded`;
-- `amy_storage_migrations` with the applied schema version.
+- Stage 15 `outcomes` / `failures` projections for `outcome.assessed`;
+- `amy_storage_migrations` with each applied schema version.
 
 Indexes cover capture/event timestamps, Runtime IDs, event kind, observability
 subject, record ID, and record kind. SQLite uses WAL, a bounded busy timeout, and
@@ -85,6 +87,19 @@ No runtime npm dependency is introduced. On a Node runtime that does not expose
 `node:sqlite`, raw JSONL can still succeed and the receipt is `degraded` rather
 than breaking Amy. A caller can explicitly choose `sqlite: disabled` when only
 raw storage is desired.
+
+### Stage 15 schema extension
+
+SQLite migration `2` adds only the normalized entities Stage 15 actually owns:
+`outcomes` and `failures`. Existing schema-1 databases upgrade in place after the
+base migration; fresh databases record migrations `1` and `2`. Outcome rows keep
+task/outcome identity, status/confidence, retry/escalation counts, and the sanitized
+assessment JSON. Failure rows keep class/source/summary/evidence refs plus the
+sanitized failure JSON. The raw JSONL event remains the portable source event.
+
+`amy.data-storage` capability SemVer is `1.1.0`; API/privacy/raw schemas remain `1`.
+The extension is still downstream of `RuntimeEventBus`: Outcome Intelligence never
+writes the database directly, and storage remains optional/fail-open.
 
 ## Privacy policy
 
@@ -167,11 +182,13 @@ factory options, so Stage 14 does not mutate Runtime config schema 1.
 
 ## Deliberate limits
 
-Stage 14 does not add:
+The Stage 14 baseline deliberately did not add normalized outcome/failure tables
+before Stage 15 owned those semantics. In the current Stage 15 state, Data Storage
+still does not add:
 
 - automatic default registration or background services;
 - an ORM or external SQLite dependency;
-- normalized task/outcome/failure tables before Stage 15 owns those semantics;
+- normalized entities beyond the Stage 13 observability and Stage 15 outcome/failure projections;
 - analytics queries or dashboards;
 - automatic retention scheduling;
 - unredacted prompt/tool payload persistence;

@@ -22,6 +22,11 @@ export {
 export { createDataStorageCapability, createDataStorageEventConsumer } from './data-storage/data-storage-capability.js';
 export { FileDataStorage } from './data-storage/file-data-storage.js';
 export { sanitizeRuntimeEventForStorage } from './data-storage/privacy-redaction.js';
+export { createOutcomeIntelligenceCapability } from './outcome-intelligence/outcome-intelligence-capability.js';
+export { assessOutcome } from './outcome-intelligence/outcome-assessor.js';
+export { recordOutcomeAssessment } from './outcome-intelligence/outcome-recorder.js';
+export { detectUserCorrection } from './outcome-intelligence/user-correction-detector.js';
+export { OUTCOME_INTELLIGENCE_VERSIONS } from './outcome-intelligence/outcome-intelligence-contract.js';
 export {
   DATA_STORAGE_LIMITS,
   DATA_STORAGE_VERSIONS,
@@ -35,7 +40,7 @@ export { validateObservabilityInput } from './observability/validate-observabili
 export { createRecoveryCapability } from './recovery/recovery-capability.js';
 export { planRecovery } from './recovery/recovery-planner.js';
 export { RECOVERY_VERSIONS, DEFAULT_RECOVERY_POLICY, RECOVERY_LIMITS } from './recovery/recovery-contract.js';
-export { validateRecoveryInput, validateRecoveryPolicy } from './recovery/validate-recovery.js';
+export { validateRecoveryInput, validateRecoveryPlan, validateRecoveryPolicy } from './recovery/validate-recovery.js';
 export { createCompletionCapability } from './completion/completion-capability.js';
 export { runCompletionProtocol } from './completion/completion-protocol.js';
 export { validateCompletionInput, validateCompletionResult } from './completion/validate-completion.js';
@@ -316,6 +321,29 @@ export type {
   TParallelismMode,
   TParallelismReasonCode,
 } from './decomposition/decomposition-contract.js';
+export type {
+  IOutcomeAssessment,
+  IOutcomeAttempts,
+  IOutcomeFailure,
+  IOutcomeInput,
+  IOutcomeIntelligenceApi,
+  IOutcomePostTaskSignal,
+  IOutcomeRecordReceipt,
+  IUserCorrectionDetection,
+  IUserCorrectionDetectionInput,
+  TOutcomeConfidence,
+  TOutcomeFailureClass,
+  TOutcomeFailureSource,
+  TOutcomeReasonCode,
+  TOutcomeRecordStatus,
+  TOutcomeStatus,
+  TPostTaskSignalImpact,
+  TPostTaskSignalKind,
+  TUserCorrectionClassification,
+  TUserCorrectionReasonCode,
+} from './outcome-intelligence/outcome-intelligence-contract.js';
+export type { IRecordOutcomeAssessmentOptions } from './outcome-intelligence/outcome-recorder.js';
+
 export type {
   IObservabilityApi,
   IObservabilityDecisionInput,

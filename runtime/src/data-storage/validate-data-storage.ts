@@ -16,6 +16,7 @@ const RUNTIME_EVENT_TYPES: readonly TRuntimeEventType[] = [
   'capability.failed',
   'capability.resolved',
   'observability.recorded',
+  'outcome.assessed',
   'runtime.started',
   'runtime.stopped',
 ];

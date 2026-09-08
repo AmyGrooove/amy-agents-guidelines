@@ -72,6 +72,11 @@ for a Completion result consumed downstream. It validates identity, status,
 policy, guard counters, and the Completion Evidence identity without recomputing
 Stage 11 completion semantics.
 
+Stage 15 adds `validateRecoveryPlan()` as the corresponding canonical structural
+boundary for downstream Recovery Plan consumers. Outcome Intelligence reuses it
+instead of copying the Stage 12 plan schema. The validator checks contract identity
+and supported structural fields without recomputing recovery policy decisions.
+
 ## Recovery actions
 
 The mapping is deterministic and intentionally small:

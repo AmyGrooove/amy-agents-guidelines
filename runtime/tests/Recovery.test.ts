@@ -93,6 +93,7 @@ describe('Recovery', () => {
       policy: 1,
     });
     assert.equal(typeof runtimeExports.createRecoveryCapability, 'function');
+    assert.equal(typeof runtimeExports.validateRecoveryPlan, 'function');
 
     const capability = createRecovery();
 
@@ -134,6 +135,31 @@ describe('Recovery', () => {
     assert.equal(result.data.requiresVerification, true);
     assert.ok(result.data.reasonCodes.includes('failure-diagnosed'));
     assert.ok(result.data.reasonCodes.includes('debugger-required'));
+  });
+
+  it('validates canonical Recovery plans for downstream consumers', () => {
+    const plan = createRecovery().api.recover({
+      completionResult: createFailedCompletion(),
+      escalationCount: 0,
+      failure: {
+        branch: { id: 'task:validator', kind: 'task' },
+        directRetryAllowed: false,
+        evidenceRefs: ['evidence:validator'],
+        failureClass: 'implementation',
+        summary: 'Validate the canonical Recovery output boundary.',
+      },
+      recoveryId: 'recovery-validator',
+    });
+    const validateRecoveryPlan = runtimeExports.validateRecoveryPlan as (value: unknown) => any;
+
+    assert.deepEqual(validateRecoveryPlan(plan), plan);
+    assert.throws(
+      () => validateRecoveryPlan({
+        ...plan,
+        data: { ...plan.data, policyVersion: 999 },
+      }),
+      (error: unknown) => error instanceof AmyRuntimeError && error.code === 'VALIDATION_FAILURE',
+    );
   });
 
   it('maps concrete failure classes to existing canonical recovery mechanisms', () => {

@@ -4,7 +4,7 @@ export const DATA_STORAGE_VERSIONS = Object.freeze({
   api: 1,
   policy: 1,
   rawRecordSchema: 1,
-  sqliteSchema: 1,
+  sqliteSchema: 2,
 });
 
 export const DATA_STORAGE_LIMITS = Object.freeze({
