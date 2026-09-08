@@ -13,7 +13,7 @@ Activate for a standalone `use<Name>` requiring React state, lifecycle, effects,
 
 ## Context and References
 
-Inspect consumers, React version, lifecycle needs, shared hooks, target layer, and any Next.js client boundary. Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/typescript-and-objects.md), and [React](../../references/react.md). Read [project architecture](../../references/project-architecture.md) only when the layer is unclear.
+Inspect consumers, React version, lifecycle needs, shared hooks, target layer, and any Next.js client boundary. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md), and [React](../../references/frontend/react.md). Read [project architecture](../../references/standards/project-architecture.md) only when the layer is unclear.
 
 ## Expected Result
 

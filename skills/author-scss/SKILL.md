@@ -13,7 +13,7 @@ Activate for `global.scss`, `reusable.scss`, reset, design tokens, Sass function
 
 ## Context and References
 
-Inspect the style import graph, tokens, reusable entry, consumers, browser baseline, and project Stylelint configuration. Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [SCSS](../../references/scss.md). Read [project architecture](../../references/project-architecture.md) only for global or shared placement.
+Inspect the style import graph, tokens, reusable entry, consumers, browser baseline, and project Stylelint configuration. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [SCSS](../../references/frontend/scss.md). Read [project architecture](../../references/standards/project-architecture.md) only for global or shared placement.
 
 ## Expected Result
 

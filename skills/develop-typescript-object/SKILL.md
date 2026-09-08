@@ -13,7 +13,7 @@ Activate for functions, types, constants, generic utilities, non-framework decor
 
 ## Context and References
 
-Inspect consumers, neighboring objects, types, constants, public index, installed configuration, and reusable utilities. Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/typescript-and-objects.md). No other reference is required.
+Inspect consumers, neighboring objects, types, constants, public index, installed configuration, and reusable utilities. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md). No other reference is required.
 
 ## Expected Result
 

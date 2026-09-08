@@ -13,7 +13,7 @@ Activate for writing a test, adding a test case or regression, repairing a test 
 
 ## Context and References
 
-Inspect the production contract, test configuration/setup, neighboring tests, and available mocks or fixtures. Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [testing](../../references/testing.md). Read only the reference for the tested artifact when its public behavior is needed.
+Inspect the production contract, test configuration/setup, neighboring tests, and available mocks or fixtures. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [testing](../../references/standards/testing.md). Read only the reference for the tested artifact when its public behavior is needed.
 
 ## Expected Result
 

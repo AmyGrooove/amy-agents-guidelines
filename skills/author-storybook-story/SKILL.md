@@ -13,7 +13,7 @@ Activate for a direct semantic request to add, repair, or update a story, scenar
 
 ## Context and References
 
-Inspect the top-level component public API, existing story, installed Storybook version/configuration, and neighboring stories. Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [Storybook](../../references/storybook.md), and [React](../../references/react.md). Read [TypeScript and objects](../../references/typescript-and-objects.md) only when types change.
+Inspect the top-level component public API, existing story, installed Storybook version/configuration, and neighboring stories. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [Storybook](../../references/frontend/storybook.md), and [React](../../references/frontend/react.md). Read [TypeScript and objects](../../references/standards/typescript-and-objects.md) only when types change.
 
 ## Expected Result
 

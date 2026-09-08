@@ -15,7 +15,7 @@ Activate for infrastructure and composition modules, standalone services, guards
 
 Inspect the module graph, imports, providers, exports, infrastructure services, installed Nest/Fastify versions, and consumers.
 
-Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/project-architecture.md), [TypeScript and objects](../../references/typescript-and-objects.md), and [NestJS](../../references/nest.md). Read [backend contracts](../../references/backend-contracts.md) only for filters/pipes affecting transport contracts, and [backend text](../../references/backend-text.md) only when messages are in scope.
+Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/standards/project-architecture.md), [TypeScript and objects](../../references/standards/typescript-and-objects.md), and [NestJS](../../references/backend/nest.md). Read [backend contracts](../../references/backend/backend-contracts.md) only for filters/pipes affecting transport contracts, and [backend text](../../references/backend/backend-text.md) only when messages are in scope.
 
 ## Expected Result
 

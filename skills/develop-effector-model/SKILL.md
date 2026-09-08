@@ -13,7 +13,7 @@ Activate for stores, events, effects, `sample`, derived stores, and wiring owned
 
 ## Context and References
 
-Inspect consumers, scopes/providers, domain events, effects, existing APIs, and neighboring Effector conventions. Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/typescript-and-objects.md), and [Effector](../../references/effector.md). Read [project architecture](../../references/project-architecture.md) only when ownership changes.
+Inspect consumers, scopes/providers, domain events, effects, existing APIs, and neighboring Effector conventions. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md), and [Effector](../../references/frontend/effector.md). Read [project architecture](../../references/standards/project-architecture.md) only when ownership changes.
 
 ## Expected Result
 

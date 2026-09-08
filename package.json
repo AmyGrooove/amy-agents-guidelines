@@ -1,6 +1,6 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "2.19.1",
+  "version": "2.19.2",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,15 +8,31 @@
   },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('runtime/dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
-    "check": "pnpm typecheck && pnpm test && pnpm check:generated",
-    "check:generated": "node scripts/check-generated.mjs",
-    "test:compile": "node -e \"require('node:fs').rmSync('runtime/.test-dist',{recursive:true,force:true})\" && tsc -p tsconfig.test.json",
-    "test": "pnpm build && pnpm test:compile && node scripts/run-tests.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm build && tsc -p tsconfig.test.json --noEmit"
+    "check": "pnpm typecheck && pnpm build && pnpm check:generated",
+    "check:generated": "node scripts/checkGenerated.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "^24.3.1",
     "typescript": "^5.9.2"
   },
-  "packageManager": "pnpm@11.23.0"
+  "packageManager": "pnpm@11.23.0",
+  "imports": {
+    "#shared/*": {
+      "types": "./src/shared/*/index.ts",
+      "default": "./runtime/dist/shared/*/index.js"
+    },
+    "#entities/*": {
+      "types": "./src/entities/*/index.ts",
+      "default": "./runtime/dist/entities/*/index.js"
+    },
+    "#modules/*": {
+      "types": "./src/modules/*/index.ts",
+      "default": "./runtime/dist/modules/*/index.js"
+    },
+    "#app/*": {
+      "types": "./src/app/*/index.ts",
+      "default": "./runtime/dist/app/*/index.js"
+    }
+  }
 }

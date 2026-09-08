@@ -15,7 +15,7 @@ Activate for JSX, public props, behavior, accessibility, `use<Component>`, compo
 
 Inspect neighboring production components, installed primitives, consumers, design tokens, owned styles, and dictionaries. Check only the existence of relevant tests and stories until their inspection is authorized.
 
-Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/typescript-and-objects.md), [React](../../references/react.md), [SCSS](../../references/scss.md), and [frontend text](../../references/frontend-text.md). Read [Storybook](../../references/storybook.md) only after approval to update an affected story. Read [testing](../../references/testing.md) only for an explicitly requested test change.
+Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md), [React](../../references/frontend/react.md), [SCSS](../../references/frontend/scss.md), and [frontend text](../../references/frontend/frontend-text.md). Read [Storybook](../../references/frontend/storybook.md) only after approval to update an affected story. Read [testing](../../references/standards/testing.md) only for an explicitly requested test change.
 
 ## Expected Result
 

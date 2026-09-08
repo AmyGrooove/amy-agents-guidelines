@@ -9,7 +9,7 @@ description: Use when creating, refreshing, or inspecting Amy Project Intelligen
 
 Build and maintain compact semantic knowledge for an unfamiliar repository. Source code remains authoritative; Project Intelligence is a cached interpretation and must not be trusted past its evidence.
 
-Read [Project Intelligence](../../references/project-intelligence.md) for artifact contracts, freshness states, graph relations, reason codes, Runtime API, CLI, and router rules.
+Read [Project Intelligence](../../references/runtime/context/project-intelligence.md) for artifact contracts, freshness states, graph relations, reason codes, Runtime API, CLI, and router rules.
 
 ## Process
 

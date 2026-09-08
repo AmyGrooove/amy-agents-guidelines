@@ -26,7 +26,7 @@ pnpm build
 pnpm check
 ```
 
-Исходники TypeScript находятся в `runtime/src`. Не редактируйте `runtime/dist`
+Исходники TypeScript находятся в `src` и разделены на `shared`, `entities`, `modules`, `app`. Не редактируйте `runtime/dist`
 вручную: это generated artifact, который не хранится в Git.
 
 ## Runtime CLI
@@ -59,23 +59,23 @@ node runtime/dist/cli.js eval --input <eval-input.json> --project <path>
 Runtime используется только явно. Существующие skills не регистрируются и не
 запускаются через него автоматически.
 
-Подробнее: [архитектура Amy Runtime](references/amy-runtime.md) и
-[Project Intelligence](references/project-intelligence.md) и
-[Task Intelligence](references/task-intelligence.md) и
-[Context Intelligence](references/context-intelligence.md) и
-[Compute Routing](references/compute-routing.md),
-[Agent Roles + Handoff](references/agent-roles.md) и
-[Strategy Routing](references/strategy-routing.md),
-[Decomposition + DAG](references/decomposition.md) и
-[Verification Pipeline](references/verification.md) и
-[Completion Protocol](references/completion.md) и
-[Retry + Escalation](references/recovery.md) и
-[Observability + Decision Provenance](references/observability.md) и
-[Data Storage + Privacy](references/data-storage.md) и
-[Outcome + Failure Intelligence](references/outcome-intelligence.md) и
-[Eval System](references/eval-system.md) и
-[Analytics Engine + Task Archetypes + Mechanism Health](references/analytics.md) и
-[Controlled Evolution](references/evolution.md) и
-[Amy Operations](references/operations.md) и
-[решение по Optional MCP Layer](references/mcp.md) и
-[Final Integration + Hardening](references/hardening.md).
+Подробнее: [архитектура Amy Runtime](references/runtime/core/amy-runtime.md) и
+[Project Intelligence](references/runtime/context/project-intelligence.md) и
+[Task Intelligence](references/runtime/context/task-intelligence.md) и
+[Context Intelligence](references/runtime/context/context-intelligence.md) и
+[Compute Routing](references/runtime/planning/compute-routing.md),
+[Agent Roles + Handoff](references/runtime/planning/agent-roles.md) и
+[Strategy Routing](references/runtime/planning/strategy-routing.md),
+[Decomposition + DAG](references/runtime/planning/decomposition.md) и
+[Verification Pipeline](references/runtime/quality/verification.md) и
+[Completion Protocol](references/runtime/quality/completion.md) и
+[Retry + Escalation](references/runtime/quality/recovery.md) и
+[Observability + Decision Provenance](references/runtime/data/observability.md) и
+[Data Storage + Privacy](references/runtime/data/data-storage.md) и
+[Outcome + Failure Intelligence](references/runtime/data/outcome-intelligence.md) и
+[Eval System](references/runtime/improvement/eval-system.md) и
+[Analytics Engine + Task Archetypes + Mechanism Health](references/runtime/improvement/analytics.md) и
+[Controlled Evolution](references/runtime/improvement/evolution.md) и
+[Amy Operations](references/runtime/core/operations.md) и
+[решение по Optional MCP Layer](references/runtime/core/mcp.md) и
+[Final Integration + Hardening](references/runtime/core/hardening.md).

@@ -15,7 +15,7 @@ Activate for where an object belongs, layer ownership, public API, cycle analysi
 
 Inspect layers, consumers, ownership, reuse, aliases, object indexes, and the import graph.
 
-Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/project-architecture.md). Read one domain reference only when framework ownership materially determines placement. Never load routing evaluation during ordinary work.
+Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/standards/project-architecture.md). Read one domain reference only when framework ownership materially determines placement. Never load routing evaluation during ordinary work.
 
 ## Expected Result
 

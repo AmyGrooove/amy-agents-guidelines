@@ -9,7 +9,7 @@ description: Use after Amy has a canonical Task Analysis and needs the minimum r
 
 Turn an existing Task Analysis into a bounded Context Packet using Amy Context Intelligence. This skill interprets the packet for the agentic workflow; deterministic Runtime owns validation, matching, freshness checks, graph impact, budgets, and cache safety.
 
-Read [Context Intelligence](../../references/context-intelligence.md) for canonical contracts and boundaries.
+Read [Context Intelligence](../../references/runtime/context/context-intelligence.md) for canonical contracts and boundaries.
 
 ## Process
 

@@ -9,9 +9,11 @@
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "outDir": "runtime/dist",
-    "rootDir": "runtime/src",
+    "rootDir": "src",
     "strict": true,
     "target": "ES2022"
   },
-  "include": ["runtime/src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ]
 }

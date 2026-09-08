@@ -13,7 +13,7 @@ Activate for schemas, collection options, indexes, virtuals, entity repositories
 
 ## Context and References
 
-Inspect schemas/plugins, collection naming, repository base, real queries/sorts/constraints, consumers, and installed MongoDB/Mongoose/Nest integration versions. Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/project-architecture.md), [TypeScript and objects](../../references/typescript-and-objects.md), and [Mongoose](../../references/mongoose.md).
+Inspect schemas/plugins, collection naming, repository base, real queries/sorts/constraints, consumers, and installed MongoDB/Mongoose/Nest integration versions. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/standards/project-architecture.md), [TypeScript and objects](../../references/standards/typescript-and-objects.md), and [Mongoose](../../references/backend/mongoose.md).
 
 ## Expected Result
 

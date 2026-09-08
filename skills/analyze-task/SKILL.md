@@ -9,7 +9,7 @@ description: Use when Amy needs to normalize a user development request into a T
 
 Turn the explicit user request and already available conversation evidence into a compact Task Contract, then use Amy Task Intelligence for deterministic classification. This is task understanding, not repository exploration or execution strategy.
 
-Read [Task Intelligence](../../references/task-intelligence.md) for the canonical contract, classification dimensions, reason codes, Runtime API, and CLI.
+Read [Task Intelligence](../../references/runtime/context/task-intelligence.md) for the canonical contract, classification dimensions, reason codes, Runtime API, and CLI.
 
 ## Process
 

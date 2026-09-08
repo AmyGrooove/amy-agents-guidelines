@@ -15,7 +15,7 @@ Activate for a project starting from zero, framework selection, initial structur
 
 Establish the project goal, frontend or backend scope, framework, package manager, first domain modules, current directory contents, and approved dependencies.
 
-Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/project-architecture.md). Read [TypeScript and objects](../../references/typescript-and-objects.md) for real TypeScript artifacts. For the selected frontend stack, read [React](../../references/react.md) and [SCSS](../../references/scss.md). For the selected backend stack, read [NestJS](../../references/nest.md) and [Mongoose](../../references/mongoose.md) only when persistence is in scope. Do not load unrelated stack references or routing evaluation.
+Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/standards/project-architecture.md). Read [TypeScript and objects](../../references/standards/typescript-and-objects.md) for real TypeScript artifacts. For the selected frontend stack, read [React](../../references/frontend/react.md) and [SCSS](../../references/frontend/scss.md). For the selected backend stack, read [NestJS](../../references/backend/nest.md) and [Mongoose](../../references/backend/mongoose.md) only when persistence is in scope. Do not load unrelated stack references or routing evaluation.
 
 ## Expected Result
 

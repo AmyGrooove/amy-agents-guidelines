@@ -15,7 +15,7 @@ Activate for query/mutation hooks, query keys, request/response types, cancellat
 
 Inspect the installed TanStack Query version, `fetchData`, backend DTO/error contract, existing keys, supporting authentication hooks, consumers, and target layer.
 
-Read [workflow and authority](../../references/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/typescript-and-objects.md), [TanStack Query](../../references/tanstack-query.md), and [backend contracts](../../references/backend-contracts.md). Read [project architecture](../../references/project-architecture.md) only when the layer is unclear.
+Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md), [TanStack Query](../../references/frontend/tanstack-query.md), and [backend contracts](../../references/backend/backend-contracts.md). Read [project architecture](../../references/standards/project-architecture.md) only when the layer is unclear.
 
 ## Expected Result
 
