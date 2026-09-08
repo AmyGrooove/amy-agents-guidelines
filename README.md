@@ -36,6 +36,7 @@ node runtime/dist/cli.js status
 node runtime/dist/cli.js capabilities
 node runtime/dist/cli.js inventory
 node runtime/dist/cli.js config --project <path>
+node runtime/dist/cli.js doctor --project <path>
 node runtime/dist/cli.js intelligence-discover --project <path>
 node runtime/dist/cli.js intelligence-show --project <path>
 node runtime/dist/cli.js intelligence-graph-build --project <path>
@@ -51,6 +52,8 @@ node runtime/dist/cli.js verification-evaluate --input <verification-input.json>
 node runtime/dist/cli.js completion-evaluate --input <completion-input.json> --project <path>
 node runtime/dist/cli.js recovery-plan --input <recovery-input.json> --project <path>
 node runtime/dist/cli.js observability-record --input <observability-input.json> --project <path>
+node runtime/dist/cli.js analyze --input <analytics-input.json> --project <path>
+node runtime/dist/cli.js eval --input <eval-input.json> --project <path>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не
@@ -72,4 +75,5 @@ Runtime используется только явно. Существующие
 [Outcome + Failure Intelligence](references/outcome-intelligence.md) и
 [Eval System](references/eval-system.md) и
 [Analytics Engine + Task Archetypes + Mechanism Health](references/analytics.md) и
-[Controlled Evolution](references/evolution.md).
+[Controlled Evolution](references/evolution.md) и
+[Amy Operations](references/operations.md).

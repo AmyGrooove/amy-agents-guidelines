@@ -679,4 +679,237 @@ describe('Cli', () => {
     assert.equal(result.status, 0, result.stderr);
     assert.equal(JSON.parse(result.stdout).projectRoot, pluginRoot);
   });
+
+  it('запускает amy doctor как fail-safe operational check без обязательных optional capabilities', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const result = runCli([
+      'doctor', '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.kind, 'doctor-report');
+    assert.equal(report.status, 'healthy');
+    assert.equal(report.schemaVersion, 1);
+    assert.equal(report.plugin.version, report.packageVersion);
+    assert.equal(
+      report.checks.find(({ id }: { id: string }) => id === 'runtime.node')?.status,
+      'pass',
+    );
+    assert.equal(
+      report.checks.find(({ id }: { id: string }) => id === 'plugin.skills')?.status,
+      'pass',
+    );
+    assert.equal(
+      report.checks.find(({ id }: { id: string }) => id === 'project-intelligence')?.status,
+      'skipped',
+    );
+    assert.equal(
+      report.checks.find(({ id }: { id: string }) => id === 'data-storage')?.status,
+      'skipped',
+    );
+  });
+
+  it('amy doctor возвращает диагностический report для невалидной config вместо падения CLI parser/runtime', async () => {
+    const projectRoot = await createTemporaryDirectory();
+
+    await mkdir(join(projectRoot, '.amy'));
+    await writeFile(join(projectRoot, '.amy', 'config.json'), '{}', 'utf8');
+
+    const result = runCli([
+      'doctor', '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 1, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.kind, 'doctor-report');
+    assert.equal(report.status, 'unhealthy');
+    const configCheck = report.checks.find(({ id }: { id: string }) => id === 'runtime.config');
+    assert.equal(configCheck?.status, 'fail');
+    assert.match(configCheck?.message ?? '', /configuration/i);
+  });
+
+  it('экспонирует canonical Analytics через тонкую operational command analyze', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'analytics-input.json');
+
+    await writeFile(inputPath, JSON.stringify({
+      evalRunSamples: [],
+      reportId: 'cli-analytics',
+      segments: [],
+      taskSamples: [],
+    }), 'utf8');
+
+    const result = runCli([
+      'analyze', '--input', inputPath, '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.kind, 'analytics-report');
+    assert.equal(report.reportId, 'cli-analytics');
+    assert.equal(report.overall.sampleSize, 0);
+  });
+
+  it('запускает bounded Eval corpus из заранее подготовленных observations без production execution', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'eval-input.json');
+    const evalCase = {
+      caseId: 'case-fast-path',
+      constraints: ['No production execution.'],
+      environmentAssumptions: ['Canonical routing evidence is supplied.'],
+      expectations: [{
+        expected: true,
+        id: 'fast-path',
+        kind: 'strategy-fast-path',
+        required: true,
+        weight: 1,
+      }],
+      kind: 'eval-case',
+      schemaVersion: 1,
+      scoring: { passThreshold: 100 },
+      task: {
+        affectedScope: { kind: 'local', targets: ['src/example.ts'] },
+        goal: 'Keep a trivial task on the fast path.',
+        kind: 'task-contract',
+        schemaVersion: 1,
+        uncertainties: [],
+        verificationExpectations: [],
+      },
+    };
+
+    await writeFile(inputPath, JSON.stringify({
+      observations: {
+        'case-fast-path': {
+          evidenceRefs: ['evidence:strategy'],
+          kind: 'eval-observation',
+          schemaVersion: 1,
+          strategyDecision: {
+            data: {
+              confidence: 'high',
+              escalation: 'none',
+              execution: 'direct',
+              exploration: 'none',
+              fastPath: true,
+              planning: 'none',
+              policyVersion: 1,
+              reasonCodes: ['direct-execution', 'fast-path'],
+              review: 'none',
+              verification: 'none',
+            },
+            kind: 'execution-strategy',
+            schemaVersion: 1,
+          },
+          usage: { costUnits: 0, durationMs: 0, tokens: 0 },
+        },
+      },
+      run: {
+        budget: {
+          maxCases: 1,
+          maxCostUnits: 1,
+          maxDurationMs: 1,
+          maxTokens: 1,
+        },
+        corpus: {
+          cases: [evalCase],
+          corpusId: 'cli-regression',
+          corpusKind: 'regression',
+          kind: 'eval-corpus',
+          schemaVersion: 1,
+          version: 1,
+        },
+        runId: 'cli-eval-run',
+        variant: { variantId: 'precomputed' },
+      },
+    }), 'utf8');
+
+    const result = runCli([
+      'eval', '--input', inputPath, '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    const run = JSON.parse(result.stdout);
+    assert.equal(run.kind, 'eval-run-result');
+    assert.equal(run.status, 'completed');
+    assert.equal(run.executedCaseCount, 1);
+    assert.equal(run.score, 100);
+    assert.equal(run.caseResults[0].status, 'passed');
+  });
+
+
+  it('amy doctor помечает stale Project Intelligence как degraded, а не как fatal', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const sourceRoot = join(projectRoot, 'src', 'feature');
+    const knowledgePath = join(projectRoot, 'knowledge.json');
+
+    await mkdir(sourceRoot, { recursive: true });
+    await writeFile(join(sourceRoot, 'index.ts'), 'export const value = 1;\n', 'utf8');
+    await writeFile(knowledgePath, JSON.stringify({
+      architecture: { kind: 'architecture', schemaVersion: 1 },
+      modules: [{
+        id: 'feature',
+        kind: 'module',
+        schemaVersion: 1,
+        sourceLocations: ['src/feature'],
+        sourceOfTruth: ['src/feature/index.ts'],
+        specWorthy: {
+          confidence: 'high',
+          isSpecWorthy: true,
+          reasons: ['public-api'],
+        },
+      }],
+      project: { kind: 'project', schemaVersion: 1 },
+    }), 'utf8');
+
+    const commonArgs = ['--project', projectRoot, '--plugin', pluginRoot];
+    assert.equal(runCli(['intelligence-save', '--input', knowledgePath, ...commonArgs]).status, 0);
+    assert.equal(runCli(['intelligence-graph-build', ...commonArgs]).status, 0);
+    assert.equal(runCli(['intelligence-freshness-refresh', ...commonArgs]).status, 0);
+
+    await writeFile(join(sourceRoot, 'index.ts'), 'export const value = 2;\n', 'utf8');
+
+    const result = runCli(['doctor', ...commonArgs]);
+
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.status, 'degraded');
+    const projectIntelligence = report.checks.find(
+      ({ id }: { id: string }) => id === 'project-intelligence',
+    );
+    assert.equal(projectIntelligence?.status, 'warn');
+    assert.match(projectIntelligence?.message ?? '', /stale/i);
+  });
+
+  it('amy doctor читает migration version существующего optional SQLite storage без записи', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const storageRoot = join(projectRoot, '.amy', 'data');
+    const sqlitePath = join(storageRoot, 'amy.sqlite');
+
+    await mkdir(storageRoot, { recursive: true });
+    const fixture = spawnSync(process.execPath, ['--input-type=module', '-e', `
+      import { DatabaseSync } from 'node:sqlite';
+      const database = new DatabaseSync(${JSON.stringify(sqlitePath)});
+      database.exec('CREATE TABLE amy_storage_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
+      database.prepare('INSERT INTO amy_storage_migrations(version, applied_at) VALUES (?, ?)').run(2, '2026-09-08T00:00:00.000Z');
+      database.close();
+    `], { encoding: 'utf8' });
+    assert.equal(fixture.status, 0, fixture.stderr);
+
+    const result = runCli([
+      'doctor', '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(
+      report.checks.find(({ id }: { id: string }) => id === 'data-storage')?.status,
+      'pass',
+    );
+    const migrations = report.checks.find(
+      ({ id }: { id: string }) => id === 'data-storage.migrations',
+    );
+    assert.equal(migrations?.status, 'pass');
+    assert.equal(migrations?.details.version, 2);
+  });
+
 });

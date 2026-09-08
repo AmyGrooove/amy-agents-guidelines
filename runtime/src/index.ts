@@ -96,6 +96,8 @@ export {
   validateVerificationInput,
   validateVerificationResult,
 } from './verification/validate-verification.js';
+export { runAmyDoctor } from './operations/doctor.js';
+export { OPERATIONS_VERSIONS } from './operations/operations-contract.js';
 export { AmyRuntimeError } from './errors/amy-runtime-error.js';
 export { loadRuntimeConfig } from './config/load-config.js';
 export { CapabilityRegistry } from './capabilities/capability-registry.js';
@@ -134,6 +136,14 @@ export {
   validateTaskContract,
   validateTaskIntelligenceAnalysis,
 } from './task-intelligence/validate-task-intelligence.js';
+
+export type {
+  IAmyDoctorReport,
+  IDoctorCheck,
+  TDoctorCheckStatus,
+  TDoctorStatus,
+} from './operations/operations-contract.js';
+export type { IRunAmyDoctorOptions } from './operations/doctor.js';
 
 export type {
   IAnalyticsApi,

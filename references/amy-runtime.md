@@ -362,6 +362,22 @@ dependency.
 
 See [Controlled Evolution](evolution.md) for contracts and the Stage 19 Handoff.
 
+## Amy Operations
+
+Stage 20 extends the existing explicit Runtime CLI instead of introducing a new
+Operations capability. `doctor` performs deterministic fail-safe checks for the
+plugin/runtime surface, configuration, optional Project Intelligence freshness, and
+optional Data Storage/migrations. `analyze` and `eval` are thin adapters to the
+existing optional Analytics and Eval capabilities and register them only for the
+requested command.
+
+`eval` consumes host-produced observations rather than executing tasks, and `stats`
+is deliberately deferred until a canonical Storage query → Analytics boundary
+exists. Optional capabilities therefore remain optional and no new application
+framework or daemon is introduced.
+
+See [Amy Operations](operations.md) for contracts and the Stage 20 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift

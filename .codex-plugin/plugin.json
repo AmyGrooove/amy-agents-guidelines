@@ -1,7 +1,7 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "2.18.0",
-  "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, Strategy, DAG, Verification, Completion, Recovery, Observability, Data Storage, Outcome/Failure Intelligence, Eval System, Analytics, Mechanism Health, and Controlled Evolution contracts.",
+  "version": "2.19.0",
+  "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, Strategy, DAG, Verification, Completion, Recovery, Observability, Data Storage, Outcome/Failure Intelligence, Eval System, Analytics, Mechanism Health, Controlled Evolution, and Operations contracts.",
   "author": {
     "name": "AmyGrooove",
     "email": "vanyablya003@gmail.com"
@@ -17,7 +17,7 @@
   "interface": {
     "displayName": "Amy Agents Guidelines",
     "shortDescription": "TypeScript standards with Amy Runtime",
-    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime with optional Project, Task, Context, Compute, Agent Role, Strategy Routing, bounded DAG/decomposition, evidence-based Verification, Completion/Stop Guards, controlled Recovery planning, fail-open Observability/Decision Provenance, privacy-first Data Storage, deterministic Outcome/Failure Intelligence, a bounded regression Eval System, descriptive non-causal Analytics, mechanism/routing health analysis, and safe Controlled Evolution proposals with shadow comparison and explicit user decisions.",
+    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime with optional Project, Task, Context, Compute, Agent Role, Strategy Routing, bounded DAG/decomposition, evidence-based Verification, Completion/Stop Guards, controlled Recovery planning, fail-open Observability/Decision Provenance, privacy-first Data Storage, deterministic Outcome/Failure Intelligence, a bounded regression Eval System, descriptive non-causal Analytics, mechanism/routing health analysis, safe Controlled Evolution proposals, and thin operational doctor/analyze/eval CLI surfaces.",
     "developerName": "AmyGrooove",
     "category": "Productivity",
     "capabilities": [

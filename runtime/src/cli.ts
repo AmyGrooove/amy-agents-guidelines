@@ -2,12 +2,15 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { createAmyRuntime } from './create-amy-runtime.js';
+import { createAnalyticsCapability } from './analytics/analytics-capability.js';
 import { createCompletionCapability } from './completion/completion-capability.js';
 import { createComputeRoutingCapability } from './compute-routing/compute-routing-capability.js';
 import { createContextIntelligenceCapability } from './context-intelligence/context-intelligence-capability.js';
 import { createDecompositionCapability } from './decomposition/decomposition-capability.js';
+import { createEvalSystemCapability } from './eval-system/eval-system-capability.js';
 import { AmyRuntimeError } from './errors/amy-runtime-error.js';
 import { createObservabilityCapability } from './observability/observability-capability.js';
+import { runAmyDoctor } from './operations/doctor.js';
 import { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 import { createRecoveryCapability } from './recovery/recovery-capability.js';
 import { createTaskIntelligenceCapability } from './task-intelligence/task-intelligence-capability.js';
@@ -15,10 +18,12 @@ import { createStrategyRoutingCapability } from './strategy-routing/strategy-rou
 import { createVerificationCapability } from './verification/verification-capability.js';
 
 import type { AmyRuntime } from './kernel/amy-runtime.js';
+import type { IAnalyticsApi } from './analytics/analytics-contract.js';
 import type { ICompletionApi } from './completion/completion-contract.js';
 import type { IComputeRoutingApi } from './compute-routing/compute-routing-contract.js';
 import type { IContextIntelligenceApi } from './context-intelligence/context-intelligence-contract.js';
 import type { IDecompositionApi } from './decomposition/decomposition-contract.js';
+import type { IEvalSystemApi } from './eval-system/eval-system-contract.js';
 import type { IObservabilityApi } from './observability/observability-contract.js';
 import type { IPluginInventoryApi } from './compatibility/plugin-inventory.js';
 import type { IProjectIntelligenceApi } from './project-intelligence/project-intelligence-contract.js';
@@ -28,12 +33,15 @@ import type { IStrategyRoutingApi } from './strategy-routing/strategy-routing-co
 import type { IVerificationApi } from './verification/verification-contract.js';
 
 type TCliCommand =
+  | 'analyze'
   | 'capabilities'
   | 'config'
   | 'completion-evaluate'
   | 'compute-route'
   | 'context-resolve'
   | 'decomposition-plan'
+  | 'doctor'
+  | 'eval'
   | 'intelligence-discover'
   | 'intelligence-freshness-refresh'
   | 'intelligence-freshness-show'
@@ -64,12 +72,15 @@ interface ICliArguments {
 }
 
 const CLI_COMMANDS: readonly TCliCommand[] = [
+  'analyze',
   'capabilities',
   'config',
   'completion-evaluate',
   'compute-route',
   'context-resolve',
   'decomposition-plan',
+  'doctor',
+  'eval',
   'intelligence-discover',
   'intelligence-freshness-refresh',
   'intelligence-freshness-show',
@@ -140,6 +151,14 @@ const RECOVERY_COMMANDS: readonly TCliCommand[] = [
   'recovery-plan',
 ];
 
+const ANALYTICS_COMMANDS: readonly TCliCommand[] = [
+  'analyze',
+];
+
+const EVAL_COMMANDS: readonly TCliCommand[] = [
+  'eval',
+];
+
 const checkIsCliCommand = (value: string): value is TCliCommand =>
   CLI_COMMANDS.some((command) => command === value);
 
@@ -194,6 +213,7 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
   }
 
   const inputCommands: readonly TCliCommand[] = [
+    'analyze',
     'completion-evaluate',
     'observability-record',
     'recovery-plan',
@@ -202,6 +222,7 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
     'context-resolve',
     'compute-route',
     'decomposition-plan',
+    'eval',
     'strategy-route',
     'task-classify',
     'task-contract-validate',
@@ -362,6 +383,27 @@ const checkIsRecoveryApi = (
   'recover' in value &&
   typeof value.recover === 'function';
 
+const checkIsAnalyticsApi = (
+  value: unknown,
+): value is IAnalyticsApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'analyze' in value &&
+  typeof value.analyze === 'function';
+
+const checkIsEvalSystemApi = (
+  value: unknown,
+): value is IEvalSystemApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'runCorpus' in value &&
+  typeof value.runCorpus === 'function';
+
+const checkIsRecord = (
+  value: unknown,
+): value is Readonly<Record<string, unknown>> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 const writeJson = (value: unknown, stream: NodeJS.WriteStream) => {
   stream.write(`${JSON.stringify(value, undefined, 2)}\n`);
 };
@@ -385,6 +427,80 @@ const executeCommand = async (
 
   if (command === 'capabilities') {
     return runtime.capabilities.list();
+  }
+
+  if (ANALYTICS_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired('amy.analytics');
+
+    if (!checkIsAnalyticsApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Analytics capability API is incompatible',
+      });
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      return capability.api.analyze(value);
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Analytics input at ${inputPath}`,
+      });
+    }
+  }
+
+  if (EVAL_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired('amy.eval-system');
+
+    if (!checkIsEvalSystemApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Eval System capability API is incompatible',
+      });
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      if (!checkIsRecord(value) || !checkIsRecord(value.observations) || value.run === undefined) {
+        throw new AmyRuntimeError({
+          code: 'VALIDATION_FAILURE',
+          details: { inputPath },
+          message: 'Eval CLI input must contain run and observations',
+        });
+      }
+
+      const observations = value.observations;
+
+      return capability.api.runCorpus(value.run, async ({ case: evalCase }) => {
+        if (!(evalCase.caseId in observations)) {
+          throw new Error(`Missing precomputed observation for eval case ${evalCase.caseId}`);
+        }
+
+        return observations[evalCase.caseId];
+      });
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Eval input at ${inputPath}`,
+      });
+    }
   }
 
   if (OBSERVABILITY_COMMANDS.includes(command)) {
@@ -776,6 +892,17 @@ const createCliCapabilities = (
 export const runCli = async (args: readonly string[]) => {
   try {
     const cliArguments = parseCliArguments(args);
+
+    if (cliArguments.command === 'doctor') {
+      const report = await runAmyDoctor({
+        ...(cliArguments.pluginRoot ? { pluginRoot: cliArguments.pluginRoot } : {}),
+        projectRoot: cliArguments.projectRoot,
+      });
+
+      writeJson(report, process.stdout);
+
+      return report.status === 'unhealthy' ? 1 : 0;
+    }
     const cliCapabilities = createCliCapabilities(
       cliArguments.command,
       cliArguments.projectRoot,
@@ -795,6 +922,14 @@ export const runCli = async (args: readonly string[]) => {
           runtimeId: runtime.getStatus().runtimeId,
         }),
       );
+    }
+
+    if (ANALYTICS_COMMANDS.includes(cliArguments.command)) {
+      runtime.capabilities.register(createAnalyticsCapability());
+    }
+
+    if (EVAL_COMMANDS.includes(cliArguments.command)) {
+      runtime.capabilities.register(createEvalSystemCapability());
     }
 
     if (RECOVERY_COMMANDS.includes(cliArguments.command)) {
