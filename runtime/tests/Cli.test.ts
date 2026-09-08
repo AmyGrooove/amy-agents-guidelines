@@ -598,6 +598,45 @@ describe('Cli', () => {
     assert.equal(JSON.parse(result.stdout).data.guard.decision, 'complete');
   });
 
+  it('планирует recovery только через явную CLI command', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'recovery-input.json');
+
+    await writeFile(inputPath, JSON.stringify({
+      completionResult: {
+        data: {
+          completionId: 'cli-failed-completion',
+          confidence: 'high',
+          evidence: { kind: 'completion-evidence', schemaVersion: 1 },
+          guard: { decision: 'retry', maxRetries: 2, retriesRemaining: 2, retryCount: 0 },
+          policyVersion: 1,
+          reasonCodes: ['execution-failed', 'guard-retry-allowed'],
+          status: 'failed',
+        },
+        kind: 'quality-result',
+        schemaVersion: 1,
+      },
+      escalationCount: 0,
+      failure: {
+        branch: { id: 'task:root', kind: 'task' },
+        directRetryAllowed: true,
+        evidenceRefs: ['evidence:tool-error'],
+        failureClass: 'tool',
+        summary: 'A retryable tool invocation failed.',
+      },
+      recoveryId: 'cli-recovery',
+    }), 'utf8');
+
+    const result = runCli([
+      'recovery-plan', '--input', inputPath, '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).kind, 'execution-plan');
+    assert.equal(JSON.parse(result.stdout).data.action, 'retry');
+    assert.equal(JSON.parse(result.stdout).data.requiresVerification, true);
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

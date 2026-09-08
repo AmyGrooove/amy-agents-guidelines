@@ -19,9 +19,13 @@ export {
   validateDecompositionInput,
   validateDecompositionPolicy,
 } from './decomposition/validate-decomposition.js';
+export { createRecoveryCapability } from './recovery/recovery-capability.js';
+export { planRecovery } from './recovery/recovery-planner.js';
+export { RECOVERY_VERSIONS, DEFAULT_RECOVERY_POLICY, RECOVERY_LIMITS } from './recovery/recovery-contract.js';
+export { validateRecoveryInput, validateRecoveryPolicy } from './recovery/validate-recovery.js';
 export { createCompletionCapability } from './completion/completion-capability.js';
 export { runCompletionProtocol } from './completion/completion-protocol.js';
-export { validateCompletionInput } from './completion/validate-completion.js';
+export { validateCompletionInput, validateCompletionResult } from './completion/validate-completion.js';
 export { COMPLETION_VERSIONS, DEFAULT_COMPLETION_POLICY } from './completion/completion-contract.js';
 export { createVerificationCapability } from './verification/verification-capability.js';
 export { runVerificationPipeline } from './verification/verification-pipeline.js';
@@ -299,6 +303,25 @@ export type {
   TParallelismMode,
   TParallelismReasonCode,
 } from './decomposition/decomposition-contract.js';
+export type {
+  IRecoveryApi,
+  IRecoveryAttemptState,
+  IRecoveryBranch,
+  IRecoveryDiagnosis,
+  IRecoveryFact,
+  IRecoveryFailureSignal,
+  IRecoveryInput,
+  IRecoveryPlanData,
+  IRecoveryPolicyConfig,
+  TRecoveryAction,
+  TRecoveryBranchKind,
+  TRecoveryFailureClass,
+  TRecoveryPlan,
+  TRecoveryReasonCode,
+} from './recovery/recovery-contract.js';
+export type { ICreateRecoveryCapabilityOptions } from './recovery/recovery-capability.js';
+export type { IPlanRecoveryOptions } from './recovery/recovery-planner.js';
+
 export type {
   ICompletionApi,
   ICompletionEvidence,

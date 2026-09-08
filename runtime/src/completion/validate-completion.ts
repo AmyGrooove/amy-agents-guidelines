@@ -1,14 +1,18 @@
 import { AmyRuntimeError } from '../errors/amy-runtime-error.js';
 import { validateTaskIntelligenceAnalysis } from '../task-intelligence/validate-task-intelligence.js';
 import { validateVerificationResult } from '../verification/validate-verification.js';
-import { DEFAULT_COMPLETION_POLICY } from './completion-contract.js';
+import { COMPLETION_VERSIONS, DEFAULT_COMPLETION_POLICY } from './completion-contract.js';
 
 import type {
   ICompletionExecutionEvidence,
   ICompletionGuardInput,
   ICompletionInput,
   ICompletionIntegrationEvidence,
+  TCompletionConfidence,
+  TCompletionGuardDecision,
   TCompletionIntegrationStatus,
+  TCompletionResult,
+  TCompletionStatus,
   TCompletionWorkStatus,
 } from './completion-contract.js';
 
@@ -21,6 +25,25 @@ const WORK_STATUSES = new Set<TCompletionWorkStatus>([
 const INTEGRATION_STATUSES = new Set<TCompletionIntegrationStatus>([
   ...WORK_STATUSES,
   'not-required',
+]);
+
+const COMPLETION_STATUSES = new Set<TCompletionStatus>([
+  'complete',
+  'failed',
+  'incomplete',
+  'unverified',
+]);
+const COMPLETION_CONFIDENCES = new Set<TCompletionConfidence>([
+  'high',
+  'low',
+  'medium',
+]);
+const COMPLETION_GUARD_DECISIONS = new Set<TCompletionGuardDecision>([
+  'complete',
+  'retry',
+  'stop-failed',
+  'stop-incomplete',
+  'stop-unverified',
 ]);
 
 const checkIsRecord = (
@@ -206,5 +229,101 @@ export const validateCompletionInput = (value: unknown): Readonly<ICompletionInp
     integration: validateIntegration(value.integration),
     taskAnalysis: validateTaskIntelligenceAnalysis(value.taskAnalysis),
     verificationResult: validateVerificationResult(value.verificationResult),
+  });
+};
+
+
+export const validateCompletionResult = (value: unknown): Readonly<TCompletionResult> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Completion result must be an object');
+  }
+
+  assertAllowedKeys(value, ['data', 'kind', 'schemaVersion'], 'Completion result');
+  if (
+    value.kind !== 'quality-result' ||
+    value.schemaVersion !== COMPLETION_VERSIONS.resultSchema ||
+    !checkIsRecord(value.data)
+  ) {
+    throw createValidationError('Completion result identity is invalid');
+  }
+
+  assertAllowedKeys(
+    value.data,
+    ['completionId', 'confidence', 'evidence', 'guard', 'policyVersion', 'reasonCodes', 'status'],
+    'Completion result data',
+  );
+  if (value.data.policyVersion !== COMPLETION_VERSIONS.policy) {
+    throw createValidationError('Completion result policyVersion is unsupported');
+  }
+  if (!COMPLETION_STATUSES.has(value.data.status as TCompletionStatus)) {
+    throw createValidationError('Completion result status is invalid');
+  }
+  if (!COMPLETION_CONFIDENCES.has(value.data.confidence as TCompletionConfidence)) {
+    throw createValidationError('Completion result confidence is invalid');
+  }
+  if (!checkIsRecord(value.data.guard)) {
+    throw createValidationError('Completion result guard must be an object');
+  }
+
+  assertAllowedKeys(
+    value.data.guard,
+    ['decision', 'maxRetries', 'retriesRemaining', 'retryCount'],
+    'Completion result guard',
+  );
+  if (!COMPLETION_GUARD_DECISIONS.has(value.data.guard.decision as TCompletionGuardDecision)) {
+    throw createValidationError('Completion result guard decision is invalid');
+  }
+  const maxRetries = validateOptionalInteger(
+    value.data.guard.maxRetries,
+    'Completion result guard maxRetries',
+    DEFAULT_COMPLETION_POLICY.maxGuardRetries,
+  );
+  const retryCount = validateOptionalInteger(
+    value.data.guard.retryCount,
+    'Completion result guard retryCount',
+    0,
+  );
+  const retriesRemaining = validateOptionalInteger(
+    value.data.guard.retriesRemaining,
+    'Completion result guard retriesRemaining',
+    0,
+  );
+
+  if (maxRetries > DEFAULT_COMPLETION_POLICY.maxGuardRetriesHardCap) {
+    throw createValidationError(
+      `Completion result guard maxRetries must not exceed ${DEFAULT_COMPLETION_POLICY.maxGuardRetriesHardCap}`,
+    );
+  }
+  if (retriesRemaining !== Math.max(0, maxRetries - retryCount)) {
+    throw createValidationError('Completion result guard retriesRemaining is inconsistent');
+  }
+  if (!checkIsRecord(value.data.evidence)) {
+    throw createValidationError('Completion result evidence must be an object');
+  }
+  if (value.data.evidence.kind !== 'completion-evidence' ||
+    value.data.evidence.schemaVersion !== COMPLETION_VERSIONS.evidenceSchema) {
+    throw createValidationError('Completion result evidence identity is invalid');
+  }
+
+  const reasonCodes = validateStringList(value.data.reasonCodes, 'Completion result reasonCodes');
+  const completionId = validateNonEmptyString(value.data.completionId, 'Completion result completionId');
+
+  return Object.freeze({
+    data: Object.freeze({
+      completionId,
+      confidence: value.data.confidence as TCompletionConfidence,
+      evidence: value.data.evidence as TCompletionResult['data']['evidence'],
+      guard: Object.freeze({
+        decision: value.data.guard.decision as TCompletionGuardDecision,
+        maxRetries,
+        retriesRemaining,
+        retryCount,
+      }),
+      policyVersion: COMPLETION_VERSIONS.policy,
+      reasonCodes: reasonCodes as TCompletionResult['data']['reasonCodes'],
+      status: value.data.status as TCompletionStatus,
+    }),
+    kind: 'quality-result' as const,
+    schemaVersion: COMPLETION_VERSIONS.resultSchema,
   });
 };

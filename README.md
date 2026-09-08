@@ -49,6 +49,7 @@ node runtime/dist/cli.js strategy-route --input <strategy-input.json> --project 
 node runtime/dist/cli.js decomposition-plan --input <decomposition-input.json> --project <path>
 node runtime/dist/cli.js verification-evaluate --input <verification-input.json> --project <path>
 node runtime/dist/cli.js completion-evaluate --input <completion-input.json> --project <path>
+node runtime/dist/cli.js recovery-plan --input <recovery-input.json> --project <path>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не
@@ -63,4 +64,5 @@ Runtime используется только явно. Существующие
 [Strategy Routing](references/strategy-routing.md),
 [Decomposition + DAG](references/decomposition.md) и
 [Verification Pipeline](references/verification.md) и
-[Completion Protocol](references/completion.md).
+[Completion Protocol](references/completion.md) и
+[Retry + Escalation](references/recovery.md).

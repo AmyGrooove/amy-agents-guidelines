@@ -63,6 +63,10 @@ The Completion validator also structurally validates the upstream Stage 10 resul
 It does not recompute the Verification Pipeline decision, so Stage 10 remains the
 single owner of verification semantics.
 
+Stage 12 adds `validateCompletionResult()` as an additive downstream structural
+boundary. It validates the Completion result identity and guard consistency without
+recomputing Stage 11 completion semantics.
+
 ## Completion Evidence
 
 The output deliberately reuses canonical `quality-result` rather than adding a

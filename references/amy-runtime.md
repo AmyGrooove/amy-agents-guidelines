@@ -225,10 +225,27 @@ Verifier/Reviewer work remains `incomplete`; failures remain failures. Guard
 
 See [Completion Protocol](completion.md) for contracts and the Stage 11 Handoff.
 
+## Retry + Escalation
+
+Stage 12 adds the independent deterministic `amy.recovery` capability. It consumes
+a canonical Stage 11 Completion result plus one concrete failure signal for one
+failing branch. It does not execute retries. Instead it diagnoses the failure class
+and emits a bounded `execution-plan` action that reuses the canonical owner:
+Debugger, Context Intelligence, Compute Routing, host retry/integration, followed by
+Verification.
+
+Retry allowance remains owned by the Stage 11 Completion guard; compute escalation
+has a separate bounded policy. Terminal Completion guards are never overridden,
+preserved facts are carried forward explicitly, and every actionable recovery plan
+requires verification again. The capability remains optional and is registered only
+for explicit use/CLI.
+
+See [Retry + Escalation](recovery.md) for contracts and the Stage 12 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, command execution, retry/recovery, analytics,
+advanced orchestration, command execution, automatic recovery execution, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.
