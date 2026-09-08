@@ -76,4 +76,5 @@ Runtime используется только явно. Существующие
 [Eval System](references/eval-system.md) и
 [Analytics Engine + Task Archetypes + Mechanism Health](references/analytics.md) и
 [Controlled Evolution](references/evolution.md) и
-[Amy Operations](references/operations.md).
+[Amy Operations](references/operations.md) и
+[решение по Optional MCP Layer](references/mcp.md).

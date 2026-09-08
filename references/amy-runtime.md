@@ -378,6 +378,16 @@ framework or daemon is introduced.
 
 See [Amy Operations](operations.md) for contracts and the Stage 20 Handoff.
 
+## Optional MCP Layer
+
+Stage 21 intentionally does not add MCP. The candidate MCP use cases are already
+covered by canonical Runtime APIs, CLI commands, scripts, and skills; the remaining
+Storage-to-Analytics query gap is a domain boundary gap rather than a transport gap.
+Adding MCP now would duplicate interfaces and lifecycle/security policy without a
+demonstrated reliability or cost benefit.
+
+See [Optional MCP Layer](mcp.md) for the Stage 21 decision and Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
