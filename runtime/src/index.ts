@@ -26,12 +26,28 @@ export { createOutcomeIntelligenceCapability } from './outcome-intelligence/outc
 export { assessOutcome } from './outcome-intelligence/outcome-assessor.js';
 export { recordOutcomeAssessment } from './outcome-intelligence/outcome-recorder.js';
 export { detectUserCorrection } from './outcome-intelligence/user-correction-detector.js';
+export { validateOutcomeAssessment } from './outcome-intelligence/validate-outcome-intelligence.js';
 export { OUTCOME_INTELLIGENCE_VERSIONS } from './outcome-intelligence/outcome-intelligence-contract.js';
 export {
   DATA_STORAGE_LIMITS,
   DATA_STORAGE_VERSIONS,
   DEFAULT_DATA_STORAGE_POLICY,
 } from './data-storage/data-storage-contract.js';
+export { createEvalSystemCapability } from './eval-system/eval-system-capability.js';
+export { evaluateEvalCase } from './eval-system/eval-scorer.js';
+export { compareEvalVariants, runEvalCorpus } from './eval-system/eval-runner.js';
+export { EVAL_SYSTEM_LIMITS, EVAL_SYSTEM_VERSIONS } from './eval-system/eval-system-contract.js';
+export {
+  validateEvalBudget,
+  validateEvalCase,
+  validateEvalCaseEvaluationInput,
+  validateEvalComparisonInput,
+  validateEvalCorpus,
+  validateEvalObservation,
+  validateEvalRunInput,
+  validateEvalUsage,
+  validateEvalVariant,
+} from './eval-system/validate-eval-system.js';
 export { buildDecisionProvenance } from './observability/decision-provenance.js';
 export { createObservabilityCapability } from './observability/observability-capability.js';
 export { recordObservability } from './observability/observability-recorder.js';
@@ -453,3 +469,32 @@ export type {
 export type {
   IPlanDecompositionOptions,
 } from './decomposition/decomposition-planner.js';
+
+export type {
+  IEvalBudget,
+  IEvalCase,
+  IEvalCaseEvaluationInput,
+  IEvalCaseResult,
+  IEvalCheckResult,
+  IEvalComparisonInput,
+  IEvalComparisonResult,
+  IEvalCorpus,
+  IEvalExecutorInput,
+  IEvalObservation,
+  IEvalRunInput,
+  IEvalRunResult,
+  IEvalScoringPolicy,
+  IEvalSystemApi,
+  IEvalUsage,
+  IEvalVariant,
+  TEvalCaseStatus,
+  TEvalCheckStatus,
+  TEvalComparisonStatus,
+  TEvalComparisonWinner,
+  TEvalCorpusKind,
+  TEvalExecutor,
+  TEvalExpectation,
+  TEvalExpectationKind,
+  TEvalRunStatus,
+} from './eval-system/eval-system-contract.js';
+

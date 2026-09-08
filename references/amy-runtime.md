@@ -297,6 +297,24 @@ analysis nor persistence is registered automatically.
 See [Outcome + Failure Intelligence](outcome-intelligence.md) for contracts and the
 Stage 15 Handoff.
 
+
+## Eval System
+
+Stage 16 adds the independent optional `amy.eval-system` capability. It validates
+compact versioned Real Task, Failure, and Regression corpora, evaluates canonical
+Completion/Verification/Strategy/Outcome observations with deterministic weighted
+checks, enforces explicit per-run usage budgets, and supports same-corpus A/B
+comparison. Actual task execution remains host-provided through a bounded executor
+port, so the Runtime does not acquire an LLM dependency or replay an entire
+production repository by itself.
+
+Eval does not require Data Storage and is not registered automatically. Stage 14's
+`evals/` directory remains only a host-owned artifact location; Stage 16 introduces
+no second persistence path. `validateOutcomeAssessment()` is now the canonical
+structural boundary for downstream consumers of Stage 15 outcome evidence.
+
+See [Eval System](eval-system.md) for contracts and the Stage 16 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift

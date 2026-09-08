@@ -1,7 +1,7 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "2.14.0",
-  "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, Strategy, DAG, Verification, Completion, Recovery, Observability, Data Storage, and Outcome/Failure Intelligence contracts.",
+  "version": "2.15.0",
+  "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, Strategy, DAG, Verification, Completion, Recovery, Observability, Data Storage, Outcome/Failure Intelligence, and Eval System contracts.",
   "author": {
     "name": "AmyGrooove",
     "email": "vanyablya003@gmail.com"
@@ -17,7 +17,7 @@
   "interface": {
     "displayName": "Amy Agents Guidelines",
     "shortDescription": "TypeScript standards with Amy Runtime",
-    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime with optional Project, Task, Context, Compute, Agent Role, Strategy Routing, bounded DAG/decomposition, evidence-based Verification, Completion/Stop Guards, controlled Recovery planning, fail-open Observability/Decision Provenance, privacy-first Data Storage, and deterministic Outcome/Failure Intelligence.",
+    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime with optional Project, Task, Context, Compute, Agent Role, Strategy Routing, bounded DAG/decomposition, evidence-based Verification, Completion/Stop Guards, controlled Recovery planning, fail-open Observability/Decision Provenance, privacy-first Data Storage, deterministic Outcome/Failure Intelligence, and a bounded regression Eval System.",
     "developerName": "AmyGrooove",
     "category": "Productivity",
     "capabilities": [

@@ -1,12 +1,19 @@
 import { validateCompletionResult } from '../completion/validate-completion.js';
 import { AmyRuntimeError } from '../errors/amy-runtime-error.js';
 import { validateRecoveryPlan } from '../recovery/validate-recovery.js';
+import { OUTCOME_INTELLIGENCE_VERSIONS } from './outcome-intelligence-contract.js';
 
 import type {
+  IOutcomeAssessment,
+  IOutcomeFailure,
   IOutcomeInput,
   IOutcomePostTaskSignal,
   IUserCorrectionDetectionInput,
+  TOutcomeConfidence,
   TOutcomeFailureClass,
+  TOutcomeFailureSource,
+  TOutcomeReasonCode,
+  TOutcomeStatus,
   TPostTaskSignalImpact,
   TPostTaskSignalKind,
 } from './outcome-intelligence-contract.js';
@@ -34,6 +41,32 @@ const OUTCOME_FAILURE_CLASSES = new Set<TOutcomeFailureClass>([
   'tool',
   'unknown',
   'verification',
+]);
+
+
+const OUTCOME_STATUSES = new Set<TOutcomeStatus>([
+  'failure',
+  'partial_success',
+  'success',
+  'unknown',
+  'unverified',
+]);
+const OUTCOME_CONFIDENCES = new Set<TOutcomeConfidence>(['high', 'low', 'medium']);
+const OUTCOME_FAILURE_SOURCES = new Set<TOutcomeFailureSource>([
+  'completion',
+  'post-task',
+  'recovery',
+]);
+const OUTCOME_REASON_CODES = new Set<TOutcomeReasonCode>([
+  'completion-evidence-missing',
+  'completion-failed',
+  'completion-incomplete',
+  'completion-succeeded',
+  'completion-unverified',
+  'failure-classified',
+  'post-task-failure-signal',
+  'post-task-partial-signal',
+  'recovery-observed',
 ]);
 
 const checkIsRecord = (
@@ -230,3 +263,140 @@ export const validateUserCorrectionDetectionInput = (
     messageRef: validateBoundedString(value.messageRef, 'User correction messageRef', 500),
   });
 };
+
+const validateOutcomeFailure = (
+  value: unknown,
+  index: number,
+): Readonly<IOutcomeFailure> => {
+  const label = `Outcome assessment failures[${index}]`;
+
+  if (!checkIsRecord(value)) {
+    throw createValidationError(`${label} must be an object`);
+  }
+
+  assertAllowedKeys(
+    value,
+    ['evidenceRefs', 'failureClass', 'failureId', 'kind', 'schemaVersion', 'source', 'summary'],
+    label,
+  );
+
+  if (
+    value.kind !== 'failure-intelligence' ||
+    value.schemaVersion !== OUTCOME_INTELLIGENCE_VERSIONS.failureSchema ||
+    !OUTCOME_FAILURE_CLASSES.has(value.failureClass as TOutcomeFailureClass) ||
+    !OUTCOME_FAILURE_SOURCES.has(value.source as TOutcomeFailureSource)
+  ) {
+    throw createValidationError(`${label} identity or taxonomy is invalid`);
+  }
+
+  return Object.freeze({
+    evidenceRefs: validateStringList(value.evidenceRefs, `${label} evidenceRefs`, {
+      maxItems: 64,
+    }),
+    failureClass: value.failureClass as TOutcomeFailureClass,
+    failureId: validateBoundedString(value.failureId, `${label} failureId`, 300),
+    kind: 'failure-intelligence' as const,
+    schemaVersion: OUTCOME_INTELLIGENCE_VERSIONS.failureSchema,
+    source: value.source as TOutcomeFailureSource,
+    summary: validateBoundedString(value.summary, `${label} summary`, 500),
+  });
+};
+
+export const validateOutcomeAssessment = (
+  value: unknown,
+): Readonly<IOutcomeAssessment> => {
+  if (!checkIsRecord(value)) {
+    throw createValidationError('Outcome assessment must be an object');
+  }
+
+  assertAllowedKeys(
+    value,
+    [
+      'attempts',
+      'confidence',
+      'evidenceRefs',
+      'failures',
+      'kind',
+      'outcomeId',
+      'reasonCodes',
+      'schemaVersion',
+      'status',
+      'taskId',
+      'unresolvedIssues',
+    ],
+    'Outcome assessment',
+  );
+
+  if (
+    value.kind !== 'outcome-assessment' ||
+    value.schemaVersion !== OUTCOME_INTELLIGENCE_VERSIONS.outcomeSchema ||
+    !OUTCOME_STATUSES.has(value.status as TOutcomeStatus) ||
+    !OUTCOME_CONFIDENCES.has(value.confidence as TOutcomeConfidence) ||
+    !checkIsRecord(value.attempts) ||
+    !Array.isArray(value.failures)
+  ) {
+    throw createValidationError('Outcome assessment identity is invalid');
+  }
+
+  assertAllowedKeys(
+    value.attempts,
+    ['escalationCount', 'retryCount'],
+    'Outcome assessment attempts',
+  );
+
+  const retryCount = value.attempts.retryCount;
+  const escalationCount = value.attempts.escalationCount;
+
+  if (
+    !Number.isInteger(retryCount) ||
+    (retryCount as number) < 0 ||
+    !Number.isInteger(escalationCount) ||
+    (escalationCount as number) < 0
+  ) {
+    throw createValidationError('Outcome assessment attempts are invalid');
+  }
+
+  if (value.failures.length > 64) {
+    throw createValidationError('Outcome assessment failures must contain at most 64 items');
+  }
+
+  if (!Array.isArray(value.reasonCodes)) {
+    throw createValidationError('Outcome assessment reasonCodes must be an array');
+  }
+
+  const reasonCodes = value.reasonCodes.map((reason) => {
+    if (typeof reason !== 'string' || !OUTCOME_REASON_CODES.has(reason as TOutcomeReasonCode)) {
+      throw createValidationError('Outcome assessment reasonCodes contain an invalid value');
+    }
+
+    return reason as TOutcomeReasonCode;
+  });
+
+  if (new Set(reasonCodes).size !== reasonCodes.length) {
+    throw createValidationError('Outcome assessment reasonCodes must not contain duplicates');
+  }
+
+  return Object.freeze({
+    attempts: Object.freeze({
+      escalationCount: escalationCount as number,
+      retryCount: retryCount as number,
+    }),
+    confidence: value.confidence as TOutcomeConfidence,
+    evidenceRefs: validateStringList(value.evidenceRefs, 'Outcome assessment evidenceRefs', {
+      maxItems: 128,
+    }),
+    failures: Object.freeze(value.failures.map(validateOutcomeFailure)),
+    kind: 'outcome-assessment' as const,
+    outcomeId: validateBoundedString(value.outcomeId, 'Outcome assessment outcomeId', 200),
+    reasonCodes: Object.freeze(reasonCodes),
+    schemaVersion: OUTCOME_INTELLIGENCE_VERSIONS.outcomeSchema,
+    status: value.status as TOutcomeStatus,
+    taskId: validateBoundedString(value.taskId, 'Outcome assessment taskId', 200),
+    unresolvedIssues: validateStringList(
+      value.unresolvedIssues,
+      'Outcome assessment unresolvedIssues',
+      { maxItems: 64 },
+    ),
+  });
+};
+
