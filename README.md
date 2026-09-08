@@ -67,4 +67,5 @@ Runtime используется только явно. Существующие
 [Verification Pipeline](references/verification.md) и
 [Completion Protocol](references/completion.md) и
 [Retry + Escalation](references/recovery.md) и
-[Observability + Decision Provenance](references/observability.md).
+[Observability + Decision Provenance](references/observability.md) и
+[Data Storage + Privacy](references/data-storage.md).

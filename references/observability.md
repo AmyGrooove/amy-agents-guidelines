@@ -145,7 +145,9 @@ Stage 13 does not add:
 - production routing changes.
 
 Persistent storage, corruption handling, retention, export, and stronger privacy
-controls belong to Stage 14.
+controls are implemented by the separate optional Stage 14 `amy.data-storage`
+capability; Stage 13 observability itself remains persistence-agnostic. See
+[Data Storage + Privacy](data-storage.md).
 
 # Stage Handoff
 

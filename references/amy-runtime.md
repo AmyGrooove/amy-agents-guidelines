@@ -259,10 +259,29 @@ or uncontrolled chain-of-thought. Persistence remains outside Stage 13.
 See [Observability + Decision Provenance](observability.md) for contracts and the
 Stage 13 Handoff.
 
+## Data Storage + Privacy
+
+Stage 14 adds the independent optional `amy.data-storage` capability. It persists
+sanitized Runtime events as append-only day-segmented JSONL and, when the running
+Node version exposes `node:sqlite`, maintains a normalized SQLite projection with
+versioned migrations and indexes. The SQLite path is dynamically loaded, so Node
+20-compatible core imports remain usable; unavailable SQLite degrades storage to
+raw JSONL rather than becoming a Runtime dependency.
+
+The storage layer consumes the existing `RuntimeEventBus` through an explicit
+consumer adapter. Backend failures are reported by the event bus but remain
+fail-open for the main workflow. Raw prompt/tool/body-like fields are omitted by
+default; explicit opt-in stores only their redacted form, and secret/.env
+redaction is always applied. Retention cleanup, bounded export, corrupt JSONL
+reporting, and SQLite quarantine/recreation are deterministic storage concerns.
+
+See [Data Storage + Privacy](data-storage.md) for contracts and the Stage 14
+Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, command execution, automatic recovery execution, persistent observability storage, outcome analysis, analytics,
-dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
-memory, or automatic skill routing.
+advanced orchestration, command execution, automatic recovery execution, outcome analysis, analytics,
+dashboards, evolution, automatic skill rewriting, long-term memory, automatic
+storage scheduling, or automatic skill routing.

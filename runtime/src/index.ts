@@ -19,6 +19,14 @@ export {
   validateDecompositionInput,
   validateDecompositionPolicy,
 } from './decomposition/validate-decomposition.js';
+export { createDataStorageCapability, createDataStorageEventConsumer } from './data-storage/data-storage-capability.js';
+export { FileDataStorage } from './data-storage/file-data-storage.js';
+export { sanitizeRuntimeEventForStorage } from './data-storage/privacy-redaction.js';
+export {
+  DATA_STORAGE_LIMITS,
+  DATA_STORAGE_VERSIONS,
+  DEFAULT_DATA_STORAGE_POLICY,
+} from './data-storage/data-storage-contract.js';
 export { buildDecisionProvenance } from './observability/decision-provenance.js';
 export { createObservabilityCapability } from './observability/observability-capability.js';
 export { recordObservability } from './observability/observability-recorder.js';
@@ -325,6 +333,25 @@ export type {
   TObservabilitySubjectKind,
   TObservabilityTelemetryEvent,
 } from './observability/observability-contract.js';
+
+
+export type {
+  IDataPrivacyPolicy,
+  IDataStorageApi,
+  IDataStorageCaptureReceipt,
+  IDataStorageCleanupReceipt,
+  IDataStorageExport,
+  IDataStorageExportOptions,
+  IDataStorageRawRecord,
+  IDataStorageStatus,
+  TDataStorageCaptureStatus,
+  TDataStorageCleanupStatus,
+  TDataStorageWriteState,
+  TRawContentStoragePolicy,
+  TSqliteStorageMode,
+} from './data-storage/data-storage-contract.js';
+export type { ICreateDataStorageCapabilityOptions } from './data-storage/data-storage-capability.js';
+export type { IFileDataStorageOptions } from './data-storage/file-data-storage.js';
 
 export type { TDecisionProvenanceSource } from './observability/decision-provenance.js';
 export type { ICreateObservabilityCapabilityOptions } from './observability/observability-capability.js';

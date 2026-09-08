@@ -3,3 +3,4 @@ docs/superpowers/
 runtime/dist/
 runtime/.test-dist/
 runtime/.generated-check/
+.amy/data/
