@@ -242,10 +242,27 @@ for explicit use/CLI.
 
 See [Retry + Escalation](recovery.md) for contracts and the Stage 12 Handoff.
 
+## Observability + Decision Provenance
+
+Stage 13 adds optional `amy.observability` on top of the existing
+`RuntimeEventBus`. Runtime lifecycle/capability events remain canonical telemetry;
+explicit task/session/agent/tool telemetry and decision provenance use the same bus
+through `observability.recorded`. Consumer failures are isolated and returned in a
+receipt, so observability remains fail-open.
+
+`buildDecisionProvenance()` deterministically translates canonical Stage 4–12
+outputs into bounded records for classification, context, compute, strategy/Scout,
+decomposition/parallelism, Verifier/Reviewer, retry, Recovery, and escalation. It
+reuses source reason codes and policy/version evidence and never stores raw prompts
+or uncontrolled chain-of-thought. Persistence remains outside Stage 13.
+
+See [Observability + Decision Provenance](observability.md) for contracts and the
+Stage 13 Handoff.
+
 ## Intentionally absent
 
 Runtime does not implement semantic project reasoning, LLM-based drift
 interpretation, automatic source exploration or agent execution, DAG execution or scheduling,
-advanced orchestration, command execution, automatic recovery execution, analytics,
+advanced orchestration, command execution, automatic recovery execution, persistent observability storage, outcome analysis, analytics,
 dashboards, evolution, automatic skill rewriting, persistent adapters, long-term
 memory, or automatic skill routing.

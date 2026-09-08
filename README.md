@@ -50,6 +50,7 @@ node runtime/dist/cli.js decomposition-plan --input <decomposition-input.json> -
 node runtime/dist/cli.js verification-evaluate --input <verification-input.json> --project <path>
 node runtime/dist/cli.js completion-evaluate --input <completion-input.json> --project <path>
 node runtime/dist/cli.js recovery-plan --input <recovery-input.json> --project <path>
+node runtime/dist/cli.js observability-record --input <observability-input.json> --project <path>
 ```
 
 Runtime используется только явно. Существующие skills не регистрируются и не
@@ -65,4 +66,5 @@ Runtime используется только явно. Существующие
 [Decomposition + DAG](references/decomposition.md) и
 [Verification Pipeline](references/verification.md) и
 [Completion Protocol](references/completion.md) и
-[Retry + Escalation](references/recovery.md).
+[Retry + Escalation](references/recovery.md) и
+[Observability + Decision Provenance](references/observability.md).

@@ -7,6 +7,7 @@ import { createComputeRoutingCapability } from './compute-routing/compute-routin
 import { createContextIntelligenceCapability } from './context-intelligence/context-intelligence-capability.js';
 import { createDecompositionCapability } from './decomposition/decomposition-capability.js';
 import { AmyRuntimeError } from './errors/amy-runtime-error.js';
+import { createObservabilityCapability } from './observability/observability-capability.js';
 import { createProjectIntelligenceCapability } from './project-intelligence/project-intelligence-capability.js';
 import { createRecoveryCapability } from './recovery/recovery-capability.js';
 import { createTaskIntelligenceCapability } from './task-intelligence/task-intelligence-capability.js';
@@ -18,6 +19,7 @@ import type { ICompletionApi } from './completion/completion-contract.js';
 import type { IComputeRoutingApi } from './compute-routing/compute-routing-contract.js';
 import type { IContextIntelligenceApi } from './context-intelligence/context-intelligence-contract.js';
 import type { IDecompositionApi } from './decomposition/decomposition-contract.js';
+import type { IObservabilityApi } from './observability/observability-contract.js';
 import type { IPluginInventoryApi } from './compatibility/plugin-inventory.js';
 import type { IProjectIntelligenceApi } from './project-intelligence/project-intelligence-contract.js';
 import type { IRecoveryApi } from './recovery/recovery-contract.js';
@@ -43,6 +45,7 @@ type TCliCommand =
   | 'intelligence-show'
   | 'intelligence-sync-router'
   | 'inventory'
+  | 'observability-record'
   | 'recovery-plan'
   | 'status'
   | 'strategy-route'
@@ -78,6 +81,7 @@ const CLI_COMMANDS: readonly TCliCommand[] = [
   'intelligence-show',
   'intelligence-sync-router',
   'inventory',
+  'observability-record',
   'recovery-plan',
   'status',
   'strategy-route',
@@ -126,6 +130,10 @@ const VERIFICATION_COMMANDS: readonly TCliCommand[] = [
 
 const COMPLETION_COMMANDS: readonly TCliCommand[] = [
   'completion-evaluate',
+];
+
+const OBSERVABILITY_COMMANDS: readonly TCliCommand[] = [
+  'observability-record',
 ];
 
 const RECOVERY_COMMANDS: readonly TCliCommand[] = [
@@ -187,6 +195,7 @@ const parseCliArguments = (args: readonly string[]): ICliArguments => {
 
   const inputCommands: readonly TCliCommand[] = [
     'completion-evaluate',
+    'observability-record',
     'recovery-plan',
     'intelligence-graph-save',
     'intelligence-save',
@@ -337,6 +346,14 @@ const checkIsCompletionApi = (
   'complete' in value &&
   typeof value.complete === 'function';
 
+const checkIsObservabilityApi = (
+  value: unknown,
+): value is IObservabilityApi =>
+  typeof value === 'object' &&
+  value !== null &&
+  'record' in value &&
+  typeof value.record === 'function';
+
 const checkIsRecoveryApi = (
   value: unknown,
 ): value is IRecoveryApi =>
@@ -368,6 +385,35 @@ const executeCommand = async (
 
   if (command === 'capabilities') {
     return runtime.capabilities.list();
+  }
+
+  if (OBSERVABILITY_COMMANDS.includes(command)) {
+    const capability = await runtime.resolveRequired('amy.observability');
+
+    if (!checkIsObservabilityApi(capability.api)) {
+      throw new AmyRuntimeError({
+        code: 'INCOMPATIBLE_CAPABILITY',
+        details: { capabilityId: capability.descriptor.id },
+        message: 'Observability capability API is incompatible',
+      });
+    }
+
+    try {
+      const value: unknown = JSON.parse(await readFile(inputPath ?? '', 'utf8'));
+
+      return capability.api.record(value);
+    } catch (error) {
+      if (error instanceof AmyRuntimeError) {
+        throw error;
+      }
+
+      throw new AmyRuntimeError({
+        cause: error,
+        code: 'VALIDATION_FAILURE',
+        details: { inputPath },
+        message: `Cannot read Observability input at ${inputPath}`,
+      });
+    }
   }
 
   if (RECOVERY_COMMANDS.includes(command)) {
@@ -741,6 +787,15 @@ export const runCli = async (args: readonly string[]) => {
         : {}),
       projectRoot: cliArguments.projectRoot,
     });
+
+    if (OBSERVABILITY_COMMANDS.includes(cliArguments.command)) {
+      runtime.capabilities.register(
+        createObservabilityCapability({
+          events: runtime.events,
+          runtimeId: runtime.getStatus().runtimeId,
+        }),
+      );
+    }
 
     if (RECOVERY_COMMANDS.includes(cliArguments.command)) {
       runtime.capabilities.register(createRecoveryCapability());

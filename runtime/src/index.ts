@@ -19,6 +19,11 @@ export {
   validateDecompositionInput,
   validateDecompositionPolicy,
 } from './decomposition/validate-decomposition.js';
+export { buildDecisionProvenance } from './observability/decision-provenance.js';
+export { createObservabilityCapability } from './observability/observability-capability.js';
+export { recordObservability } from './observability/observability-recorder.js';
+export { OBSERVABILITY_VERSIONS } from './observability/observability-contract.js';
+export { validateObservabilityInput } from './observability/validate-observability.js';
 export { createRecoveryCapability } from './recovery/recovery-capability.js';
 export { planRecovery } from './recovery/recovery-planner.js';
 export { RECOVERY_VERSIONS, DEFAULT_RECOVERY_POLICY, RECOVERY_LIMITS } from './recovery/recovery-contract.js';
@@ -303,6 +308,28 @@ export type {
   TParallelismMode,
   TParallelismReasonCode,
 } from './decomposition/decomposition-contract.js';
+export type {
+  IObservabilityApi,
+  IObservabilityDecisionInput,
+  IObservabilityDecisionRecord,
+  IObservabilityPolicyRef,
+  IObservabilityReceipt,
+  IObservabilitySubject,
+  IObservabilityTelemetryInput,
+  IObservabilityTelemetryRecord,
+  TObservabilityConfidence,
+  TObservabilityDeliveryStatus,
+  TObservabilityDecisionKind,
+  TObservabilityInput,
+  TObservabilityRecord,
+  TObservabilitySubjectKind,
+  TObservabilityTelemetryEvent,
+} from './observability/observability-contract.js';
+
+export type { TDecisionProvenanceSource } from './observability/decision-provenance.js';
+export type { ICreateObservabilityCapabilityOptions } from './observability/observability-capability.js';
+export type { IRecordObservabilityOptions } from './observability/observability-recorder.js';
+
 export type {
   IRecoveryApi,
   IRecoveryAttemptState,

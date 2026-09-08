@@ -1,7 +1,7 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "2.11.0",
-  "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, Strategy, DAG, Verification, Completion, and Recovery contracts.",
+  "version": "2.12.0",
+  "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, Strategy, DAG, Verification, Completion, Recovery, and Observability contracts.",
   "author": {
     "name": "AmyGrooove",
     "email": "vanyablya003@gmail.com"
@@ -17,7 +17,7 @@
   "interface": {
     "displayName": "Amy Agents Guidelines",
     "shortDescription": "TypeScript standards with Amy Runtime",
-    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime with optional Project, Task, Context, Compute, Agent Role, Strategy Routing, bounded DAG/decomposition, evidence-based Verification, Completion/Stop Guards, and controlled Recovery planning.",
+    "longDescription": "Applies focused TypeScript development standards and provides an explicit Node.js Runtime with optional Project, Task, Context, Compute, Agent Role, Strategy Routing, bounded DAG/decomposition, evidence-based Verification, Completion/Stop Guards, controlled Recovery planning, and fail-open Observability/Decision Provenance.",
     "developerName": "AmyGrooove",
     "category": "Productivity",
     "capabilities": [

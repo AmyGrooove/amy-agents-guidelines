@@ -637,6 +637,36 @@ describe('Cli', () => {
     assert.equal(JSON.parse(result.stdout).data.requiresVerification, true);
   });
 
+  it('записывает observability event только через явную CLI command и остаётся fail-open без consumers', async () => {
+    const projectRoot = await createTemporaryDirectory();
+    const inputPath = join(projectRoot, 'observability-input.json');
+
+    await writeFile(inputPath, JSON.stringify({
+      decision: 'worker',
+      decisionKind: 'strategy',
+      evidenceRefs: ['artifact:task-analysis'],
+      kind: 'decision',
+      policy: { owner: 'strategy-routing', version: 1 },
+      reasonCodes: ['worker-recommended'],
+      recordId: 'decision:cli:strategy',
+      subject: { id: 'task-1', kind: 'task' },
+    }), 'utf8');
+
+    const result = runCli([
+      'observability-record', '--input', inputPath, '--project', projectRoot, '--plugin', pluginRoot,
+    ]);
+
+    assert.equal(result.status, 0, result.stderr);
+    const receipt = JSON.parse(result.stdout);
+    assert.equal(receipt.status, 'emitted');
+    assert.equal(receipt.deliveredCount, 0);
+    assert.deepEqual(receipt.deliveryFailures, []);
+    assert.equal(receipt.record.kind, 'decision');
+    assert.equal(receipt.record.decisionKind, 'strategy');
+    assert.equal(receipt.record.schemaVersion, 1);
+    assert.equal(typeof receipt.record.timestamp, 'string');
+  });
+
   it('принимает relative path значения CLI options', () => {
     const result = runCli([
       'intelligence-discover',

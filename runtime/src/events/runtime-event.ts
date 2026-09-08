@@ -3,6 +3,7 @@ import type { TJsonValue } from '../state/state-store.js';
 export type TRuntimeEventType =
   | 'capability.failed'
   | 'capability.resolved'
+  | 'observability.recorded'
   | 'runtime.started'
   | 'runtime.stopped';
 
