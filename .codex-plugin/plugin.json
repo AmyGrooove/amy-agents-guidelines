@@ -1,6 +1,6 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "2.19.0",
+  "version": "2.19.1",
   "description": "Applies Amy's TypeScript development standards and provides an explicit runtime with optional Project, Task, Context, Compute, Agent Role, Strategy, DAG, Verification, Completion, Recovery, Observability, Data Storage, Outcome/Failure Intelligence, Eval System, Analytics, Mechanism Health, Controlled Evolution, and Operations contracts.",
   "author": {
     "name": "AmyGrooove",

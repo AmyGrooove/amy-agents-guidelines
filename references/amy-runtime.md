@@ -395,3 +395,18 @@ interpretation, automatic source exploration or agent execution, DAG execution o
 advanced orchestration, command execution, automatic recovery execution, dashboards, automatic skill
 rewriting, long-term memory, automatic
 storage scheduling, automatic skill routing, shadow execution, or automatic production policy mutation.
+
+## Final Integration + Hardening
+
+Stage 22 keeps the existing explicit capability architecture and hardens it rather
+than adding an Amy-wide coordinator. Cross-capability regression coverage now proves
+the trivial Fast Path, complex bounded decomposition, failed-verification Recovery,
+and fail-open optional storage/telemetry behavior through canonical public APIs.
+The clean-source typecheck workflow also builds the public Runtime entrypoint before
+typechecking tests that intentionally consume `runtime/dist/index.js`.
+
+No Runtime schema, capability contract, capability ID, or optionality rule changes in
+this stage. MCP remains intentionally absent and actual execution stays host-owned.
+
+See [Final Integration + Hardening](hardening.md) for the Stage 22 review and final
+Handoff.

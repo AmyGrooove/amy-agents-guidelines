@@ -77,4 +77,5 @@ Runtime используется только явно. Существующие
 [Analytics Engine + Task Archetypes + Mechanism Health](references/analytics.md) и
 [Controlled Evolution](references/evolution.md) и
 [Amy Operations](references/operations.md) и
-[решение по Optional MCP Layer](references/mcp.md).
+[решение по Optional MCP Layer](references/mcp.md) и
+[Final Integration + Hardening](references/hardening.md).
