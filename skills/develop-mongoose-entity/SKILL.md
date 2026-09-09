@@ -1,19 +1,19 @@
 ---
 name: develop-mongoose-entity
-description: Create, fix, extend, or refactor a Mongoose domain entity, including its schema, entity-specific repository, domain types, helpers, and entity module wiring. Excludes HTTP controllers, request DTOs, and endpoint services.
+description: Create, fix, extend, refactor, or review a Mongoose domain entity, including its schema, entity-specific repository, domain types, helpers, and entity module wiring. Excludes HTTP controllers, request DTOs, and endpoint services.
 ---
 
 # Develop Mongoose Entity
 
 ## Responsibility and Activation
 
-Create or change a Mongoose domain entity and its complete persistence-owned slice.
+Create, change, or review a Mongoose domain entity and its persistence-owned slice. Review reports confirmed findings without edits.
 
 Activate for schemas, collection options, indexes, virtuals, entity repositories, domain types/helpers, and entity module wiring. Do not activate for request/response DTOs, controllers, generic Mongo infrastructure, or endpoint response mapping. Own entity module wiring but not endpoint modules. A schema change requires confirmation unless the request explicitly asks for it.
 
 ## Context and References
 
-Inspect schemas/plugins, collection naming, repository base, real queries/sorts/constraints, consumers, and installed MongoDB/Mongoose/Nest integration versions. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/standards/project-architecture.md), [TypeScript and objects](../../references/standards/typescript-and-objects.md), and [Mongoose](../../references/backend/mongoose.md).
+Inspect schemas/plugins, collection naming, repository base, real queries/sorts/constraints, consumers, and installed MongoDB/Mongoose/Nest integration versions. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/shared/project-architecture.md), [TypeScript and objects](../../references/shared/typescript-and-objects.md), and [Mongoose](../../references/backend/mongoose.md).
 
 ## Expected Result
 

@@ -1,19 +1,19 @@
 ---
 name: develop-effector-model
-description: Create, fix, extend, or refactor a standalone cohesive Effector model and its public units. Do not use for an internal store owned exclusively by a React component object.
+description: Create, fix, extend, refactor, or review a standalone cohesive Effector model and its public units. Do not use for an internal store owned exclusively by a React component object.
 ---
 
 # Develop Effector Model
 
 ## Responsibility and Activation
 
-Create or change a standalone cohesive Effector model and its public units.
+Create, change, or review a standalone cohesive Effector model and its public units. Review reports confirmed findings without edits.
 
 Activate for stores, events, effects, `sample`, derived stores, and wiring owned by one standalone model. Do not activate for component-local state, a store exclusively owned by one component, TanStack Query cache logic, or generic state without Effector. Own all units of the cohesive model; keep incidental pure helpers inside it unless independently reusable.
 
 ## Context and References
 
-Inspect consumers, scopes/providers, domain events, effects, existing APIs, and neighboring Effector conventions. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md), and [Effector](../../references/frontend/effector.md). Read [project architecture](../../references/standards/project-architecture.md) only when ownership changes.
+Inspect consumers, scopes/providers, domain events, effects, existing APIs, and neighboring Effector conventions. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md), and [Effector](../../references/frontend/effector.md). Read [project architecture](../../references/shared/project-architecture.md) only when ownership changes.
 
 ## Expected Result
 

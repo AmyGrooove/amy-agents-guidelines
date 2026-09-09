@@ -20,6 +20,6 @@ DTO folders may contain `body`, `query`, `params`, and `response`. Files use `<n
 
 Prefer the global `ValidationPipe` configuration above. ObjectId conversion is explicit through an approved pipe or transform. Public params and OpenAPI describe ObjectId as a string; the pipe validates and converts it, and the service receives `Types.ObjectId`. Do not create a standalone `validateDto` baseline helper.
 
-Custom Nest decorators use PascalCase and the function-object structure. There is no BullMQ or scheduler skill in version 1. Existing queue or scheduler plumbing may be maintained by the Nest module skill, but do not invent a new standard without a separate approved design.
+Custom Nest decorators use PascalCase and the function-object structure. Existing queue or scheduler plumbing may be maintained by the Nest module skill, but do not invent a new standard without a separate approved design.
 
 Static completion requires an acyclic module graph, minimal provider visibility, thin metadata/controllers, owned business logic, explicit DTO validation and ObjectId boundaries, and application-service transaction ownership.

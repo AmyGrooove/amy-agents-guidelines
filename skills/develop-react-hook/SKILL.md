@@ -1,19 +1,19 @@
 ---
 name: develop-react-hook
-description: Create, fix, extend, or refactor a standalone reusable React hook object. Do not use for a hook owned by a component or for TanStack Query API hooks.
+description: Create, fix, extend, refactor, or review a standalone reusable React hook object. Do not use for a hook owned by a component or for TanStack Query API hooks.
 ---
 
 # Develop React Hook
 
 ## Responsibility and Activation
 
-Create or change a standalone reusable React hook object.
+Create, change, or review a standalone reusable React hook object. Review reports confirmed findings without edits.
 
 Activate for a standalone `use<Name>` requiring React state, lifecycle, effects, or subscriptions. Do not activate for `use<Component>`, any component-owned hook, TanStack Query hooks, or pure functions without React semantics. Activate when the primary artifact is independently reusable rather than owned by a component or API object.
 
 ## Context and References
 
-Inspect consumers, React version, lifecycle needs, shared hooks, target layer, and any Next.js client boundary. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md), and [React](../../references/frontend/react.md). Read [project architecture](../../references/standards/project-architecture.md) only when the layer is unclear.
+Inspect consumers, React version, lifecycle needs, shared hooks, target layer, and any Next.js client boundary. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md), and [React](../../references/frontend/react.md). Read [project architecture](../../references/shared/project-architecture.md) only when the layer is unclear.
 
 ## Expected Result
 

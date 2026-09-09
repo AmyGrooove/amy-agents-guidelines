@@ -17,7 +17,7 @@
 - Literal colors appear only in the token-definition layer. `transparent`, `currentColor`, `inherit`, and values derived from approved tokens with `color-mix` or an approved Sass function are allowed elsewhere.
 - Prefer pixel values divisible by four. Exempt 1px/2px borders, outlines, separators, optical adjustments; typography and line-height; fluid/intrinsic values; aspect ratios; transforms; runtime custom-property values; breakpoints; and installed-primitive requirements. Other exceptions require a concrete design or runtime reason.
 - Allowed units are semantic unitless values; `px`; `%`, `rem`, `em`, `ch`; `vw`, `vh`, `dvh`, `svh`, `lvh`; `fr`; `deg`; `ms`, `s`. Prefer `rem` for root-scalable typography, `em` for intentionally element-relative sizing, and `ms` for ordinary sub-second motion.
-- Never use `!important`. Do not restate browser defaults.
+- Do not use `!important` by default. A narrowly scoped selector and property may use it only for justified integration with a third-party style or component after available configuration, styling APIs, and ordinary cascade are insufficient. Report the justification in the result; do not add a code comment unless requested. Do not use it for an ordinary specificity problem. Do not restate browser defaults.
 - Prefer pseudo-elements for decoration and flexbox when it is the correct layout model.
 - Prefer one-word class names, otherwise camelCase. Modifiers use underscore style such as `.root_disabled` or `&_disabled` with ampersand nesting.
 - Start each new class selector at top level rather than nesting it inside another class. Keep meaningful selector nesting to at most three levels; control directives and media wrappers do not count.
@@ -31,7 +31,7 @@ Prefer supported modern CSS. Use `:has` and `:focus-within` when they reduce com
 
 Provide reduced-motion behavior for non-essential or automatic animation, including equivalent runtime checks for JavaScript motion.
 
-Do not introduce CSS Layers in version 1. Preserve coherent existing layers or request a separate decision for a concrete cascade problem. Apply these standards within the task; normalize the whole object's styles only on a separate request to bring it to standards.
+Do not introduce CSS Layers without a separate decision for a concrete cascade problem. Preserve coherent existing layers. Apply these standards within the task; normalize the whole object's styles only on a separate request to bring it to standards.
 
 ## Static Review
 

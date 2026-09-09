@@ -4,7 +4,9 @@
 
 Follow the user's request and applicable AGENTS.md. Inspect neighboring production code before implementation. Plugin standards take precedence over existing project patterns within the task; use existing conventions where the plugin has no rule. Apply this precedence to every skill and reference.
 
-Apply plugin standards to the requested changes. Bring the entire touched object into compliance only on a separate request to bring it to standards; an ordinary fix, feature, or review does not authorize full normalization. This includes its owned production artifacts, not unrelated neighbors or unapproved tests and stories. Preserve existing behavior and public APIs unless the task requires changing them. Prefer simple solutions and existing utilities, components, types, and dependencies.
+Use one of four modes. Creation makes a new object fully comply with applicable standards. A targeted change applies standards to the requested change and necessary touched consumers only. Full normalization applies to the agreed object and its owned production artifacts only after a separate request. Review does not change source files; report confirmed findings with locations and consequences, separating behavior/contract defects from personal-standard deviations. An inapplicable rule is not a finding.
+
+Checking surrounding code does not authorize its normalization. Production normalization never authorizes reading, running, or changing tests or stories. Preserve existing behavior and public APIs unless the task requires changing them. Prefer simple solutions and existing utilities, components, types, and dependencies.
 
 ## Working Contract
 
@@ -18,9 +20,11 @@ Apply plugin standards to the requested changes. Bring the entire touched object
 
 ## Authority
 
-Handle necessary, reversible implementation and safe local inspection or verification autonomously. Existing authorization covers the requested action; do not ask again. Skill-specific confirmation rules apply only when the decision is not already authorized.
+Handle necessary, reversible implementation and safe local inspection or verification autonomously. Existing authorization covers the requested action; do not ask again. A direct request to change a schema field, contract, dependency, token, or run a generator authorizes that action, but not separate external, destructive, or difficult-to-reverse effects. Ask only for a materially missing decision or parameter. Skill-specific confirmation rules apply only when the decision is not already authorized.
 
 Preserve installed dependencies and reuse them first. Add a dependency only when necessary. Ask when required information or a material decision cannot be inferred, or when an external, destructive, or difficult-to-reverse action lacks authorization. Do not expand the task into infrastructure, deployment, publishing, or unrelated cleanup.
+
+When an expected `fetchData`, dictionary, alias, or style entrypoint is absent, inspect existing equivalents and consumers first. Do not refer to a nonexistent object. Create the smallest required object only within the authorized task; do not migrate neighbors. If the standard needs substantial shared infrastructure beyond the task, identify the dependency and request that decision instead of silently weakening the standard.
 
 ## Context and Documentation
 
@@ -34,4 +38,4 @@ Available workflows must respect the user's scope and restrictions. Missing opti
 
 ## Completion
 
-Review the requested changes and affected consumers, then run relevant available checks. Report the result briefly and state any unresolved limitation; do not claim verification that did not run.
+Review the requested changes and affected consumers, then select relevant available checks. Distinguish static reading, typecheck, lint, build, and observed runtime behavior. Reading never proves interactivity, accessibility, or runtime behavior. Report only checks that ran and any unresolved limitation.

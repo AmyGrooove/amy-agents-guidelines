@@ -1,21 +1,21 @@
 ---
 name: design-typescript-project
-description: Design or initialize a new TypeScript project using the approved Next.js, Vite, or NestJS stack. Use only for project inception, not for adding objects to an established project.
+description: Design, initialize, or review a new TypeScript project using the approved Next.js, Vite, or NestJS stack. Use only for project inception, not for adding objects to an established project.
 ---
 
 # Design TypeScript Project
 
 ## Responsibility and Activation
 
-Design the minimal foundation of a new Next.js, Vite, or NestJS project and create initial files only when writing is explicitly requested and approved.
+Design, initialize, or review the minimal foundation of a new Next.js, Vite, or NestJS project. Review reports confirmed findings without edits; creation writes initial files only when authorized.
 
-Activate for a project starting from zero, framework selection, initial structure, entry points, and first real files. Do not activate for adding an object to an established project, migrating an existing application, or standalone CI, container, or deployment work. Activate only for genuine inception or an explicit redesign of the entire foundation. When approved implementation includes concrete artifacts, also apply their focused skills.
+Activate for a project starting from zero, framework selection, initial structure, entry points, and first real files. Do not activate for adding an object to an established project, migrating an existing application, redesigning an existing application, or standalone CI, container, or deployment work. Activate only for genuine inception. When approved implementation includes concrete artifacts, also apply their focused skills.
 
 ## Context and References
 
 Establish the project goal, frontend or backend scope, framework, package manager, first domain modules, current directory contents, and approved dependencies.
 
-Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/standards/project-architecture.md). Read [TypeScript and objects](../../references/standards/typescript-and-objects.md) for real TypeScript artifacts. For the selected frontend stack, read [React](../../references/frontend/react.md) and [SCSS](../../references/frontend/scss.md). For the selected backend stack, read [NestJS](../../references/backend/nest.md) and [Mongoose](../../references/backend/mongoose.md) only when persistence is in scope. Do not load unrelated stack references or routing evaluation.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/shared/project-architecture.md). Read [TypeScript and objects](../../references/shared/typescript-and-objects.md) for real TypeScript artifacts. For the selected frontend stack, read [React](../../references/frontend/react.md) and [SCSS](../../references/frontend/scss.md). For the selected backend stack, read [NestJS](../../references/backend/nest.md) and [Mongoose](../../references/backend/mongoose.md) only when persistence is in scope. Do not load unrelated stack references or routing evaluation.
 
 ## Expected Result
 

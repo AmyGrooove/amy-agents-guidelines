@@ -1,19 +1,19 @@
 ---
 name: author-scss
-description: Create or change standalone SCSS, global styles, design-token infrastructure, Sass functions, mixins, or responsive resources. Do not use for a component-owned SCSS Module.
+description: Create, change, or review standalone SCSS, global styles, design-token infrastructure, Sass functions, mixins, or responsive resources. Do not use for a component-owned SCSS Module.
 ---
 
 # Author SCSS
 
 ## Responsibility and Activation
 
-Create or change shared, global, or standalone Sass infrastructure not owned by a component.
+Create, change, or review shared, global, or standalone Sass infrastructure not owned by a component. Review reports confirmed findings without edits.
 
 Activate for `global.scss`, `reusable.scss`, reset, design tokens, Sass functions/mixins, typography, animation, and responsive resources. Do not activate for component-owned SCSS Modules, Stylelint configuration without an explicit configuration request, or component markup and state classes. Activate only when a shared/global style resource is the primary artifact.
 
 ## Context and References
 
-Inspect the style import graph, tokens, reusable entry, consumers, browser baseline, and project Stylelint configuration. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [SCSS](../../references/frontend/scss.md). Read [project architecture](../../references/standards/project-architecture.md) only for global or shared placement.
+Inspect the style import graph, tokens, reusable entry, consumers, browser baseline, and project Stylelint configuration. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [SCSS](../../references/frontend/scss.md). Read [project architecture](../../references/shared/project-architecture.md) only for global or shared placement.
 
 ## Expected Result
 
@@ -34,7 +34,7 @@ Use supported modern CSS with necessary fallback, existing tokens/mixins, and a 
 
 ## Prevent
 
-Prevent `!important`, literal colors outside token definitions, reverse imports into `reusable.scss`, excessive nesting, component styles in global resources, speculative folders, and critical unsupported selectors without fallback.
+Prevent `!important` by default, literal colors outside token definitions, reverse imports into `reusable.scss`, excessive nesting, component styles in global resources, speculative folders, and critical unsupported selectors without fallback. Allow a narrowly scoped `!important` only for justified third-party integration after ordinary cascade and styling APIs are insufficient; report its reason in the result.
 
 ## Verification and Completion
 

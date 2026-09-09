@@ -1,6 +1,6 @@
 # Backend Text
 
-Use two centralized dictionaries and no locale switching in version 1:
+Use two centralized dictionaries and no locale switching without a separate decision:
 
 - `shared/static/SHARED_DICTIONARY.ts` for general reusable backend text;
 - `entities/services/static/DICTIONARY.ts` for centralized project and domain text.

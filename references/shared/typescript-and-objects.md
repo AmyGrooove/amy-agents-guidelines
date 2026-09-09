@@ -4,7 +4,8 @@
 
 - Prefer existing utilities, objects, types, and dependencies.
 - Decompose by responsibility, ownership, reuse, and dependency direction; size is only a signal.
-- Do not use `let`, IIFEs, `any`, non-null assertions, or unjustified type assertions.
+- Prefer `const`. Use local `let` only when reassignment makes an algorithm simpler and clearer than `reduce`, recursion, or a mutable helper object. Do not introduce unjustified shared mutable state.
+- Do not use IIFEs, `any`, non-null assertions, or unjustified type assertions.
 - Use arrow functions, braces for all control structures, and blank lines between logical blocks.
 - Use `unknown` for genuinely unknown values. Default to `undefined` for omitted or unavailable values; use `null` only as an intentional supported contract value. Do not silently convert them at a boundary.
 - Use `satisfies` when it validates without widening.
@@ -20,13 +21,13 @@
 - Use `type` for unions and shapes unsuitable for interfaces, named `TName`; union names are singular.
 - Constants use `SCREAMING_SNAKE_CASE`, normally one per file.
 - Prefer named exports with separate `export` and `export type` statements. Avoid defaults and star exports except framework-required defaults.
-- Shared type-check predicate functions use `is<Type>`, for example `isRecord`. Outside `shared`, predicate functions normally start with `checkIs`; reuse concise existing guards such as `isNil`, `isString`, or `isObject`.
+- Predicate functions normally start with `checkIs`; reuse concise existing guards such as `isNil`, `isString`, or `isObject`.
 - Boolean names use `is`, `has`, `can`, or `should`. Internal handlers use `handle<Name>` and public callback props use `on<Name>`.
 - More than two authored semantic parameters become one `I<Name>Props` object. Framework/library callbacks and `AbortSignal` are exceptions.
 
 ## Files and Object Shape
 
-Normally keep one object per file. Accepted cohesive exceptions are public index barrels, Storybook story files, Nest module metadata, Effector models, and framework/configuration entry points.
+Normally keep one object per file. Specialized object rules take priority within their object: a TanStack Query API may keep its raw request and hook together. Other accepted cohesive exceptions are public index barrels, Storybook story files, Nest module metadata, Effector models, and framework/configuration entry points.
 
 Create only folders that contain real files:
 

@@ -16,7 +16,7 @@ Component folders and names use PascalCase. Use:
 - `core/<ComponentName>.module.scss` for owned styles;
 - only necessary owned helpers, hooks, stores, internal components, and a minimal `index.ts`.
 
-A component with props or logic passes the original props object as the sole argument to its owned hook: `use<ComponentName>(props)`, for example `useTooltip(props)`. Destructure and normalize props inside the hook; do not rebuild, spread, or enumerate them at the call site. Omit the hook only when there are neither props nor logic.
+A component with props or logic passes the original props object as the sole argument to its owned hook: `use<ComponentName>(props)`, for example `useTooltip(props)`. Destructure and normalize props inside the hook; do not rebuild, spread, or enumerate them at the call site. Omit the hook only when there are neither props nor logic. A pure owned hook does not itself require `use client`; add that directive only when the component boundary uses client React features, browser APIs, or a client-only library.
 
 JSX uses values and handlers returned by the hook. Small presentation-only combinations of these values and styles, such as `cn(st.root, className)`, may stay in the component. Keep business logic, prop normalization, and substantial derived computations in the hook. A deliberately extracted DOM-attribute rest object may be spread onto its intended element or installed primitive.
 

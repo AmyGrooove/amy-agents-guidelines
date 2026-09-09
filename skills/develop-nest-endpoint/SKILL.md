@@ -1,13 +1,13 @@
 ---
 name: develop-nest-endpoint
-description: Create, fix, extend, or refactor a NestJS HTTP endpoint slice, including its controller, application service, input and response DTOs, mapping, and endpoint module wiring. Excludes persistence-schema ownership and standalone infrastructure modules.
+description: Create, fix, extend, refactor, or review a NestJS HTTP endpoint slice, including its controller, application service, input and response DTOs, mapping, and endpoint module wiring. Excludes persistence-schema ownership and standalone infrastructure modules.
 ---
 
 # Develop Nest Endpoint
 
 ## Responsibility and Activation
 
-Create or change a complete NestJS HTTP endpoint slice.
+Create, change, or review a NestJS HTTP endpoint slice. Review reports confirmed findings without edits.
 
 Activate for routes, controllers, input/response DTOs, endpoint services, validation, response/error contracts, mapping, and multi-repository use cases. Do not activate for standalone entity schemas, infrastructure providers, or frontend query hooks. Own endpoint DTOs, mapping, controller, application service, and module wiring. Apply the entity skill only when a schema or repository change is genuinely required.
 
@@ -15,7 +15,7 @@ Activate for routes, controllers, input/response DTOs, endpoint services, valida
 
 Inspect route conventions, global validation, versioning/prefix configuration, repositories, auth/decorators, error contract, Swagger setup, and neighboring endpoints.
 
-Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/standards/project-architecture.md), [TypeScript and objects](../../references/standards/typescript-and-objects.md), [NestJS](../../references/backend/nest.md), [backend contracts](../../references/backend/backend-contracts.md), and [backend text](../../references/backend/backend-text.md). Read [Mongoose](../../references/backend/mongoose.md) only to understand an existing persistence contract; a schema change belongs to the entity skill.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/shared/project-architecture.md), [TypeScript and objects](../../references/shared/typescript-and-objects.md), [NestJS](../../references/backend/nest.md), [backend contracts](../../references/backend/backend-contracts.md), and [backend text](../../references/backend/backend-text.md). Read [Mongoose](../../references/backend/mongoose.md) only to understand an existing persistence contract; a schema change belongs to the entity skill.
 
 ## Expected Result
 

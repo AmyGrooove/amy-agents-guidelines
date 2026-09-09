@@ -1,19 +1,19 @@
 ---
 name: author-typescript-test
-description: Create or change a TypeScript test only when the user explicitly requests a test, test case, or test-file repair. Never activate solely because production code changed.
+description: Create, change, or review a TypeScript test only when the user explicitly requests a test, test case, or test-file repair. Never activate solely because production code changed.
 ---
 
 # Author TypeScript Test
 
 ## Responsibility and Activation
 
-Create or change an explicitly requested TypeScript test artifact. An accepted offer to inspect and update existing files supplies this authorization.
+Create, change, or review an explicitly requested TypeScript test artifact. An accepted offer to inspect and update existing files supplies this authorization. Review reports confirmed findings without edits.
 
 Activate for writing a test, adding a test case or regression, repairing a test file, or covering explicitly named behavior. Do not activate for production work alone, command execution, or generic verification without a test artifact. Without authorization, follow the shared existence-only and final-offer workflow.
 
 ## Context and References
 
-Inspect the production contract, test configuration/setup, neighboring tests, and available mocks or fixtures. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [testing](../../references/standards/testing.md). Read only the reference for the tested artifact when its public behavior is needed.
+Inspect the production contract, test configuration/setup, neighboring tests, and available mocks or fixtures. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [testing](../../references/shared/testing.md). Read only the reference for the tested artifact when its public behavior is needed.
 
 ## Expected Result
 

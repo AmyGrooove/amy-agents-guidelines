@@ -1,13 +1,13 @@
 ---
 name: place-typescript-object
-description: Determine the owning layer, destination, public API, and allowed dependencies for a TypeScript object. Use when placement or architecture is the requested result, not for routine implementation with an obvious destination.
+description: Determine or review the owning layer, destination, public API, and allowed dependencies for a TypeScript object. Use when placement or architecture is the requested result, not for routine implementation with an obvious destination.
 ---
 
 # Place TypeScript Object
 
 ## Responsibility and Activation
 
-Determine ownership, layer, directory, public API, and allowed dependencies when placement itself is the requested result.
+Determine or review ownership, layer, directory, public API, and allowed dependencies when placement itself is the requested result. Review reports confirmed findings without edits.
 
 Activate for where an object belongs, layer ownership, public API, cycle analysis, or moving an object between layers. Do not activate for routine implementation with an obvious destination, complete project inception, or a simple import repair owned by the affected artifact. It is not a mandatory preflight or general router; use it only for an independent placement result or when two materially different destinations remain.
 
@@ -15,7 +15,7 @@ Activate for where an object belongs, layer ownership, public API, cycle analysi
 
 Inspect layers, consumers, ownership, reuse, aliases, object indexes, and the import graph.
 
-Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/standards/project-architecture.md). Read one domain reference only when framework ownership materially determines placement. Never load routing evaluation during ordinary work.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/shared/project-architecture.md). Read one domain reference only when framework ownership materially determines placement. Never load routing evaluation during ordinary work.
 
 ## Expected Result
 

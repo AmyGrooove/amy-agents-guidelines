@@ -1,19 +1,19 @@
 ---
 name: author-storybook-story
-description: Create or change a Storybook story only when the user explicitly requests a story, Storybook scenario, or story documentation artifact. Never activate merely because a component changed.
+description: Create, change, or review a Storybook story only when the user explicitly requests a story, Storybook scenario, or story documentation artifact. Never activate merely because a component changed.
 ---
 
 # Author Storybook Story
 
 ## Responsibility and Activation
 
-Create or change an explicitly requested Storybook story artifact. An accepted offer to inspect and update existing files supplies this authorization.
+Create, change, or review an explicitly requested Storybook story artifact. An accepted offer to inspect and update existing files supplies this authorization. Review reports confirmed findings without edits.
 
 Activate for a direct semantic request to add, repair, or update a story, scenario, args, argTypes, or Storybook component documentation. Do not activate for ordinary component changes, generic visual checking, or possible story impact without confirmation. Automatic discovery is allowed, but the story artifact must be explicit.
 
 ## Context and References
 
-Inspect the top-level component public API, existing story, installed Storybook version/configuration, and neighboring stories. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [Storybook](../../references/frontend/storybook.md), and [React](../../references/frontend/react.md). Read [TypeScript and objects](../../references/standards/typescript-and-objects.md) only when types change.
+Inspect the top-level component public API, existing story, installed Storybook version/configuration, and neighboring stories. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [Storybook](../../references/frontend/storybook.md), and [React](../../references/frontend/react.md). Read [TypeScript and objects](../../references/shared/typescript-and-objects.md) only when types change.
 
 ## Expected Result
 

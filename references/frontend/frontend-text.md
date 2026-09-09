@@ -1,6 +1,6 @@
 # Frontend Text
 
-Write ordinary user-facing project text in Russian. Text used only inside code, including test and Storybook descriptions, is also Russian. Do not add locale switching or an i18n dependency in version 1.
+Write ordinary user-facing project text in Russian. Text used only inside code, including test and Storybook descriptions, is also Russian. Do not add locale switching or an i18n dependency without a separate decision.
 
 Use exactly these centralized sources:
 

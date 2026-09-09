@@ -1,13 +1,13 @@
 ---
 name: develop-react-component
-description: Create, fix, extend, or refactor a React component object, including its props, component-owned hooks, stores, helpers, internal components, and SCSS Module. Excludes standalone hooks, standalone Effector models, shared styles, stories, and tests.
+description: Create, fix, extend, refactor, or review a React component object, including its props, component-owned hooks, stores, helpers, internal components, and SCSS Module. Excludes standalone hooks, standalone Effector models, shared styles, stories, and tests.
 ---
 
 # Develop React Component
 
 ## Responsibility and Activation
 
-Create or change a complete React component object and everything exclusively owned by it.
+Create, change, or review a React component object and everything exclusively owned by it. Review reports confirmed findings without edits.
 
 Activate for JSX, public props, behavior, accessibility, `use<Component>`, component-owned hooks, stores, helpers, internal components, and owned SCSS Modules. Do not activate for standalone hooks or Effector models, shared/global SCSS, story-only or test-only requests, or architecture without a component artifact. Keep incidental owned artifacts here; do not activate separate hook, Effector, TypeScript, or SCSS skills for them.
 
@@ -15,7 +15,7 @@ Activate for JSX, public props, behavior, accessibility, `use<Component>`, compo
 
 Inspect neighboring production components, installed primitives, consumers, design tokens, owned styles, and dictionaries. Check only the existence of relevant tests and stories until their inspection is authorized.
 
-Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md), [React](../../references/frontend/react.md), [SCSS](../../references/frontend/scss.md), and [frontend text](../../references/frontend/frontend-text.md). Read [Storybook](../../references/frontend/storybook.md) only after approval to update an affected story. Read [testing](../../references/standards/testing.md) only for an explicitly requested test change.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md), [React](../../references/frontend/react.md), [SCSS](../../references/frontend/scss.md), and [frontend text](../../references/frontend/frontend-text.md). Read [Storybook](../../references/frontend/storybook.md) only after approval to update an affected story. Read [testing](../../references/shared/testing.md) only for an explicitly requested test change.
 
 ## Expected Result
 

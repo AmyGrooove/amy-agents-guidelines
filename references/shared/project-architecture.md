@@ -2,7 +2,9 @@
 
 ## Frontend
 
-Allowed dependency direction is `shared -> providers -> entities -> pages or routes -> app`.
+`A → B` означает: слой `A` может импортировать слой `B`.
+
+Разрешённое направление: `app → pages or routes → entities → providers → shared`. Слой может импортировать любой нижележащий слой без прохождения промежуточных.
 
 - `shared`: portable reusable code.
 - `providers`: portable application-support wrappers and services.
@@ -18,7 +20,9 @@ Preserve the existing form stack, validation approach, and browser requirements.
 
 ## Backend
 
-Allowed dependency direction is `shared -> infrastructure -> entities -> endpoints -> app`.
+`A → B` означает: слой `A` может импортировать слой `B`.
+
+Разрешённое направление: `app → endpoints → entities → infrastructure → shared`. Слой может импортировать любой нижележащий слой без прохождения промежуточных.
 
 - `shared`: portable primitives.
 - `infrastructure`: portable service-like support.
@@ -32,7 +36,9 @@ Frontend and backend are independent projects; do not infer a monorepo.
 
 Choose an omitted destination from ownership, portability, and dependency direction. Ask only when two materially different valid placements remain.
 
-- Backward imports are forbidden.
+- Обратные импорты запрещены: например, `entities` не импортирует `pages`, а `infrastructure` не импортирует `endpoints`.
+- Разрешённый пример: `pages` импортирует публичный API объекта из `shared`; `endpoints` импортирует entity repository.
+- Объекты одного слоя могут импортировать друг друга через публичный API, если сохраняются владение и ацикличность.
 - Different objects import through aliases and the target object's public `index.ts`, including objects in the same layer.
 - Deep imports into another object's internals are forbidden.
 - Files inside one object use exact relative imports, never the object's own `index.ts` or a parent barrel such as `..`.

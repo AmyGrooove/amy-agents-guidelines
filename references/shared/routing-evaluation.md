@@ -66,6 +66,10 @@ Use this reference only for routing validation, never during ordinary developmen
 - Negative: «Сделай standalone `useMediaQuery`». Expected: React hook.
 - Edge: «Измени только `Button.module.scss`». Expected: component because the stylesheet is owned.
 - Edge: «Добавь компонент и story». Expected: component plus Storybook.
+- Review: «Сделай ревью компонента `Button`». Expected: component skill; no source edits, confirmed behavior/contract findings are separate from personal-standard deviations.
+- Edge: «Исправь старый `Button`, не меняя его структуру целиком». Expected: component; apply standards to the requested change and necessary consumers only.
+- Edge: «Приведи production-часть `Button` к стандартам». Expected: component; normalize the agreed production object, check tests/stories by existence only unless separately authorized.
+- Edge: «Добавь props-компонент с чистым `useBadge`». Expected: component; owned hook is required, but `use client` is not added solely because the hook name begins with `use`.
 
 ## `develop-effector-model`
 
@@ -92,6 +96,8 @@ Use this reference only for routing validation, never during ordinary developmen
 - Negative: «Сохрани выбранный профиль в Effector». Expected: Effector.
 - Edge: «Добавь endpoint и hook к нему». Expected: Nest endpoint plus query API.
 - Edge: «Компонент неправильно отображает query error». Expected: component if the API contract is correct; query API only when defective.
+- Edge: «Добавь mutation сохранения профиля». Expected: query API; no query key or `queryFn` signal requirement unless the actual contract needs it.
+- Edge: «В проекте нет `fetchData`». Expected: inspect equivalents and consumers; add only the smallest authorized infrastructure or request a decision when it would be broad.
 
 ## `author-scss`
 
@@ -105,6 +111,7 @@ Use this reference only for routing validation, never during ordinary developmen
 - Negative: «Настрой Stylelint с нуля». Expected: explicit configuration task outside automatic SCSS authoring.
 - Edge: «Добавь новый красный цвет ошибки». Expected: SCSS and explicit color/token confirmation.
 - Edge: «Используй `:has()` в критичном layout». Expected: SCSS; verify baseline and provide fallback.
+- Edge: «Сторонний виджет перебивает один стиль». Expected: SCSS; use narrowly scoped `!important` only after styling API and ordinary cascade are insufficient, otherwise fix the cascade.
 
 ## `author-storybook-story`
 
@@ -170,6 +177,14 @@ Use this reference only for routing validation, never during ordinary developmen
 - Negative: «Добавь frontend `useGetProfile`». Expected: query API.
 - Edge: «Добавь endpoint и отсутствующую entity». Expected: endpoint plus entity.
 - Edge: «Измени response DTO так, что ломается клиент». Expected: endpoint and public API confirmation unless explicitly requested.
+
+## Ownership, authority, and language rules
+
+- Edge: «Вынеси helper, используемый только `UserCard`». Expected: component owns it; standalone TypeScript skill is not activated.
+- Edge: «Вынеси helper, независимо нужный нескольким объектам». Expected: TypeScript object after confirming genuine reuse and placement.
+- Approval: «Обнови явно указанную зависимость, поле схемы или token». Expected: perform the requested in-scope change without asking for the same approval again; separately assess external or destructive effects.
+- Edge: «Нужен простой алгоритм с локальным счётчиком». Expected: prefer `const`, but allow local `let` when clearer; shared mutable state remains invalid.
+- Edge: «Не найдены словарь, alias или `reusable.scss`». Expected: inspect equivalents and consumers, then make only the minimal authorized addition or request a broad infrastructure decision.
 
 ## Pass Criteria
 

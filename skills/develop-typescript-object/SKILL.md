@@ -1,19 +1,19 @@
 ---
 name: develop-typescript-object
-description: Create, fix, extend, or refactor a standalone TypeScript object. Excludes objects owned by a React, Effector, TanStack Query, Storybook, test, NestJS, or Mongoose artifact.
+description: Create, fix, extend, refactor, or review a standalone TypeScript object. Excludes objects owned by a React, Effector, TanStack Query, Storybook, test, NestJS, or Mongoose artifact.
 ---
 
 # Develop TypeScript Object
 
 ## Responsibility and Activation
 
-Create or change an ordinary standalone non-framework TypeScript object.
+Create, change, or review an ordinary standalone non-framework TypeScript object. Review reports confirmed findings without edits.
 
 Activate for functions, types, constants, generic utilities, non-framework decorators, and their local files. Do not activate for component-owned helpers, React hooks, query API objects, Nest decorators, DTOs, schemas, modules, tests, or stories. Use this only as the strict fallback when no framework-specific or owning artifact covers the object.
 
 ## Context and References
 
-Inspect consumers, neighboring objects, types, constants, public index, installed configuration, and reusable utilities. Read [workflow and authority](../../references/standards/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/standards/typescript-and-objects.md). No other reference is required.
+Inspect consumers, neighboring objects, types, constants, public index, installed configuration, and reusable utilities. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md). No other reference is required.
 
 ## Expected Result
 
@@ -35,7 +35,7 @@ Choose internal file names, object-local extraction, and reuse of an existing su
 
 ## Prevent
 
-Prevent `let`, `any`, IIFEs, unjustified assertions, excess barrels, duplicated utilities, and more than two authored semantic parameters without a props object.
+Prevent `any`, IIFEs, unjustified assertions, excess barrels, duplicated utilities, and more than two authored semantic parameters without a props object. Prefer `const`; allow local `let` only for a clearer algorithm, never as unjustified shared mutable state.
 
 ## Verification and Completion
 
