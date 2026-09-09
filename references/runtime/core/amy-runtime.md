@@ -37,7 +37,7 @@ the reported mechanisms.
 The TypeScript source in `src` builds to ESM in `runtime/dist`.
 The generated directory is ignored by Git and is created explicitly with
 `pnpm build` after dependencies are installed.
-Consumers import `runtime/dist/index.js` and explicitly call `createAmyRuntime`.
+Consumers import `createAmyRuntime` from `runtime/dist/app/Runtime/index.js` and call it explicitly.
 
 Runtime registration is open until `start()`. Startup validates required
 capabilities and dependencies and freezes registration. `resolveOptional`

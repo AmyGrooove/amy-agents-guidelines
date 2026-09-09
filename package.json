@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node -e \"require('node:fs').rmSync('runtime/dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "build": "node scripts/buildRuntime.mjs",
     "check": "pnpm typecheck && pnpm build && pnpm check:generated",
     "check:generated": "node scripts/checkGenerated.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -16,23 +16,5 @@
     "@types/node": "^24.3.1",
     "typescript": "^5.9.2"
   },
-  "packageManager": "pnpm@11.23.0",
-  "imports": {
-    "#shared/*": {
-      "types": "./src/shared/*/index.ts",
-      "default": "./runtime/dist/shared/*/index.js"
-    },
-    "#entities/*": {
-      "types": "./src/entities/*/index.ts",
-      "default": "./runtime/dist/entities/*/index.js"
-    },
-    "#modules/*": {
-      "types": "./src/modules/*/index.ts",
-      "default": "./runtime/dist/modules/*/index.js"
-    },
-    "#app/*": {
-      "types": "./src/app/*/index.ts",
-      "default": "./runtime/dist/app/*/index.js"
-    }
-  }
+  "packageManager": "pnpm@11.23.0"
 }
