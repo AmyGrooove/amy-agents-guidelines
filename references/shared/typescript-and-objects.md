@@ -2,7 +2,6 @@
 
 ## Language Rules
 
-- Prefer existing utilities, objects, types, and dependencies.
 - Decompose by responsibility, ownership, reuse, and dependency direction; size is only a signal.
 - Prefer `const`. Use local `let` only when reassignment makes an algorithm simpler and clearer than `reduce`, recursion, or a mutable helper object. Do not introduce unjustified shared mutable state.
 - Do not use IIFEs, `any`, non-null assertions, or unjustified type assertions.
@@ -16,11 +15,7 @@
 
 ## Implementation Simplicity
 
-Use direct domain logic for the current contract. Introduce a helper or abstraction when it owns a meaningful responsibility, removes actual duplication, or enforces an applicable boundary; do not extract code solely because it can be named or may be reused later.
-
 Validate untrusted input at its owning boundary. Repeat a check, normalization, conversion, or fallback only when a distinct trust boundary or supported contract requires it. Preserve checks needed at runtime; a TypeScript type alone does not validate external data. Keep supported absence and error behavior explicit rather than replacing failures with invented defaults.
-
-Apply the required object/file structure to necessary artifacts. Separate type or constant files and other required structural conventions remain valid; they do not justify new runtime layers, wrapper functions, intermediate objects, or optional folders.
 
 ## Types, Naming, and Exports
 
@@ -47,14 +42,8 @@ Create only folders that contain real files:
 - `stories`: only for an explicitly requested Storybook artifact;
 - `index.ts`: minimal public API.
 
-Never create empty or placeholder directories. Do not add comments, JSDoc, or unfinished-work markers unless explicitly requested. Preserve existing comments unless the change makes them incorrect.
-
 ## Function and Decorator Objects
 
 Function folders and functions use lower camel case; functions begin with a verb. The primary file is `core/<functionName>.ts`. Add `types`, `static`, `functions`, and `index.ts` only as needed. Group reusable shared functions semantically, preserving meaningful existing groups such as `checks`, `format`, `api`, `errors`, or `utility`; do not generalize this grouping rule automatically to all shared types or constants.
 
-General decorators follow the function-object shape. Nest-owned custom decorators use PascalCase and remain with the owning Nest artifact.
-
-## Static Review
-
-Confirm one clear responsibility, minimal public exports, updated in-scope imports, no self/deep/barrel violations, no unnecessary files or directories, and no duplicated existing utility.
+General decorators follow the function-object shape. Nest-owned decorators remain governed by the NestJS reference.

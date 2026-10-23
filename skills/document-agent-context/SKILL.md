@@ -1,6 +1,6 @@
 ---
 name: document-agent-context
-description: Use when agent documentation or AGENTS.md routing is requested, or when authorized implementation makes existing agent documentation stale or establishes useful new facts about its already documented subject. Excludes read-only work and new documentation subjects without a user request.
+description: Requested agent documentation or AGENTS.md routing; maintenance when authorized implementation makes existing docs stale or establishes useful facts about their subject. No automatic docs for read-only work or new subjects.
 ---
 
 # Document Agent Context
@@ -9,7 +9,7 @@ description: Use when agent documentation or AGENTS.md routing is requested, or 
 
 Maintain project memory for future coding agents. Write `AGENTS.md` and `docs/agents/**` in English for agent retrieval and use, regardless of the user's language. The documents are operational context, not user documentation: help an agent find existing capabilities, reuse their APIs, understand entity relationships and contracts, and avoid duplicate or incompatible implementations. Keep facts concise, specific, and linked to production sources. Documentation helps locate code; inspect current code before relying on a claim.
 
-Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. User restrictions take precedence. Read-only work produces no documentation changes.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once.
 
 ## Creation and Maintenance Boundary
 
@@ -18,8 +18,6 @@ Create the project-wide map only on a direct user request to initialize or gener
 Treat a documented subject as an entity, capability, integration, or contract already described in `AGENTS.md` or `docs/agents/**`, not merely a source file that already exists. During authorized implementation, automatically update affected existing documents when the behavior, fields, API, dependencies, or constraints of a documented subject change. Add newly discovered details to that subject's existing document when they help future agents use or change it correctly. Update existing incoming routes when needed. Load this skill for maintenance only when those existing facts need updating or useful new facts have been established; an implementation edit that leaves documentation accurate adds no documentation route. This maintenance needs no separate prompt.
 
 Do not document a newly introduced subject just because implementation created it, even if a related area is documented. Do not create a new topic, area, or project-wide map without a user request. If an existing shared contract changes because of the new subject, keep that already documented contract accurate, without turning the new subject into a new topic. If an existing document cannot remain accurate without a new file, finish the implementation and suggest that specific addition.
-
-When the user directly requests initialization, creation, or expansion, that request authorizes the stated documentation scope. Do not ask for the same authorization again. Ask only about material project intent or constraints that source inspection cannot establish; choose the best evidence-backed option for ordinary structure and wording.
 
 ## Structure and Routing
 
@@ -42,4 +40,4 @@ Record only facts established by inspected production sources. Distinguish obser
 
 Read applicable instructions and the root index when present, then follow only task-relevant routes. If a route is missing or stale, inspect the needed production code directly. During implementation, check whether changed subjects already have documentation; maintain only the affected existing documents and routes. A routine code change does not trigger a repository-wide documentation audit.
 
-Check that changed routes resolve, topics remain reachable, reading conditions discriminate between tasks, and factual claims match inspected production sources. Check for duplication and contradictory instructions. Documentation does not authorize test or story authoring or Storybook execution; existing safe tests follow the shared verification rules. Report the documentation changes and material verification limits briefly.
+Check that changed routes resolve, topics remain reachable, reading conditions discriminate between tasks, and factual claims match inspected production sources. Check for duplication and contradictory instructions.

@@ -1,6 +1,6 @@
 ---
 name: develop-typescript-object
-description: Create, fix, extend, refactor, or review a standalone TypeScript object. Excludes objects owned by a React, Effector, TanStack Query, Storybook, test, NestJS, or Mongoose artifact.
+description: Standalone TypeScript functions, types, constants, and utilities. Fallback only when no React, Effector, TanStack Query, NestJS, Mongoose, test, or story artifact owns them.
 ---
 
 # Develop TypeScript Object
@@ -13,34 +13,10 @@ Activate for functions, types, constants, generic utilities, non-framework decor
 
 ## Context and References
 
-Inspect consumers, neighboring objects, types, constants, public index, installed configuration, and reusable utilities. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md). Read [project architecture](../../references/shared/project-architecture.md) when placement, ownership, public API boundaries, or imports change. For a local implementation change without those effects, no additional reference is required.
+Start with the affected implementation and signature. For creation, establish ownership, public entrypoint, and required structure; search for suitable reusable utilities and inspect a neighbor only for an unresolved convention. For a targeted change, read types, constants, configuration, and dependencies only where the changed behavior relies on them; inspect consumers when the public or observable contract may be affected.
+
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Apply its activation conditions to [TypeScript and objects](../../references/shared/typescript-and-objects.md) and [project architecture](../../references/shared/project-architecture.md); a local value/expression change within an established shape does not by itself trigger either reference.
 
 ## Expected Result
 
-Create a complete object folder or minimal complete modification with a correct public API and updated in-scope imports.
-
-## Process
-
-1. Establish the object's single responsibility and consumers.
-2. Find existing reusable objects before adding code.
-3. Inspect and preserve the intended public signature.
-4. Change the core implementation.
-5. Add only necessary types, constants, or child helpers.
-6. Update minimal public exports and in-scope imports.
-7. Statically review the changed code and affected contract.
-
-## Authority
-
-Choose internal file names, object-local extraction, and reuse of an existing suitable utility. Require confirmation only when not already authorized for breaking signatures, broad rename or deletion, and dependencies.
-
-## Prevent
-
-Prevent `any`, IIFEs, unjustified assertions, excess barrels, duplicated utilities, and more than two authored semantic parameters without a props object. Prefer `const`; allow local `let` only for a clearer algorithm, never as unjustified shared mutable state.
-
-## Verification and Completion
-
-Complete when the object has one responsibility, correct exports, consistent touched consumers, and no unnecessary files, directories, or framework ownership leakage.
-
-## Optional-Capability Fallback
-
-Use local TypeScript configuration, types, and neighboring objects. Framework uncertainty belongs to the owning skill rather than this fallback. Follow shared documentation rules when local evidence is insufficient.
+Produce a complete standalone object or targeted modification, with its public API and necessary consumer adaptations. Verify the affected signature and observable behavior.

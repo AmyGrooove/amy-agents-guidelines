@@ -1,16 +1,16 @@
 # NestJS
 
-Follow stable official NestJS patterns and the installed project versions. Follow the shared Context7 rules for library-specific questions.
+Follow stable NestJS patterns for the installed project versions under the shared external-documentation rules.
 
 ## New Applications
 
-Default to the Fastify adapter, global `ValidationPipe` with `transform`, `whitelist`, and `forbidNonWhitelisted`, URI versioning, Swagger/OpenAPI, and shutdown hooks. Configure CORS only for an approved cross-origin consumer. Add a route prefix only for the chosen public URL convention and do not accidentally combine it with URI versioning. Required dependencies still need approval and are never installed automatically.
+Default to the Fastify adapter, global `ValidationPipe` with `transform`, `whitelist`, and `forbidNonWhitelisted`, URI versioning, Swagger/OpenAPI, and shutdown hooks. Configure CORS only for an approved cross-origin consumer. Add a route prefix only for the chosen public URL convention and do not accidentally combine it with URI versioning.
 
 ## Modules and Responsibilities
 
 Every backend slice is a Nest module. Module and slice folders use lower camel case. The root `<moduleName>.module.ts` contains only its `@Module` class and metadata. Name services `<serviceName>.service.ts`, repositories `<entityName>.repository.ts`, and controllers `<controllerName>.controller.ts`. Create module-local `types`, `static`, or `functions` only for real files.
 
-Controllers are thin. Application services own business logic and response mapping. Extract pure or reusable service logic only when it improves clarity or reuse. Repositories own data access. Every entity has an entity-specific repository boundary, optionally backed by an existing suitable generic infrastructure repository. Reuse existing infrastructure; do not add a backend folder category without approval.
+Controllers are thin. Application services own business logic and response mapping. Extract pure or reusable service logic only when it improves clarity or reuse. Repositories own data access behind an entity-specific boundary; schema and repository standards belong to the Mongoose reference when persistence work is in scope. Reuse existing infrastructure; do not add a backend folder category without approval.
 
 Endpoint services map persistence documents to response DTOs or explicit response models. Controllers never return Mongoose documents. Multiple repository calls alone do not require a transaction. Determine transaction necessity from the use case's atomicity and consistency requirements. When a transaction is required and used, the application service owns its `ClientSession` and transaction lifecycle and passes the session into repositories; repositories never start or commit transactions implicitly.
 
@@ -22,4 +22,4 @@ Prefer the global `ValidationPipe` configuration above. ObjectId conversion is e
 
 Custom Nest decorators use PascalCase and the function-object structure. Existing queue or scheduler plumbing may be maintained by the Nest module skill, but do not invent a new standard without a separate approved design.
 
-Static completion requires an acyclic module graph, minimal provider visibility, thin metadata/controllers, owned business logic, explicit DTO validation and ObjectId boundaries, and application-service transaction ownership when applicable.
+Keep provider visibility and exports minimal, the module graph acyclic, and global registration limited to an authorized application requirement. Ordinary in-scope configuration changes, including `.env`, are permitted; changes to global validation, provider pipelines, route prefix/versioning, material infrastructure, shared environment contracts, or secret management require authorization under the shared workflow.

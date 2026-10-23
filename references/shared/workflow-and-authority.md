@@ -18,7 +18,7 @@ Complete necessary reversible implementation, safe inspection, and permitted ver
 - Respond concisely in Russian; provide details when requested or necessary for a material decision.
 - Preserve the package manager, tooling, and installed dependencies; reuse existing capabilities and add dependencies only when necessary.
 - Do not expand into infrastructure, deployment, publishing, or unrelated cleanup.
-- Do not add code comments, TODOs, FIXMEs, or extra files unless requested; necessary owned artifacts follow the scope rules above. Documentation requires a request except for the scoped maintenance below.
+- Do not add code comments, JSDoc, TODOs, FIXMEs, or extra files unless requested; preserve existing comments unless the change makes them incorrect. Necessary owned artifacts follow the scope rules above. Documentation requires a request except for the scoped maintenance below.
 - Do not create Git commits or modify Git history.
 - Read sensitive configuration only when necessary; never expose secrets.
 
@@ -26,15 +26,36 @@ Complete necessary reversible implementation, safe inspection, and permitted ver
 
 Use applicable `AGENTS.md` instructions already loaded by Codex; do not reread them for orientation or a checklist. Read only missing applicable instructions, or recover relevant content after context loss or an instruction change. If present and relevant, follow `docs/agents/index.md` routes to affected topics. Verify documentation against current production code; missing documentation does not block inspection.
 
-Use native skill discovery by requested outcome and artifact ownership. `route-project-changes` is explicit-only. Mechanical consumer updates stay with the owning skill; select another skill when its artifact's behavior, structure, or contract changes. If none applies, use project instructions, conventions, and this workflow directly. Read shared guidance once and only references needed for affected code or contracts; consult routing evaluation only for routing checks. Existing test execution alone needs no test-authoring skill. Amy requires no activation announcement or final route report.
+Use native skill discovery by requested outcome and artifact ownership. `route-project-changes` and `codify-rule` are explicit-only; feedback or repetition alone never selects rule codification. Mechanical consumer updates stay with the owning skill; select another skill when its artifact's behavior, structure, or contract changes. If none applies, use project instructions, conventions, and this workflow directly. Read shared guidance once and only references needed for affected code or contracts; consult routing evaluation only for routing checks. Existing test execution alone needs no test-authoring skill. Amy requires no activation announcement or final route report.
 
-During authorized implementation, load [document-agent-context](../../skills/document-agent-context/SKILL.md) only when existing documentation becomes stale or useful facts are established about its already documented subject. Update affected existing topics and routes without reconfirmation. A code edit or existing `AGENTS.md` alone does not trigger documentation work. New maps, areas, topics, and other documentation require a user request; keep maintenance scoped to affected documents.
+### Context Acquisition
+
+Start with the requested behavior, affected production implementation, and its owning contract. Search for relevant symbols and paths before opening related files; read the sections needed to resolve the affected contract, not every sibling or dependency. Expand when evidence reveals another affected boundary or leaves a material uncertainty; stop when implementation and verification have sufficient evidence.
+
+- **Creation:** establish ownership, destination, public API, required owned artifacts, and dependency direction. Search for suitable reusable capabilities; inspect a relevant neighbor only to resolve a project convention not established by instructions or configuration.
+- **Targeted change:** start with the existing object and changed behavior. Inspect owned helpers, types, configuration, and dependencies only where that behavior relies on them. Do not repeat creation-wide discovery or inventory unchanged artifacts.
+- **Consumers:** search usages when inputs, outputs, exports, observable behavior, lifecycle, cache identity, or dependency visibility may affect callers. Read the relevant callers to establish compatibility and necessary adaptations; a purely internal change with an established unchanged contract does not require a consumer inventory.
+- **Related resources:** read styles/tokens for affected presentation, dictionaries for affected user-facing text, DTOs for affected transport/data shapes, and dependency implementation or versions for relied-on semantics or compatibility. Inspect module/import graphs when wiring, ownership, visibility, or dependency edges change or cycles are suspected. File proximity alone is not a trigger.
+
+These limits do not waive architectural contracts. Establish all affected ownership, layer direction, public-entrypoint, validation, security, lifecycle, and error contracts before changing them; unknown impact requires investigation, not an assumption of compatibility. Full normalization applies this process across the agreed object; review applies it across the requested review scope without edits.
+
+### Reference Activation
+
+Skills own activation, exclusions, artifact ownership, reference routes, and expected results. This workflow owns cross-skill scope, authority, context acquisition, documentation access, and verification. Domain references own detailed architectural and technology standards; keep a rule with its owner rather than repeating it in process or completion checklists. Ownership boundary summaries in separate domains remain local when removing them would require another mandatory read.
+
+Skill-specific routes below identify affected subjects, not a bundle to load. Read relevant sections once, reuse loaded guidance, and activate further references only when scope or evidence triggers them. Process and completion steps use the same conditions as each skill's Context and References section; they do not require rediscovery of unchanged contracts.
+
+- **Project architecture:** read for a new object, unclear ownership/placement, or changes to placement, public API boundaries, imports, exports, dependency direction, or wiring. An established local implementation change without those effects does not trigger it.
+- **TypeScript and objects:** read for a new TypeScript object or changes to declarations, signatures, type design, exports, object/file structure, or language/error-handling constructs governed by that reference. Changing only values, query-key members, or an expression within an established shape does not trigger it unless an applicable language/object rule is uncertain. A `.ts`/`.tsx` edit alone is not a trigger; compatible standards still apply to changed code.
+- **Artifact references:** read when the task creates or changes their governed behavior, structure, or contract, or a review must assess it. Read text, styling, persistence, transport, testing, and Storybook references only for those affected subjects under the owning skill's conditions; mere adjacency or an installed library does not activate them.
+
+For requested agent documentation, or when authorized implementation makes existing documentation stale or establishes useful facts about its already documented subject, load [document-agent-context](../../skills/document-agent-context/SKILL.md). That skill owns creation and maintenance boundaries; a code edit or existing `AGENTS.md` alone does not activate it.
 
 Prefer built-in Codex capabilities. Optional process plugins and tools grant no extra permissions and require no additional approvals, workflow artifacts, worktrees, commits, tests, or stories. Their absence does not block otherwise supported work.
 
 ## External Documentation
 
-Start with affected code, consumers, configuration, installed types/source, local documentation, and resolved installed versions (or lockfile if unavailable). Local evidence suffices when it establishes the required contract and behavior without material uncertainty; neighboring usage or types alone do not prove runtime semantics.
+Start with affected code and the task-relevant evidence selected by Context Acquisition: consumers, configuration, installed types/source, local documentation, and resolved installed versions (or lockfile if unavailable). Local evidence suffices when it establishes the required contract and behavior without material uncertainty; neighboring usage or types alone do not prove runtime semantics.
 
 Consult authoritative documentation when requested or when correctness depends on unresolved version-specific behavior, changing remote contracts, current support/compatibility, migration, or gaps/conflicts in local evidence. Use the installed or requested target version, not an inferred dependency-range version or unrelated latest guidance.
 

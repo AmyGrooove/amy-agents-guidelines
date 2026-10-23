@@ -1,10 +1,8 @@
 # TypeScript Testing
 
-Read relevant tests as needed. Run existing safe tests for authorized changes under [shared verification rules](workflow-and-authority.md#completion), without a test-authoring skill or separate confirmation. Create or modify tests only on an explicit request or accepted update offer; execution alone does not authorize source, fixture, or snapshot updates.
-
 Use one main `__tests__/<ObjectName>.test.ts` or `.tsx` file. `describe` uses the object name. Every `it` description is in Russian and states observable behavior. Test-local constants live in that object's `__tests__/static`; repeated cross-test mocks belong in the project's existing root test setup.
 
-Inspect the production contract, test configuration, setup, neighboring tests, and available mocks or fixtures. Prefer observable behavior over implementation details, avoid meaningless snapshot-only coverage, reuse established infrastructure, and do not add a dependency without confirmation. Change testing configuration only when it is directly required by the in-scope test or production task.
+Prefer observable behavior over implementation details, avoid meaningless snapshot-only coverage, and reuse established infrastructure. Change testing configuration only when it is directly required by the in-scope test or production task.
 
 ## Case Discovery and Coverage
 
@@ -26,4 +24,4 @@ Never obtain green results by deleting or skipping valid cases, weakening assert
 
 ## Completion
 
-Review the case map against the tests, imports, types, Russian descriptions, and required file structure. Run the relevant test command when authorized and available; report actual results and any unrun, blocked, or uncovered cases. Recheck affected cases after an authorized fix. Green results alone do not establish coverage or prove that a changed expectation is correct.
+Review the case map against the tests, imports, types, descriptions, and file structure. Green results alone do not establish coverage or prove that a changed expectation is correct.

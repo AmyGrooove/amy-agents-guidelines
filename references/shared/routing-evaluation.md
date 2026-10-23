@@ -34,7 +34,7 @@ node scripts/evaluateRouting.mjs run $runDir route-project-changes-04
 node scripts/evaluateRouting.mjs results $runDir
 ~~~
 
-For an authorized model smoke run, use a different new output directory:
+Keep model smoke runs a separate opt-in pre-release step, outside local checks and plugin installation. For an authorized run, use a different new output directory:
 
 ~~~powershell
 node scripts/evaluateRouting.mjs smoke $smokeDir
@@ -86,7 +86,7 @@ This separate one-case execution fixture uses route-project-changes-01 with conc
 - [design-typescript-project-07] Negative: «Куда положить этот hook?» Expected: placement skill.
 - [design-typescript-project-08] Negative: «Настрой Docker для API». Expected: outside automatic plugin scope.
 - [design-typescript-project-09] Edge: «Создай frontend и backend с нуля». Expected: project skill; design two independent projects.
-- [design-typescript-project-10] Edge: «Переведи существующий Vite-проект на Next.js». Expected: not inception; separate broad architectural confirmation.
+- [design-typescript-project-10] Edge: «Переведи существующий Vite-проект на Next.js». Expected: not inception; the migration is authorized, inspect existing contracts and clarify only unresolved material architecture or scope decisions.
 - [design-typescript-project-11] Negative: "Design only layers, aliases, and public APIs for a new Vite React project; components, rendering, client boundaries, and styles are outside the task". Expected: design-typescript-project for read-only design; project architecture, no React or SCSS reference, no artifact skills or router.
 - [design-typescript-project-12] Positive: "Design a new frontend with components, client boundaries, tokens, and global SCSS infrastructure; do not create files". Expected: design-typescript-project; project architecture plus React and SCSS references; no writing router.
 - [design-typescript-project-13] Positive: "Design a minimal NestJS API without persistence; do not create files". Expected: design-typescript-project with NestJS reference; no Mongoose reference or entity skill.
@@ -150,7 +150,7 @@ This separate one-case execution fixture uses route-project-changes-01 with conc
 - [develop-react-component-09] Edge: «Измени только `Button.module.scss`». Expected: component because the stylesheet is owned.
 - [develop-react-component-10] Edge: «Добавь компонент и story». Expected: component plus Storybook.
 - [develop-react-component-11] Review: «Сделай ревью компонента `Button`». Expected: component skill; no source edits, confirmed behavior/contract findings are separate from personal-standard deviations.
-- [develop-react-component-12] Edge: «Исправь обработчик старого `Button`, не меняя его структуру целиком». Expected: component; change only the handler and necessary consumers, not extract a hook solely for normalization. References: TypeScript and React.
+- [develop-react-component-12] Edge: «Исправь обработчик старого `Button`, не меняя его структуру целиком». Expected: component; change only the handler and necessary consumers, not extract a hook solely for normalization. Read React for affected handler semantics; TypeScript only when the shared declaration, structure, or language-construct conditions apply.
 - [develop-react-component-13] Edge: «Создай новый `Button`». Expected: component; apply the full applicable standard to the new object and only necessary artifacts. References: TypeScript, React, and SCSS when styling is required.
 - [develop-react-component-14] Edge: «Приведи production-часть `Button` к стандартам». Expected: component; normalize the agreed production object, read relevant tests/stories as needed; run existing safe tests for the authorized change; do not change tests or run/change Storybook without separate authorization.
 - [develop-react-component-15] Edge: «Добавь props-компонент с чистым `useBadge`». Expected: component; owned hook is required, but `use client` is not added solely because the hook name begins with `use`.
@@ -186,7 +186,7 @@ This separate one-case execution fixture uses route-project-changes-01 with conc
 - [develop-tanstack-query-api-12] Edge: «В проекте нет `fetchData`». Expected: inspect equivalents and consumers; add only the smallest authorized infrastructure or request a decision when it would be broad.
 - [develop-tanstack-query-api-13] Edge: «Создать самостоятельную `loadProfile` без React и TanStack Query». Expected: TypeScript object; query skill не активируется, hook не добавляется.
 - [develop-tanstack-query-api-14] Edge: «Исправить только raw request внутри `useGetProfile`». Expected: TanStack Query API skill, несмотря на отсутствие изменений hook.
-- [develop-tanstack-query-api-15] Negative: "Change only the query key in useGetProfile; HTTP request, response, error, and transport semantics remain unchanged". Expected: develop-tanstack-query-api; TypeScript and TanStack Query references, no backend contracts reference or backend skill.
+- [develop-tanstack-query-api-15] Negative: "Change only the query key in useGetProfile; HTTP request, response, error, and transport semantics remain unchanged". Expected: develop-tanstack-query-api; read TanStack Query for key completeness and cache/invalidation impact, no backend contracts reference, backend source/DTO inspection, or backend skill. TypeScript only when the shared declaration, structure, or language-construct conditions apply.
 - [develop-tanstack-query-api-16] Positive: "Fix HTTP error mapping in the raw request of useGetProfile according to the backend contract". Expected: develop-tanstack-query-api with backend contracts reference; no endpoint skill unless server behavior also changes.
 
 
@@ -250,7 +250,7 @@ This separate one-case execution fixture uses route-project-changes-01 with conc
 - [develop-mongoose-entity-02] Positive: «Исправь `toJSON` у схемы User». Expected: entity.
 - [develop-mongoose-entity-03] Positive: «Добавь подтверждённый уникальный индекс email». Expected: entity.
 - [develop-mongoose-entity-04] Indirect: «Нужно хранить комментарии в MongoDB и читать их через отдельный repository». Expected: entity; confirm consequential schema details when necessary.
-- [develop-mongoose-entity-05] Indirect: «У профиля должна появиться дата последней активности». Expected: entity and schema confirmation unless context is explicit enough.
+- [develop-mongoose-entity-05] Indirect: «У профиля должна появиться дата последней активности». Expected: entity; the field change is authorized, clarify only unresolved field semantics or consequential persistence details.
 - [develop-mongoose-entity-06] Negative: «Добавь GET `/comments`». Expected: endpoint.
 - [develop-mongoose-entity-07] Negative: «Создай response DTO пользователя». Expected: endpoint.
 - [develop-mongoose-entity-08] Negative: «Исправь общий BaseMongoRepository». Expected: Nest infrastructure module.
@@ -298,7 +298,7 @@ This separate one-case execution fixture uses route-project-changes-01 with conc
 
 ## Implementation Simplicity Cases
 
-These cases also exercise implementation choice and necessity review. Routing runs establish only the selected route and stated approach. To establish implementation quality, use the existing execution-quality procedure with representative fixtures and inspect the actual diff; catalog validation alone is insufficient.
+These cases also exercise implementation choice and necessity review. Routing runs establish only the selected route and stated approach. The bounded configuration action check above does not evaluate these implementation cases; confirming implementation quality requires separately authorized representative implementation runs and inspection of their actual diffs.
 
 - [implementation-simplicity-01] Positive: Add a query API for an existing profile endpoint. The installed TanStack Query version and existing fetchData already provide cancellation and typed error propagation. Expected: develop-tanstack-query-api; inspect and reuse those capabilities before coding, retain the raw request/hook object and public exports, and add no duplicate cancellation, cache, error wrapper, or unchanged rethrow.
 - [implementation-simplicity-02] Positive: Add a boolean switch component using the installed accessible primitive. Only its value and change callback are required. Expected: develop-react-component; reuse the primitive through allowed imports and preserve the required props file and owned hook, without an extra adapter, mirrored value state, forwarding-only handler, or speculative configuration.
@@ -321,7 +321,7 @@ These cases also exercise implementation choice and necessity review. Routing ru
 
 ## Scope and Context Cases
 
-- [scope-and-context-cases-01] Edge: «Исправь только вычисление в компоненте, без влияния на стили и тексты». Expected: component; read TypeScript and React, not SCSS or frontend text without actual impact.
+- [scope-and-context-cases-01] Edge: «Исправь только вычисление в компоненте, без влияния на стили и тексты». Expected: component; read React for component-owned logic; TypeScript only when the shared declaration, structure, or language-construct conditions apply. Do not read SCSS, frontend text, styles, or dictionaries without actual impact.
 - [scope-and-context-cases-02] Edge: «Исправь переполнение текста в компоненте». Expected: component; read SCSS because the layout is affected, without activating standalone SCSS for a component-owned module.
 - [scope-and-context-cases-03] Edge: «Добавь поле схемы и верни его из endpoint». Expected: entity plus endpoint; source changes are authorized, but applying a migration to an external database is separate.
 - [scope-and-context-cases-04] Edge: «Исправь production-объект, рядом есть tests/stories». Expected: read them as needed and run existing safe tests; do not change tests or run/change Storybook without authorization, and offer their update last.

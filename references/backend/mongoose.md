@@ -12,6 +12,4 @@ An entity slice owns its schema, entity-specific repository, domain types and he
 - Accept an application-service-owned `ClientSession` where required. A repository never begins, commits, or aborts the transaction implicitly.
 - Never expose a Mongoose document directly through a transport response.
 
-A schema change requires confirmation unless the user's request explicitly describes that change. Collection renames, operationally significant indexes, migrations, and destructive data implications require explicit confirmation.
-
-Static completion requires approved schema options, justified indexes, stable collection ownership, no `_id` or `__v` transport leakage, no repository-owned transaction lifecycle, and minimal public exports.
+Schema changes, collection renames, operationally significant indexes, migrations, and destructive data implications require authorization under the shared workflow. A source schema change does not authorize applying a migration to an external database.

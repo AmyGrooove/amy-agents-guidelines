@@ -1,6 +1,6 @@
 ---
 name: develop-tanstack-query-api
-description: Create, fix, extend, refactor, or review a TanStack Query API object containing its raw request and query or mutation hook. Excludes standalone requests outside TanStack Query API objects, backend endpoints, and generic fetch utilities.
+description: TanStack Query API hooks and their owned raw requests, query keys, and types. Excludes standalone fetch utilities, backend endpoints, and caller-only component changes.
 ---
 
 # Develop TanStack Query API
@@ -13,36 +13,10 @@ Activate for query/mutation hooks and their owned query keys, request/response t
 
 ## Context and References
 
-Inspect the installed TanStack Query version and task-relevant request, keys, authentication hooks, consumers, and target layer. Inspect the backend DTO/error contract when request, response, or error semantics are affected.
+Start with the affected request/hook/key and its cache or HTTP contract. For creation, establish ownership, backend DTO/error contract, request utility, and necessary authentication integration. For a targeted change, inspect the request utility, DTOs, and authentication hooks only when their behavior is relied on or affected; inspect key usages, invalidation, and consumers when cache identity or hook behavior may change. Resolve the installed TanStack Query version for version-dependent semantics. Neighbors serve only unresolved conventions.
 
-Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md), [TanStack Query](../../references/frontend/tanstack-query.md). Read [backend contracts](../../references/backend/backend-contracts.md) when request, response, error, or transport semantics are affected; a key-only change with unchanged HTTP behavior does not require it. Read [project architecture](../../references/shared/project-architecture.md) only when the layer is unclear.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Apply its activation conditions to [TypeScript and objects](../../references/shared/typescript-and-objects.md) and [project architecture](../../references/shared/project-architecture.md). Read [TanStack Query](../../references/frontend/tanstack-query.md) for affected request/hook structure, keys, cache behavior, cancellation, or query/mutation semantics. Read [backend contracts](../../references/backend/backend-contracts.md) for creation or affected request, response, error, or transport semantics. A key-only change with established unchanged HTTP behavior requires neither backend source/DTO inspection nor that reference.
 
 ## Expected Result
 
-Produce a `use<Method><Name>` object exporting its raw request and query or mutation hook with correct types and error flow. For a query, also provide its complete key and signal propagation.
-
-## Process
-
-1. Inspect the backend contract, `fetchData`, keys, and consumers.
-2. Define response and optional body types.
-3. Implement and export the raw request returning the direct DTO.
-4. Choose query or mutation by operation semantics; use HTTP method only as evidence.
-5. For a query, build the complete key and pass TanStack Query's `AbortSignal`; do not impose these requirements on mutation.
-6. Invoke necessary supporting hooks internally.
-7. Update exports and consumers and statically compare both contracts.
-
-## Authority
-
-Choose query versus mutation from operation semantics, include every result-affecting input in a query key, and invoke existing supporting hooks internally. Require confirmation only when not already authorized for backend/public API changes, dependencies, or a new universal error abstraction.
-
-## Prevent
-
-Prevent universal `data` wrappers, manual cancellation controllers, incomplete keys, swallowed errors, duplicated caller wiring, server-cache duplication in Effector, and undeclared `undefined` for `204`.
-
-## Verification and Completion
-
-Complete when the raw request and hook are exported and success/error types match the backend contract; for a query, its key is exact and the supplied signal reaches the request.
-
-## Optional-Capability Fallback
-
-Use installed types, local package documentation, and neighboring API objects. Follow the shared Context7 rules and report unresolved uncertainty rather than guessing.
+Produce one API object exporting its raw request and query or mutation hook. Check HTTP compatibility when creating or changing transport semantics; for a key-only change, check key completeness, cache separation, and relevant invalidation/usages without reopening unchanged backend contracts.

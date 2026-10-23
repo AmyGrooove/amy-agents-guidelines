@@ -1,6 +1,6 @@
 ---
 name: author-scss
-description: Create, change, or review standalone SCSS, global styles, design-token infrastructure, Sass functions, mixins, or responsive resources. Do not use for a component-owned SCSS Module.
+description: Standalone/shared/global SCSS, design tokens, Sass functions, mixins, and responsive resources. Excludes component-owned SCSS Modules and tooling-only configuration.
 ---
 
 # Author SCSS
@@ -9,37 +9,14 @@ description: Create, change, or review standalone SCSS, global styles, design-to
 
 Create, change, or review shared, global, or standalone Sass infrastructure not owned by a component.
 
-Activate for `global.scss`, `reusable.scss`, reset, design tokens, Sass functions/mixins, typography, animation, and responsive resources. Do not activate for component-owned SCSS Modules, Stylelint configuration without an explicit configuration request, or component markup and state classes. Activate only when a shared/global style resource is the primary artifact.
+Activate for `global.scss`, `reusable.scss`, reset, design tokens, Sass functions/mixins, typography, animation, and responsive resources. Do not activate for component-owned SCSS Modules, tooling-only configuration, or component markup and state classes. Activate only when a standalone/shared/global style resource is the primary artifact.
 
 ## Context and References
 
-Inspect the style import graph, tokens, reusable entry, consumers, browser baseline, and project Stylelint configuration. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Read [SCSS](../../references/frontend/scss.md) for style, token, layout, responsive, motion, or cascade work; read [project architecture](../../references/shared/project-architecture.md) only for global or shared placement.
+Start with the affected resource and its emitted CSS or Sass API. For creation, establish shared/global ownership, reusable/global entry integration, and existing suitable tokens/mixins. For a targeted change, read tokens/mixins only where the changed rules rely on them; inspect import/forward edges and consumers when exported Sass APIs, emitted selectors, token values, or cascade may affect them. Check browser baseline for changed CSS support requirements and Stylelint configuration for relevant lint rules. Neighbors serve only unresolved conventions.
+
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Read [SCSS](../../references/frontend/scss.md) for affected style, token, layout, responsive, motion, or cascade contracts. Apply the shared activation conditions to [project architecture](../../references/shared/project-architecture.md).
 
 ## Expected Result
 
-Produce the minimal Sass infrastructure change without cycles, speculative resources, component leakage, or unapproved colors/tokens.
-
-## Process
-
-1. Determine ownership and whether this is genuinely shared/global.
-2. Inspect reusable/global import graphs, tokens, mixins, and consumers.
-3. Check project browser requirements and support for any modern CSS.
-4. Change the direct resource and only real supporting files.
-5. Update forwarding/imports without reverse edges.
-6. Review cascade, responsive behavior, units, and reduced motion.
-
-## Authority
-
-Use supported modern CSS with necessary fallback, existing tokens/mixins, and a resource directory only when it contains a real file. Require confirmation only when not already authorized for a new color/token, CSS Layers, new global style category, or browser-baseline change.
-
-## Prevent
-
-Prevent `!important` by default, literal colors outside token definitions, reverse imports into `reusable.scss`, excessive nesting, component styles in global resources, speculative folders, and critical unsupported selectors without fallback. Allow a narrowly scoped `!important` only for justified third-party integration after ordinary cascade and styling APIs are insufficient; report its reason in the result.
-
-## Verification and Completion
-
-Complete when the graph is acyclic, `reusable.scss` emits no CSS, global styles are not a component collection, and values, units, selectors, responsive behavior, and motion follow the reference.
-
-## Optional-Capability Fallback
-
-Use Browserslist, Stylelint configuration, existing resources, and stable local Sass behavior. Report unsupported critical CSS uncertainty; missing optional capabilities do not justify configuration or dependency changes.
+Produce the minimal shared/global Sass change and necessary import/forward updates. Verify the affected cascade, emitted CSS, exported Sass API, browser support, responsive behavior, and motion. Report any justified third-party `!important` exception.

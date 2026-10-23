@@ -1,6 +1,6 @@
 ---
 name: develop-mongoose-entity
-description: Create, fix, extend, refactor, or review a Mongoose domain entity, including its schema, entity-specific repository, domain types, helpers, and entity module wiring. Excludes HTTP controllers, request DTOs, and endpoint services.
+description: Mongoose entities, schemas, indexes, entity repositories, domain types/helpers, and entity module wiring. Excludes endpoint DTOs/services/controllers and shared Mongo infrastructure.
 ---
 
 # Develop Mongoose Entity
@@ -9,38 +9,14 @@ description: Create, fix, extend, refactor, or review a Mongoose domain entity, 
 
 Create, change, or review a Mongoose domain entity and its persistence-owned slice.
 
-Activate for schemas, collection options, indexes, virtuals, entity repositories, domain types/helpers, and entity module wiring. Do not activate for request/response DTOs, controllers, generic Mongo infrastructure, or endpoint response mapping. Own entity module wiring but not endpoint modules. A schema change requires confirmation unless the request explicitly asks for it.
+Activate for schemas, collection options, indexes, virtuals, entity repositories, domain types/helpers, and entity module wiring. Do not activate for request/response DTOs, controllers, generic Mongo infrastructure, or endpoint response mapping. Own entity module wiring but not endpoint modules.
 
 ## Context and References
 
-Inspect schemas/plugins, collection naming, repository base, real queries/sorts/constraints, consumers, and installed MongoDB/Mongoose/Nest integration versions. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/shared/project-architecture.md), [TypeScript and objects](../../references/shared/typescript-and-objects.md), and [Mongoose](../../references/backend/mongoose.md).
+Start with the affected schema/repository operation and persistence contract. For creation, establish collection conventions, schema/plugin defaults, repository base, module integration, and actual query/index needs. For a targeted change, follow only relevant fields, plugins, base methods, queries/sorts, sessions, and consumers; inspect them when data compatibility, constraints, results, or transaction behavior may change. Resolve installed MongoDB/Mongoose/Nest integration versions when relied-on semantics require them. Neighbors serve only unresolved conventions.
+
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Apply its activation conditions to [project architecture](../../references/shared/project-architecture.md) and [TypeScript and objects](../../references/shared/typescript-and-objects.md). Read [Mongoose](../../references/backend/mongoose.md) for affected schema/entity structure, persistence, repository, index, session, or integration contracts. Read [NestJS](../../references/backend/nest.md) when entity module/provider structure or wiring is affected; ownership remains with this skill.
 
 ## Expected Result
 
-Produce a complete entity slice with explicit collection, approved schema options, justified indexes, entity-specific repository, module wiring, and minimal public API.
-
-## Process
-
-1. Determine domain and persistence ownership.
-2. Inspect schema, repository, plugins, queries, consumers, and collection conventions.
-3. Establish the persistence contract and confirm any non-explicit schema change.
-4. Implement schema options, fields, virtuals, and only proven indexes.
-5. Implement or adapt the entity-specific repository and session-aware operations.
-6. Add necessary domain types/helpers and wire the entity module.
-7. Review transport leakage, index justification, transaction ownership, and exports.
-
-## Authority
-
-For a new entity, apply approved timestamps, version-key, collection, and `toJSON` defaults; reuse a suitable generic repository behind an entity boundary; choose internal structure. Require confirmation only when not already authorized for non-explicit schema/migration changes, collection renames, operationally significant indexes, destructive data implications, or dependencies. A source schema change does not authorize applying a migration to an external database.
-
-## Prevent
-
-Prevent speculative indexes, Mongoose documents in transport responses, repository-owned transactions, generic repository access without an entity boundary, and `_id` or `__v` leakage.
-
-## Verification and Completion
-
-Complete when schema options match the contract, every index maps to a real operation or constraint, repositories accept rather than own sessions/transactions, and public exports are minimal.
-
-## Optional-Capability Fallback
-
-Use installed Mongoose/Nest integration types and neighboring entities. Do not guess migration consequences, collection behavior, or index requirements; report material uncertainty and request a decision.
+Produce the entity slice with its schema, justified indexes, entity-specific repository, domain artifacts, module wiring, and public API. Verify affected persistence compatibility and session behavior.

@@ -12,7 +12,7 @@
 - `pages` or `routes`: screens and route-level composition.
 - `app`: initialization and framework adapters.
 
-Next.js uses `src/app` as a thin App Router adapter and keeps route implementation in `src/routes`. Server Components are the default; add `use client` only at the smallest boundary needing React state, effects, handlers, browser APIs, custom client hooks, or a client-only library.
+Next.js uses `src/app` as a thin App Router adapter and keeps route implementation in `src/routes`. Rendering and client-boundary rules belong to the React reference when those subjects are in scope.
 
 Vite uses `src/main.tsx`, `src/pages`, and a `RoutesProvider` composition boundary. Lazily load non-trivial top-level route pages by default; small fallbacks and route shells may remain eager.
 

@@ -1,6 +1,6 @@
 ---
 name: develop-nest-endpoint
-description: Create, fix, extend, refactor, or review a NestJS HTTP endpoint slice, including its controller, application service, input and response DTOs, mapping, and endpoint module wiring. Excludes persistence-schema ownership and standalone infrastructure modules.
+description: NestJS HTTP endpoints, controllers, request/response DTOs, application services, mapping, and endpoint module wiring. Excludes entity schemas/repositories and standalone infrastructure.
 ---
 
 # Develop Nest Endpoint
@@ -13,36 +13,10 @@ Activate for routes, controllers, input/response DTOs, endpoint services, valida
 
 ## Context and References
 
-Inspect route conventions, global validation, versioning/prefix configuration, repositories, auth/decorators, error contract, Swagger setup, and neighboring endpoints.
+Start with the endpoint implementation and affected HTTP/application contract. For creation, establish route/prefix/version, validation, auth/error conventions, Swagger setup, repository capabilities, and module integration. For a targeted change, inspect DTOs/mapping for affected inputs or outputs, guards/decorators for affected auth, repositories for relied-on data/session behavior, and global configuration only where it governs the affected behavior. Inspect neighboring endpoints only for unresolved conventions; inspect consumers when the public contract may change.
 
-Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/shared/project-architecture.md), [TypeScript and objects](../../references/shared/typescript-and-objects.md), [NestJS](../../references/backend/nest.md), [backend contracts](../../references/backend/backend-contracts.md), and [backend text](../../references/backend/backend-text.md). Read [Mongoose](../../references/backend/mongoose.md) only to understand an existing persistence contract; a schema change belongs to the entity skill.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Apply its activation conditions to [project architecture](../../references/shared/project-architecture.md) and [TypeScript and objects](../../references/shared/typescript-and-objects.md). Read [NestJS](../../references/backend/nest.md) for affected controller/service/DTO structure, validation, auth, lifecycle, or wiring; [backend contracts](../../references/backend/backend-contracts.md) for creation or affected request/response/error semantics; and [backend text](../../references/backend/backend-text.md) for affected messages. Read [Mongoose](../../references/backend/mongoose.md) only when relied-on persistence/session semantics need investigation; schema changes belong to the entity skill.
 
 ## Expected Result
 
-Produce a complete endpoint slice with a thin controller, application service, validated DTOs, response mapping, explicit transport/error contracts, OpenAPI metadata, and module wiring.
-
-## Process
-
-1. Establish the HTTP route, input, success, error, auth, and version contract.
-2. Inspect neighboring endpoints and global framework configuration without changing it.
-3. Define DTOs, validation, ObjectId conversion, and OpenAPI metadata.
-4. Inspect repository capabilities and persistence contracts.
-5. Implement the application service, including transaction/session lifecycle when a transaction is required by the operation contract and used.
-6. Implement the thin controller and explicit response mapping.
-7. Add endpoint module wiring and statically review all boundaries.
-
-## Authority
-
-Choose DTO decomposition, reuse existing pipes/decorators, own transaction lifecycle in the application service when a transaction is required by the operation contract and used, and make ordinary in-scope project configuration changes, including `.env`. Require confirmation only when not already authorized for public API changes, schema/database changes, global validation, route prefix/versioning, material infrastructure or shared environment-contract changes, secret management, or dependencies.
-
-## Prevent
-
-Prevent controller business logic, Mongoose documents in responses, implicit ObjectId guessing, universal `data` wrappers, repository-owned transactions, unstable error envelopes, and persistence-schema ownership inside the endpoint.
-
-## Verification and Completion
-
-Complete when the controller is thin, inputs are validated, response DTO and error envelope are explicit, ObjectId boundaries are correct, OpenAPI matches runtime behavior, and the use case owns its transaction when a transaction is required by the operation contract and used.
-
-## Optional-Capability Fallback
-
-Use installed Nest, Fastify, validation, Swagger, and Mongoose types plus neighboring endpoints. Follow the shared Context7 rules; otherwise report uncertainty rather than changing global configuration.
+Produce the endpoint slice: controller, application service, validated input and response DTOs, response mapping, OpenAPI metadata, and module wiring. Verify the affected HTTP/application contract, including persistence/session integration when used.

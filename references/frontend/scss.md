@@ -31,8 +31,4 @@ Prefer supported modern CSS. Use `:has` and `:focus-within` when they reduce com
 
 Provide reduced-motion behavior for non-essential or automatic animation, including equivalent runtime checks for JavaScript motion.
 
-Do not introduce CSS Layers without a separate decision for a concrete cascade problem. Preserve coherent existing layers. Apply these standards within the task; normalize the whole object's styles only on a separate request to bring it to standards.
-
-## Static Review
-
-Confirm the Sass graph is acyclic, `reusable.scss` emits no CSS, global resources contain no component collection, selectors and state ownership are correct, new resources are real, and colors, units, nesting, browser support, and reduced motion follow this contract.
+Keep the Sass graph acyclic. Do not introduce CSS Layers without a separate decision for a concrete cascade problem. Preserve coherent existing layers.

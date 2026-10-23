@@ -1,6 +1,6 @@
 ---
 name: place-typescript-object
-description: Determine or review the owning layer, destination, public API, and allowed dependencies for a TypeScript object. Use when placement or architecture of an individual object is requested. Excludes complete project inception and routine implementation with an obvious destination.
+description: TypeScript object placement, layer ownership, public API/dependency boundaries, or cycle analysis. Excludes project inception and routine implementation with an established destination.
 ---
 
 # Place TypeScript Object
@@ -13,35 +13,10 @@ Activate for where an object belongs, layer ownership, public API, cycle analysi
 
 ## Context and References
 
-Inspect layers, consumers, ownership, reuse, aliases, object indexes, and the import graph.
+Start with the object's responsibility, proposed/current public boundary, and relevant dependencies. For a new object, establish intended consumers and valid layers; for an existing object, search actual usages and trace only graph edges needed to assess the requested placement or cycle. Inspect aliases, indexes, reuse candidates, and neighboring objects only to resolve destination, visibility, or dependency constraints.
 
-Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [project architecture](../../references/shared/project-architecture.md). Read one domain reference only when framework ownership materially determines placement. Never load routing evaluation during ordinary work.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once and [project architecture](../../references/shared/project-architecture.md) for the requested placement/import boundaries. Read a domain reference only when framework ownership materially determines placement; apply the shared activation conditions to [TypeScript and objects](../../references/shared/typescript-and-objects.md) when object/file or public export design is in scope. Never load routing evaluation during ordinary work.
 
 ## Expected Result
 
-Return one recommended destination, allowed dependencies, minimal public API, and required import migrations. If the user requests the move, also apply the owning artifact skill.
-
-## Process
-
-1. Find the object, consumers, and current public boundary.
-2. Determine who owns its meaning and whether it is portable or project-specific.
-3. Trace permitted dependency direction and detect cycles.
-4. Compare only valid destinations.
-5. Select the lowest minimal location that preserves ownership and acyclic dependencies.
-6. Describe public exports and in-scope import migration.
-
-## Authority
-
-Choose the destination when ownership and dependency direction leave one valid result. Require confirmation only when not already authorized for equally valid locations with different public contracts, a new layer or backend category, a broad move, or a public API change.
-
-## Prevent
-
-Prevent backward or deep imports, mega-barrels, object self-imports through `index.ts`, hidden cycles, and project-specific code in `shared`.
-
-## Verification and Completion
-
-Complete when every proposed dependency follows direction, the public API is minimal, no cycle is hidden through a deep import, and any move authority is explicit.
-
-## Optional-Capability Fallback
-
-Use the local import graph, aliases, project instructions, and neighboring objects. Missing optional capabilities do not block a unique locally supported result; ask only when materially different valid placements remain.
+Return one recommended destination, allowed dependencies, minimal public API, and required import migrations, supported by ownership and an acyclic dependency graph. If the user requests the move, also apply the owning artifact skill.

@@ -1,7 +1,5 @@
 # Storybook
 
-Read relevant stories as needed without separate approval. Follow the shared final-offer workflow before updating stories. Update stories only after an explicit story request or accepted update offer; create new stories only when explicitly requested.
-
 Only a top-level component gets `stories/<ComponentName>.stories.tsx`; internal components never get stories. Use `stories/static` only for story-owned constants.
 
 The story file must:
@@ -17,4 +15,4 @@ The story file must:
 - add meaningful distinct per-state or per-prop stories;
 - use a custom `render` only when necessary.
 
-Static completion requires valid installed Storybook types, complete prop documentation, distinct scenarios, and no production API change made merely for the story without confirmation.
+Use the installed Storybook types. A story request does not authorize a production API change merely for the story.

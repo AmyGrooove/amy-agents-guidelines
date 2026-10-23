@@ -4,7 +4,7 @@
 
 Use `use<Name>` only when logic needs React hooks or lifecycle semantics; otherwise use a function object. The primary file is `core/use<Name>.ts`. Add types, static values, helpers, hooks, stores, and `index.ts` only when needed.
 
-For a substantial hook, order props destructuring, hook calls, variables, functions, effects, then return. Keep effect dependencies stable and provide cleanup for subscriptions and listeners. In Next.js, place the smallest required client boundary around consumers.
+Follow the Rules of Hooks. For a substantial hook, order props destructuring, hook calls, variables, functions, effects, then return. Keep effect dependencies stable and provide cleanup for subscriptions and listeners; introduce a manual `AbortController` only when the hook's cancellation contract requires it.
 
 ## Component Objects
 
@@ -26,8 +26,6 @@ An internal component may live under the parent's `core` when decomposition or r
 
 The `hocs` folder name is intentional for specialized wrappers such as `NumberInput` or `SingleToggle`. Such objects follow the same component rules and compose the primary component rather than duplicating it.
 
-Component-owned hooks, stores, helpers, internal components, and SCSS Modules remain owned by the component rather than activating standalone artifact rules.
-
 ## Primitives, Accessibility, and Client Boundaries
 
 Use a suitable already installed headless or UI primitive before duplicating it. If none exists, implement locally unless the user explicitly asks to consider a new dependency.
@@ -35,7 +33,3 @@ Use a suitable already installed headless or UI primitive before duplicating it.
 Use semantic HTML, keyboard interaction, visible focus, and correct label, error, and description relationships. Do not invent additional ARIA conventions beyond the concrete interaction.
 
 In Next.js App Router, Server Components are the default. Add `use client` at the smallest boundary requiring state, effects, handlers, browser APIs, client hooks, or a client-only library. A new boundary that materially changes public architecture requires confirmation.
-
-## Completion
-
-Review props and exports, component/hook separation, owned artifacts, semantic DOM, keyboard behavior, focus, labels, installed primitive reuse, and smallest client boundary. Read relevant stories and tests as needed; follow the shared final-offer workflow before updating them.
