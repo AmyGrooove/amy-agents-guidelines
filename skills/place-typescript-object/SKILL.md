@@ -1,13 +1,13 @@
 ---
 name: place-typescript-object
-description: Determine or review the owning layer, destination, public API, and allowed dependencies for a TypeScript object. Use when placement or architecture is the requested result, not for routine implementation with an obvious destination.
+description: Determine or review the owning layer, destination, public API, and allowed dependencies for a TypeScript object. Use when placement or architecture of an individual object is requested. Excludes complete project inception and routine implementation with an obvious destination.
 ---
 
 # Place TypeScript Object
 
 ## Responsibility and Activation
 
-Determine or review ownership, layer, directory, public API, and allowed dependencies when placement itself is the requested result. Review reports confirmed findings without edits.
+Determine or review ownership, layer, directory, public API, and allowed dependencies when placement itself is the requested result.
 
 Activate for where an object belongs, layer ownership, public API, cycle analysis, or moving an object between layers. Do not activate for routine implementation with an obvious destination, complete project inception, or a simple import repair owned by the affected artifact. It is not a mandatory preflight or general router; use it only for an independent placement result or when two materially different destinations remain.
 
@@ -32,7 +32,7 @@ Return one recommended destination, allowed dependencies, minimal public API, an
 
 ## Authority
 
-Choose the destination when ownership and dependency direction leave one valid result. Require confirmation for equally valid locations with different public contracts, a new layer or backend category, a broad move, or a public API change.
+Choose the destination when ownership and dependency direction leave one valid result. Require confirmation only when not already authorized for equally valid locations with different public contracts, a new layer or backend category, a broad move, or a public API change.
 
 ## Prevent
 

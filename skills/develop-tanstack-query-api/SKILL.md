@@ -1,21 +1,21 @@
 ---
 name: develop-tanstack-query-api
-description: Create, fix, extend, refactor, or review a TanStack Query API object containing its raw request and query or mutation hook. Excludes backend endpoints and generic fetch utilities.
+description: Create, fix, extend, refactor, or review a TanStack Query API object containing its raw request and query or mutation hook. Excludes standalone requests outside TanStack Query API objects, backend endpoints, and generic fetch utilities.
 ---
 
 # Develop TanStack Query API
 
 ## Responsibility and Activation
 
-Create, change, or review one frontend API object containing its raw request and TanStack Query hook. Review reports confirmed findings without edits.
+Create, change, or review one frontend API object containing its raw request and TanStack Query hook.
 
-Activate for query/mutation hooks, query keys, request/response types, cancellation, and raw frontend requests. Do not activate for backend endpoints, generic `fetchData`, Effector state, or a component that only consumes a correct hook. Own the response/body types, raw request, hook, and key for one API object.
+Activate for query/mutation hooks and their owned query keys, request/response types, cancellation, and raw request functions within a TanStack Query API object. Do not activate for backend endpoints, generic `fetchData`, Effector state, or a component that only consumes a correct hook. Do not activate for standalone requests outside a TanStack Query API object, even when TanStack Query is installed. Route them by actual artifact ownership; use the TypeScript object skill only when no more specific owner applies. Own the response/body types, raw request, hook, and key for one API object.
 
 ## Context and References
 
-Inspect the installed TanStack Query version, `fetchData`, backend DTO/error contract, existing keys, supporting authentication hooks, consumers, and target layer.
+Inspect the installed TanStack Query version and task-relevant request, keys, authentication hooks, consumers, and target layer. Inspect the backend DTO/error contract when request, response, or error semantics are affected.
 
-Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md), [TanStack Query](../../references/frontend/tanstack-query.md), and [backend contracts](../../references/backend/backend-contracts.md). Read [project architecture](../../references/shared/project-architecture.md) only when the layer is unclear.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md), [TanStack Query](../../references/frontend/tanstack-query.md). Read [backend contracts](../../references/backend/backend-contracts.md) when request, response, error, or transport semantics are affected; a key-only change with unchanged HTTP behavior does not require it. Read [project architecture](../../references/shared/project-architecture.md) only when the layer is unclear.
 
 ## Expected Result
 
@@ -33,7 +33,7 @@ Produce a `use<Method><Name>` object exporting its raw request and query or muta
 
 ## Authority
 
-Choose query versus mutation from operation semantics, include every result-affecting input in a query key, and invoke existing supporting hooks internally. Require confirmation for backend/public API changes, dependencies, or a new universal error abstraction.
+Choose query versus mutation from operation semantics, include every result-affecting input in a query key, and invoke existing supporting hooks internally. Require confirmation only when not already authorized for backend/public API changes, dependencies, or a new universal error abstraction.
 
 ## Prevent
 

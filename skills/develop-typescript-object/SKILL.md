@@ -7,13 +7,13 @@ description: Create, fix, extend, refactor, or review a standalone TypeScript ob
 
 ## Responsibility and Activation
 
-Create, change, or review an ordinary standalone non-framework TypeScript object. Review reports confirmed findings without edits.
+Create, change, or review an ordinary standalone non-framework TypeScript object.
 
 Activate for functions, types, constants, generic utilities, non-framework decorators, and their local files. Do not activate for component-owned helpers, React hooks, query API objects, Nest decorators, DTOs, schemas, modules, tests, or stories. Use this only as the strict fallback when no framework-specific or owning artifact covers the object.
 
 ## Context and References
 
-Inspect consumers, neighboring objects, types, constants, public index, installed configuration, and reusable utilities. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md). No other reference is required.
+Inspect consumers, neighboring objects, types, constants, public index, installed configuration, and reusable utilities. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [TypeScript and objects](../../references/shared/typescript-and-objects.md). Read [project architecture](../../references/shared/project-architecture.md) when placement, ownership, public API boundaries, or imports change. For a local implementation change without those effects, no additional reference is required.
 
 ## Expected Result
 
@@ -31,7 +31,7 @@ Create a complete object folder or minimal complete modification with a correct 
 
 ## Authority
 
-Choose internal file names, object-local extraction, and reuse of an existing suitable utility. Require confirmation for breaking signatures, broad rename or deletion, and dependencies.
+Choose internal file names, object-local extraction, and reuse of an existing suitable utility. Require confirmation only when not already authorized for breaking signatures, broad rename or deletion, and dependencies.
 
 ## Prevent
 

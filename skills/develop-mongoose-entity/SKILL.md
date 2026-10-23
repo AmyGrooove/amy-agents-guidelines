@@ -7,7 +7,7 @@ description: Create, fix, extend, refactor, or review a Mongoose domain entity, 
 
 ## Responsibility and Activation
 
-Create, change, or review a Mongoose domain entity and its persistence-owned slice. Review reports confirmed findings without edits.
+Create, change, or review a Mongoose domain entity and its persistence-owned slice.
 
 Activate for schemas, collection options, indexes, virtuals, entity repositories, domain types/helpers, and entity module wiring. Do not activate for request/response DTOs, controllers, generic Mongo infrastructure, or endpoint response mapping. Own entity module wiring but not endpoint modules. A schema change requires confirmation unless the request explicitly asks for it.
 
@@ -31,7 +31,7 @@ Produce a complete entity slice with explicit collection, approved schema option
 
 ## Authority
 
-For a new entity, apply approved timestamps, version-key, collection, and `toJSON` defaults; reuse a suitable generic repository behind an entity boundary; choose internal structure. Require confirmation for non-explicit schema/migration changes, collection renames, operationally significant indexes, destructive data implications, or dependencies.
+For a new entity, apply approved timestamps, version-key, collection, and `toJSON` defaults; reuse a suitable generic repository behind an entity boundary; choose internal structure. Require confirmation only when not already authorized for non-explicit schema/migration changes, collection renames, operationally significant indexes, destructive data implications, or dependencies. A source schema change does not authorize applying a migration to an external database.
 
 ## Prevent
 

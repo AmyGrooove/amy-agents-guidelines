@@ -14,9 +14,17 @@
 - Prefer `async`/`await`. Use promise chains only when clearer or required.
 - Catch only to add context, map at an explicit boundary, recover, or perform required cleanup. Preserve correct domain/framework errors and never swallow unknown failures; rethrow or preserve the cause in the approved contract.
 
+## Implementation Simplicity
+
+Use direct domain logic for the current contract. Introduce a helper or abstraction when it owns a meaningful responsibility, removes actual duplication, or enforces an applicable boundary; do not extract code solely because it can be named or may be reused later.
+
+Validate untrusted input at its owning boundary. Repeat a check, normalization, conversion, or fallback only when a distinct trust boundary or supported contract requires it. Preserve checks needed at runtime; a TypeScript type alone does not validate external data. Keep supported absence and error behavior explicit rather than replacing failures with invented defaults.
+
+Apply the required object/file structure to necessary artifacts. Separate type or constant files and other required structural conventions remain valid; they do not justify new runtime layers, wrapper functions, intermediate objects, or optional folders.
+
 ## Types, Naming, and Exports
 
-- Keep types in separate files in normal application code, normally one type or interface per file.
+- DTOs, types, and interfaces may share a file when they form a cohesive definition. Split independent definitions into separate files when the separation is logically meaningful and improves readability. Keep nested or supporting definitions used only by that DTO or type in the same file; do not extract them solely to satisfy one object per file.
 - Prefer `interface` for object shapes, named `IName`. Put required properties first, a blank line, then optional properties.
 - Use `type` for unions and shapes unsuitable for interfaces, named `TName`; union names are singular.
 - Constants use `SCREAMING_SNAKE_CASE`, normally one per file.
@@ -27,7 +35,7 @@
 
 ## Files and Object Shape
 
-Normally keep one object per file. Specialized object rules take priority within their object: a TanStack Query API may keep its raw request and hook together. Other accepted cohesive exceptions are public index barrels, Storybook story files, Nest module metadata, Effector models, and framework/configuration entry points.
+Normally keep one object per file, with the DTO, type, and interface grouping rules above as an exception. Specialized object rules take priority within their object: a TanStack Query API may keep its raw request and hook together. Other accepted cohesive exceptions are public index barrels, Storybook story files, Nest module metadata, Effector models, and framework/configuration entry points.
 
 Create only folders that contain real files:
 

@@ -38,4 +38,4 @@ In Next.js App Router, Server Components are the default. Add `use client` at th
 
 ## Completion
 
-Review props and exports, component/hook separation, owned artifacts, semantic DOM, keyboard behavior, focus, labels, installed primitive reuse, and smallest client boundary. For stories and tests, follow the shared existence-only and final-offer workflow.
+Review props and exports, component/hook separation, owned artifacts, semantic DOM, keyboard behavior, focus, labels, installed primitive reuse, and smallest client boundary. Read relevant stories and tests as needed; follow the shared final-offer workflow before updating them.

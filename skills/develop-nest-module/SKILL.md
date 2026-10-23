@@ -7,7 +7,7 @@ description: Create, fix, extend, refactor, or review a standalone NestJS infras
 
 ## Responsibility and Activation
 
-Create, change, or review standalone NestJS infrastructure/composition and its owned support objects when no more specific backend skill applies. Review reports confirmed findings without edits.
+Create, change, or review standalone NestJS infrastructure/composition and its owned support objects when no more specific backend skill applies.
 
 Activate for infrastructure and composition modules, standalone services, guards, pipes, filters, and Nest decorators outside entity or endpoint ownership. Do not activate for entity schemas/repositories, controllers/endpoint DTOs, or generic pure helpers. This is the Nest-owned fallback; entity and endpoint skills take priority.
 
@@ -32,7 +32,7 @@ Produce a minimal module slice with a thin metadata file, required providers/sup
 
 ## Authority
 
-Choose provider placement, module-local folders, and ordinary in-scope project configuration changes, including `.env`, within the established architecture. Require confirmation for a backend folder category, material infrastructure or shared environment-contract change, secret management, dependency, global provider/pipeline, or public API change.
+Choose provider placement, module-local folders, and ordinary in-scope project configuration changes, including `.env`, within the established architecture. Require confirmation only when not already authorized for a backend folder category, material infrastructure or shared environment-contract change, secret management, dependency, global provider/pipeline, or public API change.
 
 ## Prevent
 

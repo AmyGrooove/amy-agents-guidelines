@@ -7,13 +7,13 @@ description: Create, change, or review standalone SCSS, global styles, design-to
 
 ## Responsibility and Activation
 
-Create, change, or review shared, global, or standalone Sass infrastructure not owned by a component. Review reports confirmed findings without edits.
+Create, change, or review shared, global, or standalone Sass infrastructure not owned by a component.
 
 Activate for `global.scss`, `reusable.scss`, reset, design tokens, Sass functions/mixins, typography, animation, and responsive resources. Do not activate for component-owned SCSS Modules, Stylelint configuration without an explicit configuration request, or component markup and state classes. Activate only when a shared/global style resource is the primary artifact.
 
 ## Context and References
 
-Inspect the style import graph, tokens, reusable entry, consumers, browser baseline, and project Stylelint configuration. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Consult only task-relevant references from: [SCSS](../../references/frontend/scss.md). Read [project architecture](../../references/shared/project-architecture.md) only for global or shared placement.
+Inspect the style import graph, tokens, reusable entry, consumers, browser baseline, and project Stylelint configuration. Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Read [SCSS](../../references/frontend/scss.md) for style, token, layout, responsive, motion, or cascade work; read [project architecture](../../references/shared/project-architecture.md) only for global or shared placement.
 
 ## Expected Result
 
@@ -30,7 +30,7 @@ Produce the minimal Sass infrastructure change without cycles, speculative resou
 
 ## Authority
 
-Use supported modern CSS with necessary fallback, existing tokens/mixins, and a resource directory only when it contains a real file. Require confirmation for a new color/token, CSS Layers, new global style category, or browser-baseline change.
+Use supported modern CSS with necessary fallback, existing tokens/mixins, and a resource directory only when it contains a real file. Require confirmation only when not already authorized for a new color/token, CSS Layers, new global style category, or browser-baseline change.
 
 ## Prevent
 

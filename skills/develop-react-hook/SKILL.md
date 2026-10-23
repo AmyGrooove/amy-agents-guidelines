@@ -7,7 +7,7 @@ description: Create, fix, extend, refactor, or review a standalone reusable Reac
 
 ## Responsibility and Activation
 
-Create, change, or review a standalone reusable React hook object. Review reports confirmed findings without edits.
+Create, change, or review a standalone reusable React hook object.
 
 Activate for a standalone `use<Name>` requiring React state, lifecycle, effects, or subscriptions. Do not activate for `use<Component>`, any component-owned hook, TanStack Query hooks, or pure functions without React semantics. Activate when the primary artifact is independently reusable rather than owned by a component or API object.
 
@@ -30,7 +30,7 @@ Produce `core/use<Name>.ts`, only necessary types, constants, or helpers, and a 
 
 ## Authority
 
-Choose a plain function instead when hook semantics are unnecessary, and extract hook-local helpers when justified. Require confirmation for breaking return contracts, a materially new Next.js client boundary, or a dependency.
+Choose a plain function instead when hook semantics are unnecessary, and extract hook-local helpers when justified. Require confirmation only when not already authorized for breaking return contracts, a materially new Next.js client boundary, or a dependency.
 
 ## Prevent
 

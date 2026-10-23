@@ -7,9 +7,9 @@ description: Create, change, or review a TypeScript test only when the user expl
 
 ## Responsibility and Activation
 
-Create, change, or review an explicitly requested TypeScript test artifact. An accepted offer to inspect and update existing files supplies this authorization. Review reports confirmed findings without edits.
+Create, change, or review an explicitly requested TypeScript test artifact. An accepted offer to inspect and update existing files supplies this authorization.
 
-Activate for writing a test, adding a test case or regression, repairing a test file, or covering explicitly named behavior. Do not activate for production work alone, command execution, or generic verification without a test artifact. Without authorization, follow the shared existence-only and final-offer workflow.
+Activate for writing a test, adding a test case or regression, repairing a test file, or covering explicitly named behavior. Do not activate for production work alone, command execution, or generic verification without a test artifact. Read relevant tests as needed without separate approval; follow the shared final-offer workflow before changing them.
 
 ## Context and References
 
@@ -23,22 +23,23 @@ Produce the main `__tests__/<Object>.test.ts` or `.tsx` file with Russian `it` d
 
 1. Confirm that a semantic test artifact is explicit.
 2. Inspect the production contract, test setup, and neighboring tests.
-3. Select observable cases required by the named behavior.
-4. Add minimal cases and reuse established root mocks where appropriate.
+3. Build the contract-based case map from the testing reference, including all applicable paths, boundaries, errors, states, and meaningful interactions in scope.
+4. Cover every identified applicable case with meaningful existing or new tests; keep fixtures minimal and reuse established root mocks where appropriate.
 5. Place test-local constants in the object's test `static` folder only when needed.
-6. Statically review imports, types, descriptions, and production boundaries.
+6. Diagnose failures using the testing reference before changing expectations; distinguish unintended production regressions, intentional contract changes, and defective tests or environment.
+7. Review the case map, assertions, imports, types, descriptions, and production boundaries; run authorized relevant checks and report material coverage gaps.
 
 ## Authority
 
-Choose cases directly required by the explicitly named behavior and run the relevant existing test command as safe local verification. Require confirmation before changing production API for testability, adding or changing testing dependencies, or using a package-manager operation that changes `lockfile` or `node_modules`.
+Discover and cover all applicable cases within the explicitly requested object or behavior and run the relevant existing test command as safe local verification. Require confirmation only when not already authorized before changing production API for testability, adding or changing testing dependencies, or using a package-manager operation that changes `lockfile` or `node_modules`.
 
 ## Prevent
 
-Prevent default test creation, implementation-detail assertions, meaningless snapshot-only coverage, duplicate setup, unauthorized production changes, and confirmation-gated dependency or infrastructure changes.
+Prevent changing expectations merely to obtain green results, hiding regressions, happy-path-only coverage, default test creation, implementation-detail assertions, meaningless snapshot-only coverage, duplicate setup, unauthorized production changes, and confirmation-gated dependency or infrastructure changes.
 
 ## Verification and Completion
 
-Complete when tests target observable behavior, use one main test file, have Russian `it` descriptions, compile against installed types, and the relevant test command ran when available or its limitation is reported.
+Complete when every identified applicable case has meaningful coverage, expectations follow the required contract, failures have been diagnosed, and tests follow the required file structure, Russian `it` descriptions, and installed types. If a required case remains uncovered or blocked, report partial completion and the gap. Report the relevant test command's actual result or the reason it could not run; a green run alone is insufficient.
 
 ## Optional-Capability Fallback
 

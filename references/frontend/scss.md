@@ -20,7 +20,7 @@
 - Do not use `!important` by default. A narrowly scoped selector and property may use it only for justified integration with a third-party style or component after available configuration, styling APIs, and ordinary cascade are insufficient. Report the justification in the result; do not add a code comment unless requested. Do not use it for an ordinary specificity problem. Do not restate browser defaults.
 - Prefer pseudo-elements for decoration and flexbox when it is the correct layout model.
 - Prefer one-word class names, otherwise camelCase. Modifiers use underscore style such as `.root_disabled` or `&_disabled` with ampersand nesting.
-- Start each new class selector at top level rather than nesting it inside another class. Keep meaningful selector nesting to at most three levels; control directives and media wrappers do not count.
+- Define each class's base styles at top level. Root state modifiers and descendant overrides scoped to those states may be nested; do not introduce a descendant's base styles only inside a parent selector. Keep meaningful selector nesting to at most three levels; control directives and media wrappers do not count.
 - Prefer logical properties unless a physical side or axis is intentional.
 
 ## Responsive and Motion

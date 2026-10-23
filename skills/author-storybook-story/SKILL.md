@@ -7,7 +7,7 @@ description: Create, change, or review a Storybook story only when the user expl
 
 ## Responsibility and Activation
 
-Create, change, or review an explicitly requested Storybook story artifact. An accepted offer to inspect and update existing files supplies this authorization. Review reports confirmed findings without edits.
+Create, change, or review an explicitly requested Storybook story artifact. An accepted offer to inspect and update existing files supplies this authorization.
 
 Activate for a direct semantic request to add, repair, or update a story, scenario, args, argTypes, or Storybook component documentation. Do not activate for ordinary component changes, generic visual checking, or possible story impact without confirmation. Automatic discovery is allowed, but the story artifact must be explicit.
 
@@ -30,7 +30,7 @@ Produce one meaningful top-level story file with metadata, `TStory`, `DocsPrevie
 
 ## Authority
 
-Choose meaningful states and args directly implied by public props. Require confirmation before changing the component API for the story or when a production task only incidentally affects an existing story.
+Choose meaningful states and args directly implied by public props. Require confirmation only when not already authorized before changing the component API for the story or when a production task only incidentally affects an existing story.
 
 ## Prevent
 

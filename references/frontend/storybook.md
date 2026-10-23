@@ -1,6 +1,6 @@
 # Storybook
 
-Before authorization, follow the shared existence-only and final-offer workflow. Read and update stories only after an explicit story request or accepted update offer; create new stories only when explicitly requested.
+Read relevant stories as needed without separate approval. Follow the shared final-offer workflow before updating stories. Update stories only after an explicit story request or accepted update offer; create new stories only when explicitly requested.
 
 Only a top-level component gets `stories/<ComponentName>.stories.tsx`; internal components never get stories. Use `stories/static` only for story-owned constants.
 

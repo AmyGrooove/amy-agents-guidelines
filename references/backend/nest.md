@@ -12,7 +12,7 @@ Every backend slice is a Nest module. Module and slice folders use lower camel c
 
 Controllers are thin. Application services own business logic and response mapping. Extract pure or reusable service logic only when it improves clarity or reuse. Repositories own data access. Every entity has an entity-specific repository boundary, optionally backed by an existing suitable generic infrastructure repository. Reuse existing infrastructure; do not add a backend folder category without approval.
 
-Endpoint services map persistence documents to response DTOs or explicit response models. Controllers never return Mongoose documents. The application service defining a multi-repository use case owns `ClientSession` and transaction lifecycle and passes the session into repositories; repositories never start or commit transactions implicitly.
+Endpoint services map persistence documents to response DTOs or explicit response models. Controllers never return Mongoose documents. Multiple repository calls alone do not require a transaction. Determine transaction necessity from the use case's atomicity and consistency requirements. When a transaction is required and used, the application service owns its `ClientSession` and transaction lifecycle and passes the session into repositories; repositories never start or commit transactions implicitly.
 
 ## DTOs and Boundaries
 
@@ -22,4 +22,4 @@ Prefer the global `ValidationPipe` configuration above. ObjectId conversion is e
 
 Custom Nest decorators use PascalCase and the function-object structure. Existing queue or scheduler plumbing may be maintained by the Nest module skill, but do not invent a new standard without a separate approved design.
 
-Static completion requires an acyclic module graph, minimal provider visibility, thin metadata/controllers, owned business logic, explicit DTO validation and ObjectId boundaries, and application-service transaction ownership.
+Static completion requires an acyclic module graph, minimal provider visibility, thin metadata/controllers, owned business logic, explicit DTO validation and ObjectId boundaries, and application-service transaction ownership when applicable.

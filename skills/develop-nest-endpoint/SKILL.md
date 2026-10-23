@@ -7,7 +7,7 @@ description: Create, fix, extend, refactor, or review a NestJS HTTP endpoint sli
 
 ## Responsibility and Activation
 
-Create, change, or review a NestJS HTTP endpoint slice. Review reports confirmed findings without edits.
+Create, change, or review a NestJS HTTP endpoint slice.
 
 Activate for routes, controllers, input/response DTOs, endpoint services, validation, response/error contracts, mapping, and multi-repository use cases. Do not activate for standalone entity schemas, infrastructure providers, or frontend query hooks. Own endpoint DTOs, mapping, controller, application service, and module wiring. Apply the entity skill only when a schema or repository change is genuinely required.
 
@@ -27,13 +27,13 @@ Produce a complete endpoint slice with a thin controller, application service, v
 2. Inspect neighboring endpoints and global framework configuration without changing it.
 3. Define DTOs, validation, ObjectId conversion, and OpenAPI metadata.
 4. Inspect repository capabilities and persistence contracts.
-5. Implement the application service, including transaction/session lifecycle for its multi-repository use case.
+5. Implement the application service, including transaction/session lifecycle when a transaction is required by the operation contract and used.
 6. Implement the thin controller and explicit response mapping.
 7. Add endpoint module wiring and statically review all boundaries.
 
 ## Authority
 
-Choose DTO decomposition, reuse existing pipes/decorators, own transaction lifecycle in the application service, and make ordinary in-scope project configuration changes, including `.env`. Require confirmation for public API changes not already explicit, schema/database changes, global validation, route prefix/versioning, material infrastructure or shared environment-contract changes, secret management, or dependencies.
+Choose DTO decomposition, reuse existing pipes/decorators, own transaction lifecycle in the application service when a transaction is required by the operation contract and used, and make ordinary in-scope project configuration changes, including `.env`. Require confirmation only when not already authorized for public API changes, schema/database changes, global validation, route prefix/versioning, material infrastructure or shared environment-contract changes, secret management, or dependencies.
 
 ## Prevent
 
@@ -41,7 +41,7 @@ Prevent controller business logic, Mongoose documents in responses, implicit Obj
 
 ## Verification and Completion
 
-Complete when the controller is thin, inputs are validated, response DTO and error envelope are explicit, ObjectId boundaries are correct, OpenAPI matches runtime behavior, and the use case owns its transaction.
+Complete when the controller is thin, inputs are validated, response DTO and error envelope are explicit, ObjectId boundaries are correct, OpenAPI matches runtime behavior, and the use case owns its transaction when a transaction is required by the operation contract and used.
 
 ## Optional-Capability Fallback
 
