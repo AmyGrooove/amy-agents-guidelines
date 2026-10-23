@@ -27,13 +27,10 @@
 
 ## Сопровождение
 
-Метаданные и версия хранятся в корневом [plugin.json](plugin.json). Файл `.codex-plugin/plugin.json` генерируется автоматически.
+Метаданные и версия хранятся в корневом [plugin.json](plugin.json), настройки OpenAI — в `extensions.com.openai`, навыки — в `skills/`.
 
 ```powershell
-# Синхронизировать манифесты
-node scripts/syncManifest.mjs
-
-# Проверить манифесты, skills и ссылки
+# Проверить манифест, skills и ссылки
 node scripts/verifyPlugin.mjs .
 
 # Проверить каталог маршрутизации

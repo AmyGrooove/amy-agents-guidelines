@@ -6,11 +6,13 @@ import { join, resolve } from 'node:path';
 import { verifyPlugin, parseFrontmatter } from '../verifyPlugin.mjs';
 
 const validSkill = '---\nname: sample\ndescription: Create sample artifacts when requested.\n---\n# Sample\n';
+const validManifest = { $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json', name: 'sample-plugin', version: '1.0.0', description: 'Sample', extensions: { 'com.openai': {} } };
+const validInterface = { displayName: 'Sample', shortDescription: 'Sample', longDescription: 'Sample plugin', developerName: 'Sample', category: 'Productivity', capabilities: [] };
 function fixture(t) {
   const path = mkdtempSync(join(tmpdir(), 'amy-verifier-test-'));
   t.after(() => { assert.ok(resolve(path).startsWith(resolve(tmpdir()) + '\\') || resolve(path).startsWith(resolve(tmpdir()) + '/')); rmSync(path, { recursive: true, force: true }); });
-  for (const dir of ['.codex-plugin', 'skills/sample', 'references']) mkdirSync(join(path, dir), { recursive: true });
-  writeFileSync(join(path, '.codex-plugin/plugin.json'), JSON.stringify({ name: 'sample-plugin', version: '1.0.0', description: 'Sample', skills: './skills' }));
+  for (const dir of ['skills/sample', 'references']) mkdirSync(join(path, dir), { recursive: true });
+  writeFileSync(join(path, 'plugin.json'), JSON.stringify(validManifest));
   writeFileSync(join(path, 'skills/sample/SKILL.md'), validSkill);
   return path;
 }
@@ -24,23 +26,39 @@ test('валидный плагин проходит проверку', t => {
   assert.deepEqual(verifyPlugin([root]).errors, []);
   assert.equal(verifyPlugin([root]).skillCount, 1);
 });
-for (const [label, change] of [
-  ['сломанный JSON', '{'], ['массив вместо manifest', '[]'], ['null вместо manifest', 'null'],
+for (const [label, change, expected] of [
+  ['сломанный JSON', '{', /invalid JSON manifest/], ['массив вместо manifest', '[]', /manifest must be an object/], ['null вместо manifest', 'null', /manifest must be an object/],
 ]) test(label, t => {
-  const root = fixture(t); writeFileSync(join(root, '.codex-plugin/plugin.json'), change);
-  assert.ok(verifyPlugin([root]).errors.length);
+  const root = fixture(t); writeFileSync(join(root, 'plugin.json'), change);
+  assert.match(verifyPlugin([root]).errors.join('\n'), expected);
 });
-for (const [label, patch] of [
-  ['суффикс версии', {version:'1.0.0+codex'}], ['ведущий ноль версии', {version:'01.0.0'}],
-  ['пустое имя', {name:''}], ['невалидное имя', {name:'Bad_Name'}], ['пустое описание', {description:' '}],
-  ['плохой author', {author:[]}], ['плохие keywords', {keywords:['x','x']}], ['плохой interface', {interface:[]}],
-  ['абсолютный skills', {skills:'C:/outside'}], ['выход skills', {skills:'./../outside'}],
-  ['выход icon', {interface:{logo:'./../outside'}}], ['абсолютный icon', {interface:{logo:'/outside'}}],
-  ['директория вместо icon', {interface:{logo:'./skills'}}],
+for (const [label, patch, expected] of [
+  ['суффикс версии', {version:'1.0.0+codex'}, /version must use/], ['ведущий ноль версии', {version:'01.0.0'}, /version must use/],
+  ['пустое имя', {name:''}, /invalid plugin name/], ['невалидное имя', {name:'Bad_Name'}, /invalid plugin name/], ['пустое описание', {description:' '}, /description must be non-empty/],
+  ['плохой author', {author:[]}, /author must have/], ['плохие keywords', {keywords:['x','x']}, /keywords must be unique/],
+  ['неверная схема', {$schema:'https://example.com/schema.json'}, /must declare the Agent Plugins/],
+  ['нет расширения OpenAI', {extensions:{}}, /extensions.com.openai must be an object/],
+  ['массив вместо расширения OpenAI', {extensions:{'com.openai':[]}}, /extensions.com.openai must be an object/],
+  ['плохой interface', {extensions:{'com.openai':{interface:[]}}}, /extensions.com.openai.interface must be an object/],
+  ['выход icon', {extensions:{'com.openai':{interface:{...validInterface,logo:'./../outside'}}}}, /path escapes plugin|contain no \.\. components/],
+  ['абсолютный icon', {extensions:{'com.openai':{interface:{...validInterface,logo:'/outside'}}}}, /logo must be a relative plugin path/],
+  ['директория вместо icon', {extensions:{'com.openai':{interface:{...validInterface,logo:'./skills'}}}}, /logo must point to a regular file/],
 ]) test(label, t => {
   const root = fixture(t);
-  writeFileSync(join(root, '.codex-plugin/plugin.json'), JSON.stringify({name:'sample',description:'Sample',version:'1.0.0',skills:'./skills',...patch}));
-  assert.ok(verifyPlugin([root]).errors.length);
+  writeFileSync(join(root, 'plugin.json'), JSON.stringify({...validManifest,...patch}));
+  assert.match(verifyPlugin([root]).errors.join('\n'), expected);
+});
+test('валидные настройки интерфейса OpenAI проходят проверку', t => {
+  const root = fixture(t);
+  writeFileSync(join(root, 'plugin.json'), JSON.stringify({...validManifest,extensions:{'com.openai':{interface:validInterface}}}));
+  assert.deepEqual(verifyPlugin([root]).errors, []);
+});
+for (const asFile of [false, true]) test(asFile ? 'файл вместо каталога skills отклоняется' : 'отсутствующий каталог skills отклоняется', t => {
+  const root = fixture(t);
+  const skillsPath = join(root, 'skills');
+  rmSync(skillsPath, { recursive: true });
+  if (asFile) writeFileSync(skillsPath, 'invalid');
+  assert.match(verifyPlugin([root]).errors.join('\n'), asFile ? /skills path must be a directory/ : /cannot access skills directory/);
 });
 for (const [label, content] of [
  ['нет YAML', '# Heading'], ['нет конца YAML', '---\nname: sample'],

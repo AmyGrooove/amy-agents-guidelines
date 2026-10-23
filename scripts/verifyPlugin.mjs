@@ -1,7 +1,6 @@
-import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
+import { lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve, relative, isAbsolute, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { syncManifest } from './syncManifest.mjs';
 
 const VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const LINK_PATTERN = /!?\[[^\]\r\n]*\]\(([^)\r\n]*)\)/g;
@@ -68,14 +67,7 @@ const collectManifestPaths = (value, paths) => {
 };
 
 const validateManifest = (root, errors) => {
-  if (existsSync(join(root, 'plugin.json'))) {
-    try {
-      containedPath(root, join(root, 'plugin.json'));
-      containedPath(root, join(root, '.codex-plugin/plugin.json'));
-      syncManifest(true, root);
-    } catch (error) { errors.push(`${root}/plugin.json: ${getErrorMessage(error)}`); }
-  }
-  const manifestPath = join(root, '.codex-plugin', 'plugin.json');
+  const manifestPath = join(root, 'plugin.json');
   const text = readText(manifestPath, errors);
   if (text === undefined) {
     return undefined;
@@ -94,6 +86,11 @@ const validateManifest = (root, errors) => {
     return undefined;
   }
 
+  if (manifest.$schema !== 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json') errors.push(`${manifestPath}: must declare the Agent Plugins 1.0.0 schema`);
+  const openai = manifest.extensions?.['com.openai'];
+  if (!openai || typeof openai !== 'object' || Array.isArray(openai)) errors.push(`${manifestPath}: extensions.com.openai must be an object`);
+  const interfaceSettings = openai?.interface;
+
   if (typeof manifest.version !== 'string' || !VERSION_PATTERN.test(manifest.version)) {
     errors.push(`${manifestPath}: version must use MAJOR.MINOR.PATCH without leading zeroes`);
   }
@@ -101,24 +98,24 @@ const validateManifest = (root, errors) => {
   if (typeof manifest.description !== 'string' || !manifest.description.trim()) errors.push(`${manifestPath}: description must be non-empty`);
   if (manifest.author !== undefined && (!manifest.author || typeof manifest.author !== 'object' || Array.isArray(manifest.author) || typeof manifest.author.name !== 'string' || !manifest.author.name.trim())) errors.push(`${manifestPath}: author must have a non-empty name`);
   if (manifest.keywords !== undefined && (!Array.isArray(manifest.keywords) || new Set(manifest.keywords).size !== manifest.keywords.length || manifest.keywords.some((word) => typeof word !== 'string' || !word.trim()))) errors.push(`${manifestPath}: keywords must be unique non-empty strings`);
-  if (manifest.interface !== undefined && (manifest.interface === null || Array.isArray(manifest.interface) || typeof manifest.interface !== 'object')) errors.push(`${manifestPath}: interface must be an object`);
-  if (manifest.interface && typeof manifest.interface === 'object' && !Array.isArray(manifest.interface)) {
+  if (interfaceSettings !== undefined && (interfaceSettings === null || Array.isArray(interfaceSettings) || typeof interfaceSettings !== 'object')) errors.push(`${manifestPath}: extensions.com.openai.interface must be an object`);
+  if (interfaceSettings && typeof interfaceSettings === 'object' && !Array.isArray(interfaceSettings)) {
     for (const [key, limit] of Object.entries({ displayName: 30, shortDescription: 30, longDescription: 4000, developerName: 80 })) {
-      const value = manifest.interface[key];
+      const value = interfaceSettings[key];
       if (typeof value !== 'string' || !value.trim() || [...value].length > limit) errors.push(`${manifestPath}: interface.${key} must contain 1-${limit} characters`);
     }
-    if (typeof manifest.interface.category !== 'string' || !manifest.interface.category.trim()) errors.push(`${manifestPath}: interface.category must be non-empty`);
-    const capabilities = manifest.interface.capabilities;
+    if (typeof interfaceSettings.category !== 'string' || !interfaceSettings.category.trim()) errors.push(`${manifestPath}: interface.category must be non-empty`);
+    const capabilities = interfaceSettings.capabilities;
     if (!Array.isArray(capabilities) || capabilities.length > 20 || capabilities.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 120)) errors.push(`${manifestPath}: invalid interface.capabilities`);
-    const prompts = manifest.interface.defaultPrompt;
+    const prompts = interfaceSettings.defaultPrompt;
     if (prompts !== undefined) {
       const values = typeof prompts === 'string' ? [prompts] : prompts;
       if (!Array.isArray(values) || values.length > 3 || new Set(values).size !== values.length || values.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 128)) errors.push(`${manifestPath}: invalid interface.defaultPrompt`);
     }
-    for (const key of ['brandColor', 'brandColorDark']) if (manifest.interface[key] !== undefined && !/^#[0-9a-f]{6}$/i.test(manifest.interface[key])) errors.push(`${manifestPath}: invalid interface.${key}`);
+    for (const key of ['brandColor', 'brandColorDark']) if (interfaceSettings[key] !== undefined && !/^#[0-9a-f]{6}$/i.test(interfaceSettings[key])) errors.push(`${manifestPath}: invalid interface.${key}`);
   }
   for (const key of ['composerIcon', 'logo', 'logoDark']) {
-    const value = manifest.interface?.[key];
+    const value = interfaceSettings?.[key];
     if (value !== undefined && (typeof value !== 'string' || !value.startsWith('./'))) errors.push(`${manifestPath}: ${key} must be a relative plugin path`);
     else if (value !== undefined) {
       const info = getPathInfo(resolve(root, value), errors, key);
@@ -130,18 +127,10 @@ const validateManifest = (root, errors) => {
   collectManifestPaths(manifest, manifestPaths);
   for (const relativePath of [...new Set(manifestPaths)].sort(compareNames)) {
     if (relativePath.includes('\\') || relativePath.split('/').includes('..')) errors.push(`${manifestPath}: declared paths must use forward slashes and contain no .. components: ${relativePath}`);
-    if (relativePath === manifest.skills) {
-      continue;
-    }
     getPathInfo(resolve(root, relativePath), errors, `declared path ${relativePath}`);
   }
 
-  if (typeof manifest.skills !== 'string' || !manifest.skills.startsWith('./') || manifest.skills.length === 2) {
-    errors.push(`${manifestPath}: skills must be a non-empty relative path starting with ./`);
-    return undefined;
-  }
-
-  const skillsRoot = resolve(root, manifest.skills);
+  const skillsRoot = join(root, 'skills');
   const skillsInfo = getPathInfo(skillsRoot, errors, 'skills directory');
   if (skillsInfo !== undefined && !skillsInfo.isDirectory()) {
     errors.push(`${skillsRoot}: skills path must be a directory`);
