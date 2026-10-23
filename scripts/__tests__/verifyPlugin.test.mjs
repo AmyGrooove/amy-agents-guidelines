@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { verifyPlugin, parseFrontmatter, validatePortableManifest } from '../verifyPlugin.mjs';
 
 const validSkill = '---\nname: sample\ndescription: Create sample artifacts when requested.\n---\n# Sample\n';
@@ -53,6 +54,80 @@ test('валидные настройки интерфейса OpenAI прохо
   const root = fixture(t);
   writeFileSync(join(root, 'plugin.json'), JSON.stringify({...validManifest,extensions:{'com.openai':{interface:validInterface}}}));
   assert.deepEqual(verifyPlugin([root]).errors, []);
+});
+
+for (const [field, limit] of [['shortDescription', 30], ['longDescription', 4000]]) {
+  for (const [label, value, valid] of [
+    ['граница', 'я'.repeat(limit), true],
+    ['Unicode code points', '😀'.repeat(limit), true],
+    ['превышение', 'я'.repeat(limit + 1), false],
+    ['пустая строка', ' ', false],
+    ['не строка', 42, false],
+    ['перенос строки', 'Первая\nВторая', field === 'longDescription'],
+  ]) test(`OpenAI ${field}: ${label}`, t => {
+    const root = fixture(t);
+    const settings = { ...validInterface, [field]: value };
+    writeFileSync(join(root, 'plugin.json'), JSON.stringify({ ...validManifest, extensions: { 'com.openai': { interface: settings } } }));
+    const errors = verifyPlugin([root]).errors;
+    if (valid) assert.deepEqual(errors, []);
+    else assert.match(errors.join('\n'), new RegExp(`interface\\.${field}`));
+  });
+}
+
+for (const [label, patch, valid] of [
+  ['Developer Tools', { category: 'Developer Tools' }, true],
+  ['Productivity', { category: 'Productivity' }, true],
+  ['неизвестная категория', { category: 'Development' }, false],
+  ['пустая категория', { category: '' }, false],
+  ['не строка категории', { category: 42 }, false],
+  ['граница capabilities', { capabilities: Array(20).fill('я'.repeat(120)) }, true],
+  ['много capabilities', { capabilities: Array(21).fill('Read') }, false],
+  ['длинная capability', { capabilities: ['я'.repeat(121)] }, false],
+  ['пустая capability', { capabilities: [' '] }, false],
+  ['перенос capability', { capabilities: ['Read\nWrite'] }, false],
+  ['Unicode перенос capability', { capabilities: ['Read\u2028Write'] }, false],
+  ['не строка capability', { capabilities: [null] }, false],
+  ['не массив capabilities', { capabilities: 'Read' }, false],
+  ['prompt строкой на границе', { defaultPrompt: 'я'.repeat(128) }, true],
+  ['три prompts', { defaultPrompt: ['React', 'NestJS', 'AGENTS.md'] }, true],
+  ['нет prompts', { defaultPrompt: [] }, true],
+  ['много prompts', { defaultPrompt: ['a', 'b', 'c', 'd'] }, false],
+  ['длинный prompt', { defaultPrompt: ['я'.repeat(129)] }, false],
+  ['пустой prompt', { defaultPrompt: [' '] }, false],
+  ['перенос prompt', { defaultPrompt: ['React\r\ncomponent'] }, false],
+  ['Unicode перенос prompt', { defaultPrompt: ['React\u2029component'] }, false],
+  ['не строка prompt', { defaultPrompt: [null] }, false],
+  ['не строка и не массив prompts', { defaultPrompt: {} }, false],
+  ['дубликат prompts', { defaultPrompt: ['React', 'React'] }, false],
+  ['нормализация пробелов prompts', { defaultPrompt: ['React component', ' React  component '] }, false],
+  ['нормализация Unicode prompts', { defaultPrompt: ['Café', 'Cafe\u0301'] }, false],
+  ['app mention', { defaultPrompt: ['Use @my_app to create a component.'] }, false],
+]) test('OpenAI listing: ' + label, t => {
+  const root = fixture(t);
+  const settings = { ...validInterface, ...patch };
+  writeFileSync(join(root, 'plugin.json'), JSON.stringify({ ...validManifest, extensions: { 'com.openai': { interface: settings } } }));
+  const errors = verifyPlugin([root]).errors;
+  if (valid) assert.deepEqual(errors, []);
+  else assert.match(errors.join('\n'), /interface\.(category|capabilities|defaultPrompt)/);
+});
+
+test('метаданные Amy описывают разработку и три основных стартовых запроса', () => {
+  const root = new URL('../../', import.meta.url);
+  const manifest = JSON.parse(readFileSync(new URL('plugin.json', root), 'utf8'));
+  const settings = manifest.extensions['com.openai'].interface;
+  assert.equal(settings.category, 'Developer Tools');
+  assert.match(settings.shortDescription, /TypeScript/);
+  for (const subject of ['TypeScript', 'React', 'NestJS', 'AGENTS.md']) {
+    assert.ok(settings.longDescription.includes(subject), subject);
+  }
+  assert.equal(settings.defaultPrompt.length, 3);
+  for (const subject of ['React', 'NestJS', 'AGENTS.md']) {
+    assert.ok(settings.defaultPrompt.some(prompt => prompt.includes(subject)), subject);
+  }
+  assert.ok(settings.capabilities.length > 2);
+  assert.ok(settings.capabilities.every(capability => !['Interactive', 'Write'].includes(capability)));
+  assert.match(settings.capabilities.find(capability => capability.includes('Storybook')), /explicit request/);
+  assert.deepEqual(verifyPlugin([fileURLToPath(root)]).errors, []);
 });
 for (const asFile of [false, true]) test(asFile ? 'файл вместо каталога skills отклоняется' : 'отсутствующий каталог skills отклоняется', t => {
   const root = fixture(t);

@@ -7,6 +7,8 @@ const LINK_PATTERN = /!?\[[^\]\r\n]*\]\(([^)\r\n]*)\)/g;
 const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PLUGIN_NAME_PATTERN = /^(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
 const OPENAI_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+const OPENAI_CATEGORIES = ['Productivity', 'Creativity', 'Developer Tools', 'Business & Operations', 'Data & Analytics', 'Communication', 'Education & Research', 'Security', 'Finance', 'Healthcare', 'Travel', 'Entertainment', 'Other'];
+const LINE_BREAK_PATTERN = /[\r\n\u0085\u2028\u2029]/u;
 let pluginRoot;
 
 export const containedPath = (root, target) => {
@@ -109,14 +111,15 @@ const validateOpenAIManifest = (root, manifest, errors) => {
     for (const [key, limit] of Object.entries({ displayName: 30, shortDescription: 30, longDescription: 4000, developerName: 80 })) {
       const value = interfaceSettings[key];
       if (typeof value !== 'string' || !value.trim() || [...value].length > limit) errors.push(`${manifestPath}: interface.${key} must contain 1-${limit} characters`);
+      if (typeof value === 'string' && key !== 'longDescription' && LINE_BREAK_PATTERN.test(value)) errors.push(`${manifestPath}: interface.${key} must be a single-line string`);
     }
-    if (typeof interfaceSettings.category !== 'string' || !interfaceSettings.category.trim()) errors.push(`${manifestPath}: interface.category must be non-empty`);
+    if (!OPENAI_CATEGORIES.includes(interfaceSettings.category)) errors.push(`${manifestPath}: interface.category must be a supported OpenAI category`);
     const capabilities = interfaceSettings.capabilities;
-    if (capabilities !== undefined && (!Array.isArray(capabilities) || capabilities.length > 20 || capabilities.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 120))) errors.push(`${manifestPath}: invalid interface.capabilities`);
+    if (capabilities !== undefined && (!Array.isArray(capabilities) || capabilities.length > 20 || capabilities.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 120 || LINE_BREAK_PATTERN.test(value)))) errors.push(`${manifestPath}: invalid interface.capabilities`);
     const prompts = interfaceSettings.defaultPrompt;
     if (prompts !== undefined) {
       const values = typeof prompts === 'string' ? [prompts] : prompts;
-      if (!Array.isArray(values) || values.length > 3 || new Set(values).size !== values.length || values.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 128)) errors.push(`${manifestPath}: invalid interface.defaultPrompt`);
+      if (!Array.isArray(values) || values.length > 3 || values.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 128 || LINE_BREAK_PATTERN.test(value) || /(^|\s)@[\p{L}\p{N}_-]+/u.test(value)) || new Set(values.map((value) => value.normalize('NFKC').trim().replace(/\s+/gu, ' '))).size !== values.length) errors.push(`${manifestPath}: invalid interface.defaultPrompt`);
     }
     for (const key of ['brandColor', 'brandColorDark']) if (interfaceSettings[key] !== undefined && (typeof interfaceSettings[key] !== 'string' || !/^#[0-9a-f]{6}$/i.test(interfaceSettings[key]))) errors.push(`${manifestPath}: invalid interface.${key}`);
   }

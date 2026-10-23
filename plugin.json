@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "amy-agents-guidelines",
-  "version": "3.0.8",
-  "description": "Applies Amy's TypeScript standards and maintains scoped project context for coding agents.",
+  "version": "3.0.9",
+  "description": "Skills for TypeScript, React, and NestJS development with Amy's standards and scoped project AGENTS.md documentation.",
   "author": {
     "name": "AmyGrooove",
     "email": "vanyablya003@gmail.com"
@@ -17,18 +17,26 @@
     "com.openai": {
       "interface": {
         "displayName": "Amy Agents Guidelines",
-        "shortDescription": "Amy TypeScript standards",
-        "longDescription": "Automatically applies focused development standards for TypeScript, React, Next.js, Vite, NestJS, and Mongoose projects, and maintains agent-first project context with hierarchical routing and scoped automatic updates.",
+        "shortDescription": "TypeScript & project standards",
+        "longDescription": "Amy Agents Guidelines helps developers and coding agents apply Amy's standards to TypeScript projects. Specialized skills cover React components and reusable hooks, Effector models, TanStack Query APIs, shared SCSS, NestJS endpoints and infrastructure modules, and Mongoose schemas and repositories. It also guides new Next.js, Vite, and NestJS project setup, standalone TypeScript utilities, and code placement and dependency boundaries. On request, it creates project AGENTS.md and routed agent documentation, persists selected working rules, and authors TypeScript tests and Storybook stories. During authorized implementation, it maintains affected documentation for already documented subjects; new documentation topics require a request. Explicit user instructions, project AGENTS.md, and mandatory project contracts take precedence over Amy's standards. The plugin provides skills and reference guidance; it does not bundle an MCP server.",
         "developerName": "AmyGrooove",
-        "category": "Productivity",
+        "category": "Developer Tools",
         "capabilities": [
-          "Interactive",
-          "Write"
+          "React components and hooks",
+          "Effector models and TanStack Query APIs",
+          "Shared SCSS and design tokens",
+          "NestJS endpoints and infrastructure modules",
+          "Mongoose schemas and repositories",
+          "Next.js, Vite, and NestJS project setup",
+          "TypeScript utilities, code placement, and dependency boundaries",
+          "Project AGENTS.md and scoped agent documentation",
+          "Working rules on explicit request",
+          "TypeScript tests and Storybook stories on explicit request"
         ],
         "defaultPrompt": [
           "Создай React-компонент по стандартам проекта.",
           "Добавь NestJS endpoint по стандартам проекта.",
-          "Определи правильный слой для TypeScript-объекта."
+          "Создай проектный AGENTS.md и связанную агентную документацию на основе кода проекта."
         ],
         "brandColor": "#6366F1",
         "composerIcon": "./assets/icon.svg",
