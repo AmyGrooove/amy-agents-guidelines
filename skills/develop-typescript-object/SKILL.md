@@ -43,4 +43,4 @@ Complete when the object has one responsibility, correct exports, consistent tou
 
 ## Optional-Capability Fallback
 
-Use local TypeScript configuration, types, and neighboring objects. Framework uncertainty routes to the owning skill rather than this fallback. Superpowers and Context7 are not required for ordinary standalone work.
+Use local TypeScript configuration, types, and neighboring objects. Framework uncertainty belongs to the owning skill rather than this fallback. Follow shared documentation rules when local evidence is insufficient.

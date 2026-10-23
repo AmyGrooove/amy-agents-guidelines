@@ -1,6 +1,6 @@
 # TypeScript Testing
 
-Read relevant tests as needed without separate approval. Follow the shared final-offer workflow before changing them. An explicit test request or accepted update offer authorizes changing the relevant tests and running verification. An execution-only request authorizes running tests, not editing their source.
+Read relevant tests as needed. Run existing safe tests for authorized changes under [shared verification rules](workflow-and-authority.md#completion), without a test-authoring skill or separate confirmation. Create or modify tests only on an explicit request or accepted update offer; execution alone does not authorize source, fixture, or snapshot updates.
 
 Use one main `__tests__/<ObjectName>.test.ts` or `.tsx` file. `describe` uses the object name. Every `it` description is in Russian and states observable behavior. Test-local constants live in that object's `__tests__/static`; repeated cross-test mocks belong in the project's existing root test setup.
 
@@ -19,8 +19,8 @@ Map every identified applicable case to an existing meaningful test or add cover
 When a test fails, inspect the failure, relevant test and production diffs, contract, fixtures, mocks, and setup before changing assertions. Establish whether recent work caused it and whether that work intentionally changes the required behavior. Use available before-state evidence or an authorized isolated comparison without overwriting existing user changes. If attribution is uncertain, report it rather than guessing.
 
 - If recent changes violate behavior that must remain valid, keep the contractual expectation and fix the responsible component or other production code within the authorized scope. Preserve the failing regression test or add the missing case when test edits are authorized. If the necessary production repair is outside scope, report the blocker instead of weakening the test.
-- If an authorized requirement intentionally changes behavior, update the affected test to that requirement and preserve coverage of contracts that remain valid. Explain the requirement that justifies the changed expectation.
-- If the test, mock, fixture, or environment is defective, correct that cause using the contract and project evidence. A test failure alone is not proof that either the test or production code is wrong. Separate pre-existing failures from regressions.
+- If an authorized requirement intentionally changes behavior, update the affected test only when test edits are authorized; otherwise report the mismatch and offer the scoped update. Preserve coverage of contracts that remain valid and explain the requirement justifying a changed expectation.
+- If the test, mock, fixture, or environment is defective, establish that cause using the contract and project evidence and correct it only within the authorized scope. A test failure alone is not proof that either the test or production code is wrong. Separate pre-existing failures from regressions.
 
 Never obtain green results by deleting or skipping valid cases, weakening assertions, refreshing snapshots blindly, mocking away the behavior under test, or copying observed output into expected values without contract evidence. Mocks must model the dependency contract and exercise the subject's real decisions. Assert observable outcomes and relevant errors or side effects so the test can detect a plausible defect, rather than merely repeating the implementation. Repair a flawed test when evidence establishes its flaw; do not preserve an incorrect expectation solely because it already exists.
 

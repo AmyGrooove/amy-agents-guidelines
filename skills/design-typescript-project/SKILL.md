@@ -46,4 +46,4 @@ Complete when the tree contains only required real files, imports follow the sel
 
 ## Optional-Capability Fallback
 
-Follow the shared fallback. If framework selection or stable compatibility cannot be established from local evidence without Context7, stop before writing and request a decision. Without Superpowers, perform the same minimal design and static review directly.
+Follow the shared documentation and fallback rules. Resolve material framework or compatibility uncertainty before dependent changes; missing optional tools alone do not require confirmation.

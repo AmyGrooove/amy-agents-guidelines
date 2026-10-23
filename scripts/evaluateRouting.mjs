@@ -76,7 +76,7 @@ try {
     save(join(output, 'manifest.json'), { schemaVersion: 2, createdAt: new Date().toISOString(), pluginVersion: JSON.parse(read(join(root, '.codex-plugin/plugin.json'))).version, snapshot, caseIds: cases.map((item) => item.id), phase: 'routing-decision' });
     save(join(output, 'expectations.json'), cases);
     for (const item of cases) {
-      const prompt = 'Evaluate Amy routing for the hypothetical task below. This is a routing decision experiment, not implementation. Do not read expected answers or files outside this fixture. Select Amy skills from the catalog, then actually read selected SKILL.md and necessary references. Report exact selected skill names (include route-project-changes for hypothetical writes), artifact ownership, allowed changes, prohibited actions, required clarification, and references actually read. Explain whether tests/stories are authorized and whether another confirmation is necessary. Do not execute the hypothetical task. Respond in Russian.\n\nAvailable Amy skills:\n' + skills.map((skill) => skill.name + ': ' + skill.description).join('\n') + '\n\nHypothetical task:\n' + item.prompt + '\n';
+      const prompt = 'Evaluate Amy routing for the hypothetical task below. This is a routing decision experiment, not implementation. Do not read expected answers or files outside this fixture. Select Amy skills from the catalog, then actually read selected SKILL.md and necessary references. Report exact selected skill names (include route-project-changes only when explicitly invoked in the hypothetical task), artifact ownership, allowed changes, prohibited actions, required clarification, and references actually read. Distinguish existing safe test execution from test authoring and Storybook authorization; explain whether another confirmation is necessary. Do not execute the hypothetical task. Respond in Russian.\n\nAvailable Amy skills:\n' + skills.map((skill) => skill.name + ': ' + skill.description).join('\n') + '\n\nHypothetical task:\n' + item.prompt + '\n';
       writeFileSync(join(output, 'prompts', item.id + '.txt'), prompt);
     }
     writeFileSync(join(output, 'results.jsonl'), '');
@@ -123,7 +123,7 @@ try {
     };
     save(join(output, 'before.json'), state());
     const id = 'route-project-changes-01';
-    const prompt = 'Add .editorconfig with root=true, section [*], indent_style=space, indent_size=2. Preserve pre-existing user-notes.txt and all unrelated files. Use applicable Amy guidance. Read selected skill files and necessary references. Implement only this configuration change and verify it. Do not run tests or Storybook. Respond in Russian.\n\nAvailable Amy skills:\n' + skills.map((skill) => skill.name + ': ' + skill.description).join('\n');
+    const prompt = 'Use $route-project-changes and add .editorconfig with root=true, section [*], indent_style=space, indent_size=2. Preserve pre-existing user-notes.txt and all unrelated files. Use applicable Amy guidance. Read selected skill files and necessary references. Implement only this configuration change and verify it. Do not run tests or Storybook. Respond in Russian.\n\nAvailable Amy skills:\n' + skills.map((skill) => skill.name + ': ' + skill.description).join('\n');
     writeFileSync(join(output, 'prompts', id + '.txt'), prompt);
     const manifest = JSON.parse(read(join(output, 'manifest.json')));
     manifest.phase = 'execution';

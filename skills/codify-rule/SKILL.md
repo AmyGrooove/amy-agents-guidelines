@@ -7,7 +7,7 @@ description: Use only when the user explicitly asks to establish, save, or amend
 
 Turn an explicitly selected instruction into a scoped, actionable rule. Repetition is evidence of relevance, never permission to persist. Invoking this skill without identifying the rule requires clarification, not invention. Never update memory unless the user directly requests a memory change; a request to establish a rule is not such a request.
 
-Follow [workflow and authority](../../references/shared/workflow-and-authority.md) once. Use [route-project-changes](../route-project-changes/SKILL.md) before file changes. This skill owns rule wording and scope; it does not authorize implementing the behavior described by the rule. Use [document-agent-context](../document-agent-context/SKILL.md) only when project documentation or its routing also needs maintenance.
+Follow [workflow and authority](../../references/shared/workflow-and-authority.md) once. This skill owns rule wording and scope; it does not authorize implementing the behavior described by the rule. Use [document-agent-context](../document-agent-context/SKILL.md) only when project documentation or its routing also needs maintenance.
 
 ## Choose One Owner
 

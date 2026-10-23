@@ -15,7 +15,7 @@ Activate for JSX, public props, behavior, accessibility, `use<Component>`, compo
 
 Inspect neighboring production components, installed primitives, consumers, design tokens, owned styles, and dictionaries. Read relevant tests and stories as needed to understand the component contract.
 
-Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Read [TypeScript and objects](../../references/shared/typescript-and-objects.md) for code, types, exports, or object structure; [React](../../references/frontend/react.md) for JSX, props, lifecycle, accessibility, or client boundaries; [SCSS](../../references/frontend/scss.md) only for affected styles or layout; and [frontend text](../../references/frontend/frontend-text.md) only for affected user-facing text. Read [Storybook](../../references/frontend/storybook.md) only after approval to update an affected story. Read [testing](../../references/shared/testing.md) only for an explicitly requested test change.
+Read [workflow and authority](../../references/shared/workflow-and-authority.md) once. Read [TypeScript and objects](../../references/shared/typescript-and-objects.md) for code, types, exports, or object structure; [React](../../references/frontend/react.md) for JSX, props, lifecycle, accessibility, or client boundaries; [SCSS](../../references/frontend/scss.md) only for affected styles or layout; and [frontend text](../../references/frontend/frontend-text.md) only for affected user-facing text. Read [Storybook](../../references/frontend/storybook.md) for authorized story work and [testing](../../references/shared/testing.md) for test authoring or failure diagnosis.
 
 ## Expected Result
 
@@ -46,4 +46,4 @@ Complete a creation or explicit normalization when its applicable component stru
 
 ## Optional-Capability Fallback
 
-Use installed React/UI primitives, local types, and neighboring components. Do not invent version-sensitive behavior when local evidence is insufficient; report the uncertainty. Missing Superpowers does not block direct implementation and static review.
+Use installed React/UI primitives, local types, and neighboring components. Do not invent version-sensitive behavior when local evidence is insufficient; report the uncertainty.
