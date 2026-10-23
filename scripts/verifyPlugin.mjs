@@ -1,9 +1,24 @@
 import { lstatSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, relative, isAbsolute, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const LINK_PATTERN = /!?\[[^\]\r\n]*\]\(([^)\r\n]*)\)/g;
+const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+let pluginRoot;
+
+export const containedPath = (root, target) => {
+  if (/^(?:[A-Za-z]:|[\\/]{2})/.test(target) && !isAbsolute(target)) throw new Error(`unsupported absolute path: ${target}`);
+  const path = resolve(root, target);
+  const part = relative(root, path);
+  if (part === '..' || part.startsWith('..\\') || part.startsWith('../') || isAbsolute(part)) throw new Error(`path escapes plugin: ${target}`);
+  let current = parse(path).root;
+  for (const component of path.slice(current.length).split(/[\\/]/).filter(Boolean)) {
+    current = join(current, component);
+    if (lstatSync(current).isSymbolicLink()) throw new Error(`symbolic links and junctions are not supported: ${current}`);
+  }
+  return path;
+};
 
 const getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
 
@@ -11,6 +26,7 @@ const compareNames = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 
 const readText = (path, errors) => {
   try {
+    if (pluginRoot) containedPath(pluginRoot, path);
     return readFileSync(path, 'utf8');
   } catch (error) {
     errors.push(`${path}: cannot read: ${getErrorMessage(error)}`);
@@ -20,6 +36,7 @@ const readText = (path, errors) => {
 
 const getPathInfo = (path, errors, label) => {
   try {
+    if (pluginRoot) containedPath(pluginRoot, path);
     return lstatSync(path);
   } catch (error) {
     errors.push(`${path}: cannot access ${label}: ${getErrorMessage(error)}`);
@@ -72,6 +89,19 @@ const validateManifest = (root, errors) => {
   if (typeof manifest.version !== 'string' || !VERSION_PATTERN.test(manifest.version)) {
     errors.push(`${manifestPath}: version must use MAJOR.MINOR.PATCH without leading zeroes`);
   }
+  if (typeof manifest.name !== 'string' || manifest.name.length > 64 || !NAME_PATTERN.test(manifest.name)) errors.push(`${manifestPath}: invalid plugin name`);
+  if (typeof manifest.description !== 'string' || !manifest.description.trim()) errors.push(`${manifestPath}: description must be non-empty`);
+  if (manifest.author !== undefined && (!manifest.author || typeof manifest.author !== 'object' || Array.isArray(manifest.author) || typeof manifest.author.name !== 'string' || !manifest.author.name.trim())) errors.push(`${manifestPath}: author must have a non-empty name`);
+  if (manifest.keywords !== undefined && (!Array.isArray(manifest.keywords) || new Set(manifest.keywords).size !== manifest.keywords.length || manifest.keywords.some((word) => typeof word !== 'string' || !word.trim()))) errors.push(`${manifestPath}: keywords must be unique non-empty strings`);
+  if (manifest.interface !== undefined && (manifest.interface === null || Array.isArray(manifest.interface) || typeof manifest.interface !== 'object')) errors.push(`${manifestPath}: interface must be an object`);
+  for (const key of ['composerIcon', 'logo', 'logoDark']) {
+    const value = manifest.interface?.[key];
+    if (value !== undefined && (typeof value !== 'string' || !value.startsWith('./'))) errors.push(`${manifestPath}: ${key} must be a relative plugin path`);
+    else if (value !== undefined) {
+      const info = getPathInfo(resolve(root, value), errors, key);
+      if (info && !info.isFile()) errors.push(`${manifestPath}: ${key} must point to a regular file`);
+    }
+  }
 
   const manifestPaths = [];
   collectManifestPaths(manifest, manifestPaths);
@@ -103,7 +133,12 @@ const parseFieldValue = (path, field, value, errors) => {
     return undefined;
   }
 
-  const trimmed = value.trim();
+  const raw = value.trim();
+  const trimmed = /^["']/.test(raw) ? raw : raw.replace(/(?:^|\s+)#.*$/, '').trim();
+  if (!trimmed || /^(?:null|true|false|~|[-+]?\d+(?:\.\d+)?)$/i.test(trimmed) || /^[&*!%@`]|^[-?:]\s/.test(trimmed) || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(trimmed)) {
+    errors.push(`${path}: ${field} must be a YAML string`);
+    return undefined;
+  }
   if (trimmed.startsWith('|') || trimmed.startsWith('>') || trimmed.startsWith('[') || trimmed.startsWith('{')) {
     errors.push(`${path}: ${field} must use an unquoted value or matching single or double quotes`);
     return undefined;
@@ -115,7 +150,14 @@ const parseFieldValue = (path, field, value, errors) => {
       errors.push(`${path}: ${field} has an unclosed quoted value`);
       return undefined;
     }
-    const unquoted = trimmed.slice(1, -1);
+    let unquoted;
+    try {
+      unquoted = firstCharacter === '"' ? JSON.parse(trimmed) : trimmed.slice(1, -1).replaceAll("''", "'");
+      if (firstCharacter === "'" && /(^|[^'])'([^']|$)/.test(trimmed.slice(1, -1))) throw new Error('unescaped quote');
+    } catch {
+      errors.push(`${path}: ${field} has invalid quoted string syntax`);
+      return undefined;
+    }
     if (unquoted === '') {
       errors.push(`${path}: ${field} must use a non-empty single-line value`);
       return undefined;
@@ -123,15 +165,15 @@ const parseFieldValue = (path, field, value, errors) => {
     return unquoted;
   }
 
-  if (trimmed.includes('"') || trimmed.includes("'")) {
-    errors.push(`${path}: ${field} must use an unquoted value or matching single or double quotes`);
+  if (/:\s|:\s*$/.test(trimmed)) {
+    errors.push(`${path}: ${field} contains an unquoted mapping delimiter`);
     return undefined;
   }
 
-  return trimmed;
+  return trimmed.replace(/\s+#.*$/, '').trim();
 };
 
-const parseFrontmatter = (path, content, errors) => {
+export const parseFrontmatter = (path, content, errors) => {
   const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/);
   if (lines[0] !== '---') {
     errors.push(`${path}: missing YAML frontmatter`);
@@ -146,8 +188,10 @@ const parseFrontmatter = (path, content, errors) => {
 
   const fields = new Map();
   for (let index = 1; index < endIndex; index += 1) {
-    const match = lines[index].match(/^(name|description):(?:[ \t]*(.*))?$/);
+    if (/^\s*(?:#.*)?$/.test(lines[index])) continue;
+    const match = lines[index].match(/^([a-z][a-z-]*):(?:[ \t]+(.*))?$/);
     if (match === null) {
+      errors.push(`${path}: invalid or unsupported YAML at line ${index + 1}`);
       continue;
     }
     const [, field, value] = match;
@@ -155,8 +199,34 @@ const parseFrontmatter = (path, content, errors) => {
       errors.push(`${path}: duplicate frontmatter ${field}`);
       continue;
     }
-    fields.set(field, parseFieldValue(path, field, value, errors));
+    if (!['name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools'].includes(field)) errors.push(`${path}: unsupported frontmatter field ${field}`);
+    if (field === 'metadata' && !value) {
+      const keys = new Set();
+      while (index + 1 < endIndex && /^  \S/.test(lines[index + 1])) {
+        index += 1;
+        const child = lines[index].match(/^  ([\w.-]+):\s+(.+)$/);
+        if (!child || keys.has(child[1])) errors.push(`${path}: invalid or duplicate metadata key`);
+        else { keys.add(child[1]); parseFieldValue(path, 'metadata', child[2], errors); }
+      }
+      if (!keys.size) errors.push(`${path}: metadata must be a non-empty string mapping`);
+      fields.set(field, true);
+    } else if (field === 'metadata') {
+      errors.push(`${path}: metadata must use an indented string mapping`);
+      fields.set(field, undefined);
+    } else if (/^[|>][-+]?$/.test(value || '')) {
+      const parts = [];
+      while (index + 1 < endIndex && /^(?:  |$)/.test(lines[index + 1])) parts.push(lines[++index].slice(2));
+      fields.set(field, parts.join(value.startsWith('>') ? ' ' : '\n').trim());
+    } else {
+      fields.set(field, parseFieldValue(path, field, value, errors));
+    }
   }
+  const name = fields.get('name');
+  const description = fields.get('description');
+  if (typeof name === 'string' && (name.length > 64 || !NAME_PATTERN.test(name))) errors.push(`${path}: invalid skill name (1-64 lowercase letters, digits, single hyphens)`);
+  if (typeof description === 'string' && (!description.trim() || [...description].length > 1024)) errors.push(`${path}: invalid description (1-1024 characters)`);
+  if (fields.has('compatibility') && (typeof fields.get('compatibility') !== 'string' || !fields.get('compatibility').trim() || fields.get('compatibility').length > 500)) errors.push(`${path}: compatibility must contain 1-500 characters`);
+  if (!lines.slice(endIndex + 1).join('\n').trim()) errors.push(`${path}: missing skill body`);
 
   for (const field of ['name', 'description']) {
     if (!fields.has(field)) {
@@ -295,13 +365,20 @@ const parseLinkTarget = (source, target, errors) => {
 };
 
 const validateLinks = (source, content, errors) => {
-  for (const match of removeCode(content).matchAll(LINK_PATTERN)) {
+  const visible = removeCode(content);
+  const definitions = [...visible.matchAll(/^\s{0,3}\[[^\]]+\]:\s*(.+)$/gm)].map((match) => [match[0], match[1]]);
+  const labels = new Set([...visible.matchAll(/^\s{0,3}\[([^\]]+)\]:/gm)].map((match) => match[1].toLowerCase().replace(/\s+/g, ' ')));
+  for (const match of visible.matchAll(/\[([^\]\r\n]+)\]\[([^\]\r\n]*)\]/g)) {
+    const label = (match[2] || match[1]).toLowerCase().replace(/\s+/g, ' ');
+    if (!labels.has(label)) errors.push(`${source}: undefined reference link ${label}`);
+  }
+  for (const match of [...visible.matchAll(LINK_PATTERN), ...definitions]) {
     const linkTarget = parseLinkTarget(source, match[1], errors);
-    if (linkTarget === undefined || linkTarget === '' || linkTarget.startsWith('#') || linkTarget.startsWith('//') || /^[A-Za-z][A-Za-z\d+.-]*:/.test(linkTarget)) {
+    if (linkTarget === undefined || linkTarget === '' || linkTarget.startsWith('#') || /^(?:https?|mailto):/.test(linkTarget)) {
       continue;
     }
 
-    const encodedPath = linkTarget.split('#', 1)[0];
+    const encodedPath = linkTarget.split(/[?#]/, 1)[0];
     let localPath;
     try {
       localPath = decodeURIComponent(encodedPath);
@@ -311,6 +388,10 @@ const validateLinks = (source, content, errors) => {
     }
 
     const targetPath = resolve(dirname(source), localPath);
+    if (/^(?:[A-Za-z]:|[\\/])/.test(localPath)) {
+      errors.push(`${source}: local link must be relative: ${linkTarget}`);
+      continue;
+    }
     const targetInfo = getPathInfo(targetPath, errors, `local link ${linkTarget}`);
     if (targetInfo !== undefined && targetInfo.isDirectory()) {
       errors.push(`${source}: local link points to a directory ${linkTarget}`);
@@ -349,6 +430,7 @@ const getRoot = (argumentsList, errors) => {
   const root = argumentsList[0] === undefined
     ? resolve(fileURLToPath(new URL('..', import.meta.url)))
     : resolve(argumentsList[0]);
+  pluginRoot = root;
   const rootInfo = getPathInfo(root, errors, 'plugin root');
   if (rootInfo !== undefined && !rootInfo.isDirectory()) {
     errors.push(`${root}: plugin root must be a directory`);
@@ -357,9 +439,10 @@ const getRoot = (argumentsList, errors) => {
   return rootInfo === undefined ? undefined : root;
 };
 
-const run = () => {
+export const verifyPlugin = (argumentsList = []) => {
   const errors = [];
-  const root = getRoot(process.argv.slice(2), errors);
+  pluginRoot = undefined;
+  const root = getRoot(argumentsList, errors);
   let skillCount = 0;
 
   if (root !== undefined) {
@@ -369,7 +452,18 @@ const run = () => {
       validateMarkdownDirectory(skillsRoot, errors);
     }
     validateMarkdownDirectory(join(root, 'references'), errors);
+    for (const entry of getDirectoryEntries(root, errors).filter((entry) => entry.isFile() && entry.name.endsWith('.md'))) {
+      const source = join(root, entry.name);
+      const content = readText(source, errors);
+      if (content !== undefined) validateLinks(source, content, errors);
+    }
   }
+
+  return { errors: errors.sort(compareNames), skillCount, root };
+};
+
+const run = () => {
+  const { errors, skillCount, root } = verifyPlugin(process.argv.slice(2));
 
   if (errors.length > 0) {
     console.error('Plugin integrity check failed:');
@@ -383,7 +477,7 @@ const run = () => {
   console.log(`Plugin integrity check passed: ${skillCount} skills in ${root}`);
 };
 
-try {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) try {
   run();
 } catch (error) {
   console.error('Plugin integrity check failed:');
