@@ -1,2 +1,5 @@
+interface:
+  display_name: "Route Project Changes"
+  short_description: "Assess artifact ownership and applicable Amy guidance"
 policy:
   allow_implicit_invocation: false

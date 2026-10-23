@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 const VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const LINK_PATTERN = /!?\[[^\]\r\n]*\]\(([^)\r\n]*)\)/g;
-const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const PLUGIN_NAME_PATTERN = /^(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
+const OPENAI_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 let pluginRoot;
 
 export const containedPath = (root, target) => {
@@ -66,6 +68,68 @@ const collectManifestPaths = (value, paths) => {
   }
 };
 
+export const validatePortableManifest = (manifest, path, errors) => {
+  if (manifest.$schema !== 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json') errors.push(`${path}: must declare the Agent Plugins 1.0.0 schema`);
+  if (typeof manifest.name !== 'string' || manifest.name.length > 64 || !PLUGIN_NAME_PATTERN.test(manifest.name)) errors.push(`${path}: invalid plugin name`);
+  const fields = ['$schema', 'name', 'version', 'description', 'author', 'homepage', 'repository', 'license', 'keywords', 'extensions'];
+  for (const key of Object.keys(manifest)) if (!fields.includes(key)) errors.push(`${path}: unsupported manifest field ${key}`);
+  for (const key of ['version', 'description', 'homepage', 'repository', 'license']) {
+    if (manifest[key] !== undefined && typeof manifest[key] !== 'string') errors.push(`${path}: ${key} must be a string`);
+  }
+  if (manifest.author !== undefined) {
+    if (!manifest.author || typeof manifest.author !== 'object' || Array.isArray(manifest.author)) errors.push(`${path}: author must be an object`);
+    else for (const [key, value] of Object.entries(manifest.author)) {
+      if (!['name', 'email', 'url'].includes(key) || typeof value !== 'string') errors.push(`${path}: invalid author.${key}`);
+    }
+  }
+  if (manifest.keywords !== undefined && (!Array.isArray(manifest.keywords) || manifest.keywords.some((word) => typeof word !== 'string'))) errors.push(`${path}: keywords must be strings`);
+  if (manifest.extensions !== undefined) {
+    if (!manifest.extensions || typeof manifest.extensions !== 'object' || Array.isArray(manifest.extensions)) errors.push(`${path}: extensions must be an object`);
+    else for (const [key, value] of Object.entries(manifest.extensions)) {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) errors.push(`${path}: extensions.${key} must be an object`);
+    }
+  }
+};
+
+const validateOpenAIManifest = (root, manifest, errors) => {
+  const manifestPath = join(root, 'plugin.json');
+  if (typeof manifest.name === 'string' && !OPENAI_NAME_PATTERN.test(manifest.name)) errors.push(`${manifestPath}: invalid OpenAI plugin name (ASCII letters, digits, underscores and hyphens; alphanumeric start)`);
+  const openai = manifest.extensions?.['com.openai'];
+  if (!openai || typeof openai !== 'object' || Array.isArray(openai)) errors.push(`${manifestPath}: extensions.com.openai must be an object`);
+  const interfaceSettings = openai?.interface;
+
+  if (typeof manifest.version !== 'string' || !VERSION_PATTERN.test(manifest.version)) {
+    errors.push(`${manifestPath}: version must use MAJOR.MINOR.PATCH without leading zeroes`);
+  }
+  if (typeof manifest.description !== 'string' || !manifest.description.trim()) errors.push(`${manifestPath}: description must be non-empty`);
+  if (!manifest.author || typeof manifest.author.name !== 'string' || !manifest.author.name.trim()) errors.push(`${manifestPath}: author must have a non-empty name`);
+  if (manifest.keywords !== undefined && (!Array.isArray(manifest.keywords) || new Set(manifest.keywords).size !== manifest.keywords.length || manifest.keywords.some((word) => typeof word !== 'string' || !word.trim()))) errors.push(`${manifestPath}: keywords must be unique non-empty strings`);
+  if (interfaceSettings === undefined || interfaceSettings === null || Array.isArray(interfaceSettings) || typeof interfaceSettings !== 'object') errors.push(`${manifestPath}: extensions.com.openai.interface must be an object`);
+  if (interfaceSettings && typeof interfaceSettings === 'object' && !Array.isArray(interfaceSettings)) {
+    for (const [key, limit] of Object.entries({ displayName: 30, shortDescription: 30, longDescription: 4000, developerName: 80 })) {
+      const value = interfaceSettings[key];
+      if (typeof value !== 'string' || !value.trim() || [...value].length > limit) errors.push(`${manifestPath}: interface.${key} must contain 1-${limit} characters`);
+    }
+    if (typeof interfaceSettings.category !== 'string' || !interfaceSettings.category.trim()) errors.push(`${manifestPath}: interface.category must be non-empty`);
+    const capabilities = interfaceSettings.capabilities;
+    if (capabilities !== undefined && (!Array.isArray(capabilities) || capabilities.length > 20 || capabilities.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 120))) errors.push(`${manifestPath}: invalid interface.capabilities`);
+    const prompts = interfaceSettings.defaultPrompt;
+    if (prompts !== undefined) {
+      const values = typeof prompts === 'string' ? [prompts] : prompts;
+      if (!Array.isArray(values) || values.length > 3 || new Set(values).size !== values.length || values.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 128)) errors.push(`${manifestPath}: invalid interface.defaultPrompt`);
+    }
+    for (const key of ['brandColor', 'brandColorDark']) if (interfaceSettings[key] !== undefined && (typeof interfaceSettings[key] !== 'string' || !/^#[0-9a-f]{6}$/i.test(interfaceSettings[key]))) errors.push(`${manifestPath}: invalid interface.${key}`);
+  }
+  for (const key of ['composerIcon', 'logo', 'logoDark']) {
+    const value = interfaceSettings?.[key];
+    if (value !== undefined && (typeof value !== 'string' || !value.startsWith('./'))) errors.push(`${manifestPath}: ${key} must be a relative plugin path`);
+    else if (value !== undefined) {
+      const info = getPathInfo(resolve(root, value), errors, key);
+      if (info && !info.isFile()) errors.push(`${manifestPath}: ${key} must point to a regular file`);
+    }
+  }
+};
+
 const validateManifest = (root, errors) => {
   const manifestPath = join(root, 'plugin.json');
   const text = readText(manifestPath, errors);
@@ -86,42 +150,8 @@ const validateManifest = (root, errors) => {
     return undefined;
   }
 
-  if (manifest.$schema !== 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json') errors.push(`${manifestPath}: must declare the Agent Plugins 1.0.0 schema`);
-  const openai = manifest.extensions?.['com.openai'];
-  if (!openai || typeof openai !== 'object' || Array.isArray(openai)) errors.push(`${manifestPath}: extensions.com.openai must be an object`);
-  const interfaceSettings = openai?.interface;
-
-  if (typeof manifest.version !== 'string' || !VERSION_PATTERN.test(manifest.version)) {
-    errors.push(`${manifestPath}: version must use MAJOR.MINOR.PATCH without leading zeroes`);
-  }
-  if (typeof manifest.name !== 'string' || manifest.name.length > 64 || !NAME_PATTERN.test(manifest.name)) errors.push(`${manifestPath}: invalid plugin name`);
-  if (typeof manifest.description !== 'string' || !manifest.description.trim()) errors.push(`${manifestPath}: description must be non-empty`);
-  if (manifest.author !== undefined && (!manifest.author || typeof manifest.author !== 'object' || Array.isArray(manifest.author) || typeof manifest.author.name !== 'string' || !manifest.author.name.trim())) errors.push(`${manifestPath}: author must have a non-empty name`);
-  if (manifest.keywords !== undefined && (!Array.isArray(manifest.keywords) || new Set(manifest.keywords).size !== manifest.keywords.length || manifest.keywords.some((word) => typeof word !== 'string' || !word.trim()))) errors.push(`${manifestPath}: keywords must be unique non-empty strings`);
-  if (interfaceSettings !== undefined && (interfaceSettings === null || Array.isArray(interfaceSettings) || typeof interfaceSettings !== 'object')) errors.push(`${manifestPath}: extensions.com.openai.interface must be an object`);
-  if (interfaceSettings && typeof interfaceSettings === 'object' && !Array.isArray(interfaceSettings)) {
-    for (const [key, limit] of Object.entries({ displayName: 30, shortDescription: 30, longDescription: 4000, developerName: 80 })) {
-      const value = interfaceSettings[key];
-      if (typeof value !== 'string' || !value.trim() || [...value].length > limit) errors.push(`${manifestPath}: interface.${key} must contain 1-${limit} characters`);
-    }
-    if (typeof interfaceSettings.category !== 'string' || !interfaceSettings.category.trim()) errors.push(`${manifestPath}: interface.category must be non-empty`);
-    const capabilities = interfaceSettings.capabilities;
-    if (!Array.isArray(capabilities) || capabilities.length > 20 || capabilities.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 120)) errors.push(`${manifestPath}: invalid interface.capabilities`);
-    const prompts = interfaceSettings.defaultPrompt;
-    if (prompts !== undefined) {
-      const values = typeof prompts === 'string' ? [prompts] : prompts;
-      if (!Array.isArray(values) || values.length > 3 || new Set(values).size !== values.length || values.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 128)) errors.push(`${manifestPath}: invalid interface.defaultPrompt`);
-    }
-    for (const key of ['brandColor', 'brandColorDark']) if (interfaceSettings[key] !== undefined && !/^#[0-9a-f]{6}$/i.test(interfaceSettings[key])) errors.push(`${manifestPath}: invalid interface.${key}`);
-  }
-  for (const key of ['composerIcon', 'logo', 'logoDark']) {
-    const value = interfaceSettings?.[key];
-    if (value !== undefined && (typeof value !== 'string' || !value.startsWith('./'))) errors.push(`${manifestPath}: ${key} must be a relative plugin path`);
-    else if (value !== undefined) {
-      const info = getPathInfo(resolve(root, value), errors, key);
-      if (info && !info.isFile()) errors.push(`${manifestPath}: ${key} must point to a regular file`);
-    }
-  }
+  validatePortableManifest(manifest, manifestPath, errors);
+  validateOpenAIManifest(root, manifest, errors);
 
   const manifestPaths = [];
   collectManifestPaths(manifest, manifestPaths);
@@ -137,7 +167,7 @@ const validateManifest = (root, errors) => {
     return undefined;
   }
 
-  return skillsInfo === undefined ? undefined : skillsRoot;
+  return skillsInfo === undefined ? undefined : { skillsRoot, name: manifest.name };
 };
 
 const parseFieldValue = (path, field, value, errors) => {
@@ -147,8 +177,8 @@ const parseFieldValue = (path, field, value, errors) => {
   }
 
   const raw = value.trim();
-  const trimmed = /^["']/.test(raw) ? raw : raw.replace(/(?:^|\s+)#.*$/, '').trim();
-  if (!trimmed || /^(?:null|true|false|~|[-+]?\d+(?:\.\d+)?)$/i.test(trimmed) || /^[&*!%@`]|^[-?:]\s/.test(trimmed) || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(trimmed)) {
+  const trimmed = /^["']/.test(raw) ? (raw.match(/^((?:"(?:[^"\\]|\\.)*"|'(?:[^']|'')*'))(?:[ \t]+#.*)?$/)?.[1] ?? raw) : raw.replace(/(?:^|\s+)#.*$/, '').trim();
+  if (!trimmed || /^(?:null|true|false|~|[-+]?(?:0[xo][0-9a-f]+|(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?|\.inf|\.nan))$/i.test(trimmed) || /^[&*!%@`]|^[-?:]\s/.test(trimmed) || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(trimmed)) {
     errors.push(`${path}: ${field} must be a YAML string`);
     return undefined;
   }
@@ -236,7 +266,7 @@ export const parseFrontmatter = (path, content, errors) => {
   }
   const name = fields.get('name');
   const description = fields.get('description');
-  if (typeof name === 'string' && (name.length > 64 || !NAME_PATTERN.test(name))) errors.push(`${path}: invalid skill name (1-64 lowercase letters, digits, single hyphens)`);
+  if (typeof name === 'string' && (name.length > 64 || !SKILL_NAME_PATTERN.test(name))) errors.push(`${path}: invalid skill name (1-64 lowercase letters, digits, single hyphens)`);
   if (typeof description === 'string' && (!description.trim() || [...description].length > 1024)) errors.push(`${path}: invalid description (1-1024 characters)`);
   if (fields.has('compatibility') && (typeof fields.get('compatibility') !== 'string' || !fields.get('compatibility').trim() || fields.get('compatibility').length > 500)) errors.push(`${path}: compatibility must contain 1-500 characters`);
   if (!lines.slice(endIndex + 1).join('\n').trim()) errors.push(`${path}: missing skill body`);
@@ -262,7 +292,93 @@ const getDirectoryEntries = (directory, errors) => {
   }
 };
 
-const validateSkills = (skillsRoot, errors) => {
+const validateSkillAgent = (skillRoot, errors) => {
+  const explicitOnly = ['codify-rule', 'route-project-changes'].includes(parse(skillRoot).base);
+  const path = join(skillRoot, 'agents', 'openai.yaml');
+  const agents = getDirectoryEntries(skillRoot, errors).find((entry) => entry.name === 'agents');
+  if (!agents) {
+    if (explicitOnly) errors.push(`${path}: explicit-only skill requires policy.allow_implicit_invocation: false`);
+    return;
+  }
+  const agentsInfo = getPathInfo(join(skillRoot, 'agents'), errors, 'agents directory');
+  if (!agentsInfo || !agentsInfo.isDirectory()) {
+    if (agentsInfo) errors.push(`${path}: agents must be a directory`);
+    return;
+  }
+  if (!getDirectoryEntries(join(skillRoot, 'agents'), errors).some((entry) => entry.name === 'openai.yaml')) {
+    if (explicitOnly) errors.push(`${path}: explicit-only skill requires policy.allow_implicit_invocation: false`);
+    return;
+  }
+  const info = getPathInfo(path, errors, 'skill agent metadata');
+  if (!info) return;
+  if (!info.isFile()) {
+    errors.push(`${path}: skill agent metadata must be a regular file`);
+    return;
+  }
+  let content;
+  try {
+    content = new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(path));
+  } catch (error) {
+    errors.push(`${path}: cannot read UTF-8 skill agent metadata: ${getErrorMessage(error)}`);
+    return;
+  }
+  const sections = new Map();
+  let section;
+  for (const [index, line] of content.replace(/^\uFEFF/, '').split(/\r?\n/).entries()) {
+    if (/^\s*(?:#.*)?$/.test(line)) continue;
+    const heading = line.match(/^([a-z_]+):\s*(?:#.*)?$/);
+    if (heading) {
+      section = heading[1];
+      if (!['interface', 'policy'].includes(section)) errors.push(`${path}: unsupported YAML section ${section}; verifier supports interface and policy mappings`);
+      if (sections.has(section)) errors.push(`${path}: duplicate YAML section ${section}`);
+      sections.set(section, sections.get(section) || new Map());
+      continue;
+    }
+    const field = line.match(/^  ([a-z_]+):(?:[ \t]+(.*))?$/);
+    if (!section || !field) {
+      errors.push(`${path}: invalid or unsupported YAML mapping at line ${index + 1}`);
+      continue;
+    }
+    const [, key, raw] = field;
+    const fields = sections.get(section);
+    if (fields.has(key)) {
+      errors.push(`${path}: duplicate ${section}.${key}`);
+      continue;
+    }
+    if (section === 'policy') {
+      if (key !== 'allow_implicit_invocation') errors.push(`${path}: unsupported policy field ${key}`);
+      const value = raw?.replace(/\s+#.*$/, '').trim();
+      if (value !== 'true' && value !== 'false') errors.push(`${path}: policy.${key} must be a YAML boolean`);
+      fields.set(key, value === 'true' ? true : value === 'false' ? false : undefined);
+    } else {
+      if (!['display_name', 'short_description', 'default_prompt', 'brand_color', 'icon_small', 'icon_large'].includes(key)) errors.push(`${path}: unsupported interface field ${key}`);
+      const value = parseFieldValue(path, `${section}.${key}`, raw, errors);
+      if (typeof value === 'string' && (!value.trim() || /[\u0000-\u001f\u007f]/.test(value))) errors.push(`${path}: interface.${key} must be a non-empty single-line string`);
+      fields.set(key, value);
+    }
+  }
+  if (sections.has('policy') && sections.get('policy').size === 0) errors.push(`${path}: policy must be a non-empty YAML mapping`);
+  const settings = sections.get('interface');
+  if (!settings) errors.push(`${path}: interface must be a YAML mapping`);
+  for (const key of ['display_name', 'short_description']) {
+    if (!settings?.has(key)) errors.push(`${path}: missing interface.${key}`);
+  }
+  const color = settings?.get('brand_color');
+  if (color !== undefined && !/^#[0-9a-f]{6}$/i.test(color)) errors.push(`${path}: invalid interface.brand_color`);
+  for (const key of ['icon_small', 'icon_large']) {
+    const value = settings?.get(key);
+    if (value === undefined) continue;
+    if (value !== value.trim() || /^(?:[A-Za-z][A-Za-z0-9+.-]*:|[\\/])/.test(value) || value.includes('\\') || value.split('/').includes('..')) {
+      errors.push(`${path}: interface.${key} must be a relative skill file path without traversal`);
+      continue;
+    }
+    const asset = getPathInfo(resolve(skillRoot, value), errors, `interface.${key}`);
+    if (asset && !asset.isFile()) errors.push(`${path}: interface.${key} must point to a regular file`);
+  }
+  if (explicitOnly && sections.get('policy')?.get('allow_implicit_invocation') !== false) errors.push(`${path}: explicit-only skill requires policy.allow_implicit_invocation: false`);
+};
+
+const validateSkills = (skillsRoot, pluginName, errors) => {
   const skillNames = new Map();
   let skillCount = 0;
 
@@ -277,6 +393,7 @@ const validateSkills = (skillsRoot, errors) => {
     }
 
     skillCount += 1;
+    validateSkillAgent(entryPath, errors);
     const skillPath = join(entryPath, 'SKILL.md');
     const skillInfo = getPathInfo(skillPath, errors, 'SKILL.md');
     if (skillInfo === undefined) {
@@ -300,6 +417,8 @@ const validateSkills = (skillsRoot, errors) => {
     if (frontmatter.name !== entry.name) {
       errors.push(`${skillPath}: name ${frontmatter.name} does not match directory ${entry.name}`);
     }
+
+    if (typeof pluginName === 'string' && `${pluginName}:${frontmatter.name}`.length > 64) errors.push(`${skillPath}: OpenAI skill identity plugin:skill must contain at most 64 characters`);
 
     const firstSkillPath = skillNames.get(frontmatter.name);
     if (firstSkillPath !== undefined) {
@@ -459,10 +578,10 @@ export const verifyPlugin = (argumentsList = []) => {
   let skillCount = 0;
 
   if (root !== undefined) {
-    const skillsRoot = validateManifest(root, errors);
-    if (skillsRoot !== undefined) {
-      skillCount = validateSkills(skillsRoot, errors);
-      validateMarkdownDirectory(skillsRoot, errors);
+    const manifest = validateManifest(root, errors);
+    if (manifest !== undefined) {
+      skillCount = validateSkills(manifest.skillsRoot, manifest.name, errors);
+      validateMarkdownDirectory(manifest.skillsRoot, errors);
     }
     validateMarkdownDirectory(join(root, 'references'), errors);
     for (const entry of getDirectoryEntries(root, errors).filter((entry) => entry.isFile() && entry.name.endsWith('.md'))) {

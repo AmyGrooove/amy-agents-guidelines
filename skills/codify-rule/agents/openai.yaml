@@ -1,2 +1,5 @@
+interface:
+  display_name: "Codify Rule"
+  short_description: "Persist an explicitly requested working rule"
 policy:
   allow_implicit_invocation: false

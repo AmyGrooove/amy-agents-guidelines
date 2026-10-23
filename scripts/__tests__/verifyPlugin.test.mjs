@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { verifyPlugin, parseFrontmatter } from '../verifyPlugin.mjs';
+import { verifyPlugin, parseFrontmatter, validatePortableManifest } from '../verifyPlugin.mjs';
 
 const validSkill = '---\nname: sample\ndescription: Create sample artifacts when requested.\n---\n# Sample\n';
-const validManifest = { $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json', name: 'sample-plugin', version: '1.0.0', description: 'Sample', extensions: { 'com.openai': {} } };
 const validInterface = { displayName: 'Sample', shortDescription: 'Sample', longDescription: 'Sample plugin', developerName: 'Sample', category: 'Productivity', capabilities: [] };
+const validManifest = { $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json', name: 'sample-plugin', version: '1.0.0', description: 'Sample', author: { name: 'Sample' }, extensions: { 'com.openai': { interface: validInterface } } };
+const validAgent = 'interface:\n  display_name: "Sample"\n  short_description: "Create sample artifacts on request"\npolicy:\n  allow_implicit_invocation: false\n';
 function fixture(t) {
   const path = mkdtempSync(join(tmpdir(), 'amy-verifier-test-'));
   t.after(() => { assert.ok(resolve(path).startsWith(resolve(tmpdir()) + '\\') || resolve(path).startsWith(resolve(tmpdir()) + '/')); rmSync(path, { recursive: true, force: true }); });
@@ -124,4 +125,151 @@ test('неверные CLI аргументы отклоняются',()=>{
 test('комментарий не превращает null/boolean в строку description',()=>{
  for(const value of ['# comment','true # comment','- item','? key'])assert.ok(frontmatter(validSkill.replace('Create sample artifacts when requested.',value)).errors.length,value);
  assert.deepEqual(frontmatter(validSkill.replace('name: sample','name: sample # comment')).errors,[]);
+});
+
+function agentFixture(t, content = validAgent, name = 'sample') {
+  const root = fixture(t);
+  if (name !== 'sample') {
+    rmSync(join(root, 'skills/sample'), { recursive: true });
+    mkdirSync(join(root, 'skills', name));
+    writeFileSync(join(root, 'skills', name, 'SKILL.md'), validSkill.replace('name: sample', 'name: ' + name));
+  }
+  const agents = join(root, 'skills', name, 'agents');
+  mkdirSync(agents);
+  writeFileSync(join(agents, 'openai.yaml'), content);
+  return root;
+}
+
+test('portable metadata не требует OpenAI полей и допускает точки в имени', () => {
+  for (const manifest of [
+    { $schema: validManifest.$schema, name: 'acme.tools' },
+    { $schema: validManifest.$schema, name: 'a.-b', version: 'draft', description: '', author: {}, keywords: ['', 'x', 'x'], extensions: { 'com.example': { interface: false } } },
+  ]) {
+    const errors = [];
+    validatePortableManifest(manifest, 'plugin.json', errors);
+    assert.deepEqual(errors, []);
+  }
+});
+
+for (const name of ['-a', 'a-', '.a', 'a.', 'a--b', 'a..b', 'A', 'a_b', 'a'.repeat(65)]) test('portable plugin name отклоняет ' + name, () => {
+  const errors = [];
+  validatePortableManifest({ ...validManifest, name }, 'plugin.json', errors);
+  assert.match(errors.join('\n'), /invalid plugin name/);
+});
+
+for (const patch of [{ version: 1 }, { description: null }, { author: { name: 1 } }, { author: { extra: '' } }, { keywords: [1] }, { extensions: [] }, { extensions: { 'com.example': false } }, { skills: './skills' }]) test('portable manifest проверяет типы и закрытые поля ' + JSON.stringify(patch), () => {
+  const errors = [];
+  validatePortableManifest({ ...validManifest, ...patch }, 'plugin.json', errors);
+  assert.ok(errors.length);
+});
+
+test('OpenAI отклоняет portable имя с точкой отдельно от core проверки', t => {
+  const root = fixture(t);
+  writeFileSync(join(root, 'plugin.json'), JSON.stringify({ ...validManifest, name: 'acme.tools' }));
+  const { errors } = verifyPlugin([root]);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /invalid OpenAI plugin name/);
+});
+
+test('OpenAI interface обязателен, capabilities для Agent Plugins необязательны', t => {
+  const root = fixture(t);
+  writeFileSync(join(root, 'plugin.json'), JSON.stringify({ ...validManifest, extensions: { 'com.openai': {} } }));
+  assert.match(verifyPlugin([root]).errors.join('\n'), /interface must be an object/);
+  const { capabilities, ...settings } = validInterface;
+  writeFileSync(join(root, 'plugin.json'), JSON.stringify({ ...validManifest, extensions: { 'com.openai': { interface: settings } } }));
+  assert.deepEqual(verifyPlugin([root]).errors, []);
+});
+
+test('OpenAI identity учитывает plugin name и разделитель: 64 проходит, 65 нет', t => {
+  const root = fixture(t);
+  for (const length of [57, 58]) {
+    writeFileSync(join(root, 'plugin.json'), JSON.stringify({ ...validManifest, name: 'a'.repeat(length) }));
+    const errors = verifyPlugin([root]).errors;
+    if (length === 57) assert.deepEqual(errors, []);
+    else assert.match(errors.join('\n'), /OpenAI skill identity/);
+  }
+  assert.deepEqual(frontmatter(validSkill.replace('name: sample', 'name: ' + 'a'.repeat(64))).errors, []);
+  assert.ok(frontmatter(validSkill.replace('name: sample', 'name: sample.name')).errors.length);
+});
+
+test('валидный agent YAML и обычный skill без agent YAML проходят', t => {
+  assert.deepEqual(verifyPlugin([fixture(t)]).errors, []);
+  assert.deepEqual(verifyPlugin([agentFixture(t)]).errors, []);
+  assert.deepEqual(verifyPlugin([agentFixture(t, '\uFEFF# Metadata\r\n' + validAgent.replaceAll('\n', '\r\n'))]).errors, []);
+  assert.deepEqual(verifyPlugin([agentFixture(t, validAgent.replace('false', 'true # allowed'))]).errors, []);
+  assert.deepEqual(verifyPlugin([agentFixture(t, validAgent.replace('"Sample"', '"Sample" # comment'))]).errors, []);
+});
+
+for (const [label, content, expected] of [
+  ['нет interface', 'policy:\n  allow_implicit_invocation: false', /interface/],
+  ['пустой interface', 'interface:\n', /display_name|short_description/],
+  ['нет display_name', validAgent.replace(/  display_name:.*\n/, ''), /display_name/],
+  ['нет short_description', validAgent.replace(/  short_description:.*\n/, ''), /short_description/],
+  ['пустая строка', validAgent.replace('"Sample"', '""'), /display_name/],
+  ['пробелы', validAgent.replace('"Sample"', '"  "'), /single-line string/],
+  ['boolean', validAgent.replace('"Sample"', 'true'), /YAML string/],
+  ['число', validAgent.replace('"Sample"', '42'), /YAML string/],
+  ['exponent', validAgent.replace('"Sample"', '1e3'), /YAML string/],
+  ['hex number', validAgent.replace('"Sample"', '0xFF'), /YAML string/],
+  ['null', validAgent.replace('"Sample"', 'null'), /YAML string/],
+  ['массив', validAgent.replace('"Sample"', '[Sample]'), /unquoted value/],
+  ['mapping', validAgent.replace('"Sample"', '{name: Sample}'), /unquoted value/],
+  ['alias', validAgent.replace('"Sample"', '*alias'), /YAML string/],
+  ['escape', validAgent.replace('"Sample"', '"Sam\\qple"'), /quoted string/],
+  ['перенос строки', validAgent.replace('"Sample"', '"Sam\\nple"'), /single-line string/],
+  ['дубликат секции', validAgent + 'interface:\n', /duplicate YAML section/],
+  ['дубликат поля', validAgent.replace('  display_name:', '  display_name: "First"\n  display_name:'), /duplicate interface.display_name/],
+  ['quoted boolean', validAgent.replace('false', '"false"'), /YAML boolean/],
+  ['число вместо boolean', validAgent.replace('false', '0'), /YAML boolean/],
+  ['дубликат policy', validAgent + '  allow_implicit_invocation: true\n', /duplicate policy/],
+  ['неизвестное policy поле', validAgent + '  allow_implicit_invocations: false\n', /unsupported policy field/],
+  ['scalar interface', 'interface: false\n', /unsupported YAML mapping/],
+  ['пустая policy', validAgent.replace('  allow_implicit_invocation: false\n', ''), /policy must be a non-empty YAML mapping/],
+  ['array root', '- interface\n', /unsupported YAML mapping/],
+  ['tab', validAgent.replace('  display_name', '\tdisplay_name'), /unsupported YAML mapping/],
+  ['неверный цвет', validAgent.replace('policy:', '  brand_color: "red"\npolicy:'), /invalid interface.brand_color/],
+  ['пустой prompt', validAgent.replace('policy:', '  default_prompt: ""\npolicy:'), /default_prompt/],
+]) test('agent YAML: ' + label, t => {
+  assert.match(verifyPlugin([agentFixture(t, content)]).errors.join('\n'), expected);
+});
+
+for (const name of ['codify-rule', 'route-project-changes']) test('explicit-only policy сохраняется для ' + name, t => {
+  const root = agentFixture(t, validAgent, name);
+  const path = join(root, 'skills', name, 'agents/openai.yaml');
+  assert.deepEqual(verifyPlugin([root]).errors, []);
+  writeFileSync(path, validAgent.replace('false', 'true'));
+  assert.match(verifyPlugin([root]).errors.join('\n'), /requires policy.allow_implicit_invocation: false/);
+  writeFileSync(path, validAgent.replace(/policy:[\s\S]*/, ''));
+  assert.match(verifyPlugin([root]).errors.join('\n'), /requires policy.allow_implicit_invocation: false/);
+  rmSync(path);
+  assert.match(verifyPlugin([root]).errors.join('\n'), /requires policy.allow_implicit_invocation: false/);
+});
+
+test('agent metadata должен быть обычным файлом, symlink отклоняется', t => {
+  const root = agentFixture(t);
+  const path = join(root, 'skills/sample/agents/openai.yaml');
+  rmSync(path);
+  mkdirSync(path);
+  assert.match(verifyPlugin([root]).errors.join('\n'), /must be a regular file/);
+  rmSync(path, { recursive: true });
+  symlinkSync(join(root, 'references'), path, 'junction');
+  assert.match(verifyPlugin([root]).errors.join('\n'), /symbolic links|junctions/);
+});
+
+test('agent metadata отклоняет повреждённый UTF-8', t => {
+  const root = agentFixture(t);
+  writeFileSync(join(root, 'skills/sample/agents/openai.yaml'), Buffer.concat([Buffer.from(validAgent), Buffer.from([0xff])]));
+  assert.match(verifyPlugin([root]).errors.join('\n'), /cannot read UTF-8 skill agent metadata/);
+});
+
+for (const target of ['../SKILL.md', '/outside.svg', 'C:/outside.svg', 'https://example.com/icon.svg', 'assets\\icon.svg', 'missing.svg', './agents']) test('agent icon: ' + target, t => {
+  const content = validAgent.replace('policy:', '  icon_small: ' + JSON.stringify(target) + '\npolicy:');
+  assert.ok(verifyPlugin([agentFixture(t, content)]).errors.length);
+});
+
+test('agent assets разрешаются относительно skill directory', t => {
+  const root = agentFixture(t, validAgent.replace('policy:', '  icon_small: "./assets/icon.svg"\n  icon_large: "assets/icon.svg"\n  brand_color: "#123ABC"\n  default_prompt: "Use $sample to create artifacts."\npolicy:'));
+  mkdirSync(join(root, 'skills/sample/assets'));
+  writeFileSync(join(root, 'skills/sample/assets/icon.svg'), '<svg/>');
+  assert.deepEqual(verifyPlugin([root]).errors, []);
 });
