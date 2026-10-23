@@ -1,21 +1,21 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Applies Amy's TypeScript standards and maintains scoped project context for coding agents.",
   "author": {
     "name": "AmyGrooove",
     "email": "vanyablya003@gmail.com"
   },
-  "skills": "./skills/",
   "keywords": [
     "typescript",
     "react",
     "nestjs",
     "development-standards"
   ],
+  "skills": "./skills/",
   "interface": {
     "displayName": "Amy Agents Guidelines",
-    "shortDescription": "Personal TypeScript development standards",
+    "shortDescription": "Amy TypeScript standards",
     "longDescription": "Automatically applies focused development standards for TypeScript, React, Next.js, Vite, NestJS, and Mongoose projects, and maintains agent-first project context with hierarchical routing and scoped automatic updates.",
     "developerName": "AmyGrooove",
     "category": "Productivity",

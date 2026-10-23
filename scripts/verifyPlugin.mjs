@@ -1,6 +1,7 @@
-import { lstatSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve, relative, isAbsolute, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { syncManifest } from './syncManifest.mjs';
 
 const VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const LINK_PATTERN = /!?\[[^\]\r\n]*\]\(([^)\r\n]*)\)/g;
@@ -67,6 +68,13 @@ const collectManifestPaths = (value, paths) => {
 };
 
 const validateManifest = (root, errors) => {
+  if (existsSync(join(root, 'plugin.json'))) {
+    try {
+      containedPath(root, join(root, 'plugin.json'));
+      containedPath(root, join(root, '.codex-plugin/plugin.json'));
+      syncManifest(true, root);
+    } catch (error) { errors.push(`${root}/plugin.json: ${getErrorMessage(error)}`); }
+  }
   const manifestPath = join(root, '.codex-plugin', 'plugin.json');
   const text = readText(manifestPath, errors);
   if (text === undefined) {
@@ -94,6 +102,21 @@ const validateManifest = (root, errors) => {
   if (manifest.author !== undefined && (!manifest.author || typeof manifest.author !== 'object' || Array.isArray(manifest.author) || typeof manifest.author.name !== 'string' || !manifest.author.name.trim())) errors.push(`${manifestPath}: author must have a non-empty name`);
   if (manifest.keywords !== undefined && (!Array.isArray(manifest.keywords) || new Set(manifest.keywords).size !== manifest.keywords.length || manifest.keywords.some((word) => typeof word !== 'string' || !word.trim()))) errors.push(`${manifestPath}: keywords must be unique non-empty strings`);
   if (manifest.interface !== undefined && (manifest.interface === null || Array.isArray(manifest.interface) || typeof manifest.interface !== 'object')) errors.push(`${manifestPath}: interface must be an object`);
+  if (manifest.interface && typeof manifest.interface === 'object' && !Array.isArray(manifest.interface)) {
+    for (const [key, limit] of Object.entries({ displayName: 30, shortDescription: 30, longDescription: 4000, developerName: 80 })) {
+      const value = manifest.interface[key];
+      if (typeof value !== 'string' || !value.trim() || [...value].length > limit) errors.push(`${manifestPath}: interface.${key} must contain 1-${limit} characters`);
+    }
+    if (typeof manifest.interface.category !== 'string' || !manifest.interface.category.trim()) errors.push(`${manifestPath}: interface.category must be non-empty`);
+    const capabilities = manifest.interface.capabilities;
+    if (!Array.isArray(capabilities) || capabilities.length > 20 || capabilities.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 120)) errors.push(`${manifestPath}: invalid interface.capabilities`);
+    const prompts = manifest.interface.defaultPrompt;
+    if (prompts !== undefined) {
+      const values = typeof prompts === 'string' ? [prompts] : prompts;
+      if (!Array.isArray(values) || values.length > 3 || new Set(values).size !== values.length || values.some((value) => typeof value !== 'string' || !value.trim() || [...value].length > 128)) errors.push(`${manifestPath}: invalid interface.defaultPrompt`);
+    }
+    for (const key of ['brandColor', 'brandColorDark']) if (manifest.interface[key] !== undefined && !/^#[0-9a-f]{6}$/i.test(manifest.interface[key])) errors.push(`${manifestPath}: invalid interface.${key}`);
+  }
   for (const key of ['composerIcon', 'logo', 'logoDark']) {
     const value = manifest.interface?.[key];
     if (value !== undefined && (typeof value !== 'string' || !value.startsWith('./'))) errors.push(`${manifestPath}: ${key} must be a relative plugin path`);
@@ -106,6 +129,7 @@ const validateManifest = (root, errors) => {
   const manifestPaths = [];
   collectManifestPaths(manifest, manifestPaths);
   for (const relativePath of [...new Set(manifestPaths)].sort(compareNames)) {
+    if (relativePath.includes('\\') || relativePath.split('/').includes('..')) errors.push(`${manifestPath}: declared paths must use forward slashes and contain no .. components: ${relativePath}`);
     if (relativePath === manifest.skills) {
       continue;
     }
