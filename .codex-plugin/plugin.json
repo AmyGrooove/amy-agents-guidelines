@@ -1,6 +1,6 @@
 {
   "name": "amy-agents-guidelines",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "description": "Applies Amy's TypeScript standards and maintains scoped project context for coding agents.",
   "author": {
     "name": "AmyGrooove",
