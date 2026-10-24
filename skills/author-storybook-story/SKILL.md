@@ -1,6 +1,6 @@
 ---
 name: author-storybook-story
-description: Explicitly requested Storybook stories, scenarios, args/argTypes, or component documentation. Excludes component-only changes and generic visual checks.
+description: Use when working on explicitly requested Storybook stories, scenarios, args/argTypes, or component documentation. Excludes component-only changes and generic visual checks.
 ---
 
 # Author Storybook Story

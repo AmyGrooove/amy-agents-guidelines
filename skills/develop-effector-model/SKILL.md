@@ -1,6 +1,6 @@
 ---
 name: develop-effector-model
-description: Standalone Effector models and their stores, events, effects, and sample wiring. Excludes component-owned stores and TanStack Query cache logic.
+description: Use when working on standalone Effector models and their stores, events, effects, and sample wiring. Excludes component-owned stores and TanStack Query cache logic.
 ---
 
 # Develop Effector Model

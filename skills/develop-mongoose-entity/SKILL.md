@@ -1,6 +1,6 @@
 ---
 name: develop-mongoose-entity
-description: Mongoose entities, schemas, indexes, entity repositories, domain types/helpers, and entity module wiring. Excludes endpoint DTOs/services/controllers and shared Mongo infrastructure.
+description: Use when working on Mongoose entities, schemas, indexes, entity repositories, domain types/helpers, and entity module wiring. Excludes endpoint DTOs/services/controllers and shared Mongo infrastructure.
 ---
 
 # Develop Mongoose Entity

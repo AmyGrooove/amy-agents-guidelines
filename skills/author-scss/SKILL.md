@@ -1,6 +1,6 @@
 ---
 name: author-scss
-description: Standalone/shared/global SCSS, design tokens, Sass functions, mixins, and responsive resources. Excludes component-owned SCSS Modules and tooling-only configuration.
+description: Use when working on standalone/shared/global SCSS, design tokens, Sass functions, mixins, and responsive resources. Excludes component-owned SCSS Modules and tooling-only configuration.
 ---
 
 # Author SCSS

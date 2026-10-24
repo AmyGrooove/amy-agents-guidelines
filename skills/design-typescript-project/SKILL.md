@@ -1,6 +1,6 @@
 ---
 name: design-typescript-project
-description: New Next.js, Vite, or NestJS project inception, design, and initialization. Excludes additions to existing projects, migrations, and standalone CI/container/deployment work.
+description: Use when working on new Next.js, Vite, or NestJS project inception, design, and initialization. Excludes additions to existing projects, migrations, and standalone CI/container/deployment work.
 ---
 
 # Design TypeScript Project

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "amy-agents-guidelines",
-  "version": "3.0.10",
+  "version": "4.0.0",
   "description": "Skills for TypeScript, React, and NestJS development with Amy's standards and scoped project AGENTS.md documentation.",
   "author": {
     "name": "AmyGrooove",
@@ -44,5 +44,6 @@
         "logoDark": "./assets/icon.svg"
       }
     }
-  }
+  },
+  "repository": "https://github.com/AmyGrooove/amy-agents-guidelines"
 }

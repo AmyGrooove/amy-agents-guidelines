@@ -348,3 +348,44 @@ test('agent assets разрешаются относительно skill directo
   writeFileSync(join(root, 'skills/sample/assets/icon.svg'), '<svg/>');
   assert.deepEqual(verifyPlugin([root]).errors, []);
 });
+
+
+test('independent validation calls keep their own roots, including nested validation', t => {
+ const first = fixture(t);
+ const second = fixture(t);
+ writeFileSync(join(first, 'references/only-first.md'), '# First');
+ writeFileSync(join(first, 'README.md'), '[First](references/only-first.md)');
+ const before = verifyPlugin([first]);
+ let calls = 0;
+ const result = verifyPlugin([second], { skillsRef: true, spawn: (command, args, options) => {
+  calls += 1;
+  assert.equal(command, 'skills-ref');
+  assert.deepEqual(args, ['validate', join(second, 'skills/sample')]);
+  assert.equal(options.shell, false);
+  assert.deepEqual(verifyPlugin([first]).errors, []);
+  return { status: 0, stdout: '', stderr: '' };
+ } });
+ assert.equal(calls, 1);
+ assert.equal(result.skillsRef.status, 'pass');
+ assert.deepEqual(verifyPlugin([first]), before);
+ assert.deepEqual(verifyPlugin([second]).errors, []);
+});
+
+for (const [label, result, status] of [
+ ['missing', { error: { code: 'ENOENT' } }, 'skipped'],
+ ['invalid format', { status: 1, stderr: 'invalid frontmatter' }, 'fail'],
+ ['timeout', { error: new Error('ETIMEDOUT'), status: null }, 'fail'],
+ ['success', { status: 0 }, 'pass'],
+]) test('skills-ref reports ' + label + ' honestly', t => {
+ const root = fixture(t);
+ const verified = verifyPlugin([root], { skillsRef: true, spawn: () => result });
+ assert.equal(verified.skillsRef.status, status);
+ assert.equal(verified.errors.length > 0, status === 'fail');
+});
+
+test('Agent Skills optional fields and Unicode character limits', () => {
+ const optional = "license: MIT\ncompatibility: " + '😀'.repeat(500) + "\nallowed-tools: Read Bash(git:*)\nmetadata:\n  owner: Amy\n";
+ assert.deepEqual(frontmatter(validSkill.replace('description:', optional + 'description:')).errors, []);
+ assert.ok(frontmatter(validSkill.replace('Create sample artifacts when requested.', '😀'.repeat(1025))).errors.length);
+ assert.ok(frontmatter(validSkill.replace('description:', 'compatibility: '+ '😀'.repeat(501)+'\ndescription:')).errors.length);
+});

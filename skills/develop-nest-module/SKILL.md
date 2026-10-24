@@ -1,6 +1,6 @@
 ---
 name: develop-nest-module
-description: Standalone NestJS infrastructure/composition modules, services, guards, pipes, filters, and decorators. Excludes entity-owned or endpoint-owned artifacts and pure helpers.
+description: Use when working on standalone NestJS infrastructure/composition modules, services, guards, pipes, filters, and decorators. Excludes entity-owned or endpoint-owned artifacts and pure helpers.
 ---
 
 # Develop Nest Module

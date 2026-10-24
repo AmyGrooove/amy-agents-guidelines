@@ -1,6 +1,6 @@
 ---
 name: develop-nest-endpoint
-description: NestJS HTTP endpoints, controllers, request/response DTOs, application services, mapping, and endpoint module wiring. Excludes entity schemas/repositories and standalone infrastructure.
+description: Use when working on NestJS HTTP endpoints, controllers, request/response DTOs, application services, mapping, and endpoint module wiring. Excludes entity schemas/repositories and standalone infrastructure.
 ---
 
 # Develop Nest Endpoint

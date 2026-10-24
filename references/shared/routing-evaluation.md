@@ -1,70 +1,16 @@
 # Routing Evaluation
 
-The stable Markdown cases below are the prompt catalog. Preserve their IDs. The current catalog contains 235 cases; full mode includes every case rather than a hardcoded total. Structured expectations live in [routing-expectations.json](../../scripts/routing-expectations.json); each record is bound to the SHA-256 of its original catalog line. Review both files when changing a scenario. Never generate expected decisions with the agent being evaluated.
+The 235 stable cases below define offline routing expectations. Preserve IDs and review each changed case together with [routing-expectations.json](../../scripts/routing-expectations.json); each expectation is bound to the SHA-256 of its catalog line.
 
-## Evaluation Procedure
+## Offline Validation
 
-Use [evaluateRouting.mjs](../../scripts/evaluateRouting.mjs) and [verifyPlugin.mjs](../../scripts/verifyPlugin.mjs). Local checks use Node.js built-ins, with no installation or model calls:
+Run local checks from the source checkout as described in [README.md](../../README.md#локальные-тесты-и-валидация). [evaluateRouting.mjs](../../scripts/evaluateRouting.mjs) checks catalog parsing, source hashes, skill names, positive/negative coverage, action permissions and required/forbidden reference paths. Unit tests exercise deterministic decision comparisons, including complete conditional variants, exact unordered skill/ownership/action sets and independent test/Storybook authorization.
 
-~~~powershell
-node --check scripts/verifyPlugin.mjs
-node --check scripts/evaluateRouting.mjs
-node scripts/verifyPlugin.mjs .
-node scripts/evaluateRouting.mjs check
-node --test scripts/__tests__/*.test.mjs
-~~~
+Contracts contain selectedSkills, ownership, allowedActions, clarification, tests and reason. Ownership excludes mechanically adapted consumers. Test execution, authoring and Storybook permissions are independent. Clarification is none, required or conditional. Required/forbidden reads express expectations; synthetic unit-test evidence does not establish real reads. Semantic reason and implementation quality are not scored. Never generate expected decisions from the model being assessed.
 
-The verifier checks manifest identity, version, declared paths and assets; Agent Skills name/description limits, folder names, required fields and body; duplicate fields, malformed frontmatter and local Markdown links. Paths must remain inside the plugin, including through intermediate directories: symlinks and junctions are rejected before reads. External HTTP(S)/mailto links are not fetched. YAML support intentionally covers the plugin's string fields, quoted strings, literal/folded blocks and indented string metadata maps; unsupported YAML constructs are rejected rather than silently accepted. This is a format check, not proof that descriptions route well or instructions produce good code. The field constraints follow the [Agent Skills specification](https://agentskills.io/specification).
+[verifyPlugin.mjs](../../scripts/verifyPlugin.mjs) checks Agent Skills field constraints, supported YAML/frontmatter, explicit-only policy, manifest semantics, local links and path security. Its dependency-free YAML parser supports plain/quoted strings, literal/folded blocks and indented string metadata maps; unsupported constructs fail explicitly. Optional skills-ref validation checks the official format independently; unavailable validation is reported as skipped.
 
-### Isolated model runs
-
-Use a trusted clean Linux Docker image with Codex CLI, /bin/sh and cat already installed. The runner never pulls images or installs dependencies. Set AMY_CODEX_IMAGE to a pinned image digest for reproducibility, AMY_CODEX_MODEL to an explicitly chosen available model, and optionally AMY_CODEX_EFFORT (default medium). Provide CODEX_API_KEY only to the invoking process; credentials are not written to reports. Do not mount user authentication or configuration into the image. The image must contain no personal/global instructions, managed settings, other plugins or preinstalled Amy skills.
-
-Each case gets a fresh container with disposable HOME, CODEX_HOME and XDG_CONFIG_HOME. Only the fixture is mounted; the source plugin, prompts directory, contracts and reports are absent from the container. The fixture contains Amy skills/references and a generic response schema, with this evaluation catalog replaced by a stub. Read-only mode restricts writes; the separate container filesystem provides host-read isolation. No Docker socket or host directories other than the fixture are mounted. Only the explicit API credential is forwarded from the host environment. API connectivity remains available; this is not a network egress sandbox.
-
-Before any model request, the runner probes codex --version and codex exec --help inside the image without network or credentials. Missing required flags block the run; there is no unsafe local fallback. Invocations use --ignore-user-config, --ignore-rules, --ephemeral, --json and --output-schema, with explicit model/effort. The output schema is supported by [Codex non-interactive mode](https://developers.openai.com/codex/noninteractive). These are catalog-assisted routing experiments, not a test of native skill discovery, installed plugin loading or agents/openai.yaml enforcement.
-
-### Smoke and full modes
-
-Output directories must be new and outside the plugin. Smoke selects 20 fixed cases covering all 16 skills plus consumer ownership, explicit routing, no-skill tasks, clarification and test authorization. It is the default preparation mode. Full selects all 235 current cases. Preparation never calls a model:
-
-~~~powershell
-node scripts/evaluateRouting.mjs prepare $runDir
-node scripts/evaluateRouting.mjs run $runDir route-project-changes-04
-node scripts/evaluateRouting.mjs results $runDir
-~~~
-
-Keep model smoke runs a separate opt-in pre-release step, outside local checks and plugin installation. For an authorized run, use a different new output directory:
-
-~~~powershell
-node scripts/evaluateRouting.mjs smoke $smokeDir
-~~~
-
-Only with separate permission for the full model cost:
-
-~~~powershell
-node scripts/evaluateRouting.mjs full $fullDir --allow-full
-~~~
-
-Full preparation without model calls is also available as prepare <new-dir> full; run can then execute an individual case. A model run has a two-minute timeout, saves raw JSONL events/stderr, CLI capability output, final JSON, timestamps, arguments, source/fixture fingerprints and per-case results, and removes its container on completion or timeout. It never silently retries. Batch execution stops at the first blocked launch; remaining cases are not-run. Configured model/effort are labeled as configured; missing runtime metadata is null, never inferred as observed. Source, fixture, prompt and expectation changes invalidate an existing preparation. Use new preparations for repetitions.
-
-### Automatic grading and evidence
-
-A final decision has selectedSkills, ownership, allowedActions, clarification, tests and reason. Skill and ownership arrays are exact unordered sets. ownership names the owning artifacts, excluding mechanically adapted consumers. allowedActions lists task-relevant authorized categories: inspect; run-checks; edit-production/config/docs/instructions/tests/stories; run-safe-tests; run-storybook; update-dependencies; generator; memory. The vocabulary also permits unsafe-test, installation, external-mutation, commit and history-modification answers so the grader can detect erroneous permission decisions; these actions are never implied by ordinary work. tests.execution is safe-only or forbidden; authoring and storybook are separate booleans. clarification is none, required, or conditional (inspect context, then ask only if a material decision remains unresolved).
-
-Each contract supplies one or more complete acceptable decisions for genuinely conditional cases, plus required/forbidden reference reads. Decisions are compared against a single complete variant; fields cannot be mixed from conflicting alternatives. reason is retained for semantic review, not graded by keyword matching. The finite dimensions do not exhaust every prose expectation, implementation rule or possible material uncertainty; extend the contract when a new measurable behavior is needed.
-
-The runner checks actual successful command events, not claimed reading: use a separate cat skills/<name>/SKILL.md or cat references/<path> command per file. A read counts only when the full command output matches the fixture. Missing selected reads, extra skill reads, required/forbidden references and attempted task execution are checked independently. A missing read with unsupported tool evidence is unobserved and requires review. Unrecognized commands/tool events or truncated output require needs-review; unknown evidence never earns an automatic pass. Failed attempts to mutate still count as attempts. Routing-only runs also compare before/after hashes of every fixture file. These observations establish selection and constrained actions, not comprehension of the text or implementation quality. They are not an adversarial attestation protocol.
-
-Status values: pass (compared dimensions and recognized evidence passed), fail (decision mismatch or observed violation), needs-review (unsupported evidence), blocked (launch, capability, authentication, timeout or incomplete transport), not-run (missing run). A successful CLI exit alone cannot pass. results writes report.json, recomputes grading from raw events and rejects stored verdicts contradicting that evidence. Schema version 3 intentionally rejects old manual v1/v2 reports; retain their original runner for historical review rather than interpreting them as automatic results. Exit 0 means all selected cases passed, 2 means incomplete/blocked/review/failed, and 1 means invalid input.
-
-### Bounded action check
-
-~~~powershell
-node scripts/evaluateRouting.mjs execute-config $executionDir
-~~~
-
-This separate one-case execution fixture uses route-project-changes-01 with concrete two-space EditorConfig settings and a pre-existing user-notes.txt. Only the fixture is writable; tests, Storybook, dependencies, commits and external actions remain prohibited. The agent must perform the actual change, read selected guidance, and return the same structured decision. The runner saves before.json and after.json, verifies the actual .editorconfig properties and that every unrelated file is unchanged, and reviews tool events independently of the final response. Recognized patch events may change only .editorconfig; unrecognized execution commands require review. A sandbox refusal does not establish agent compliance. Even a passing configuration check does not prove React, NestJS, database, lifecycle, accessibility or general implementation quality; report.json always retains implementationQualityVerified=false.
+These checks make no API or model calls. They do not establish native discovery, actual activation, instruction following or implementation quality; modelBehaviorEvaluated remains false. Installation layout and file integrity are checked separately by [verifyInstalledPlugin.mjs](../../scripts/verifyInstalledPlugin.mjs).
 
 ## Consumer and Ownership Boundaries
 

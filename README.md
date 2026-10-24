@@ -55,13 +55,21 @@ codex plugin add amy-agents-guidelines --marketplace marketplace-name
 ```sh
 node --check scripts/verifyPlugin.mjs
 node --check scripts/evaluateRouting.mjs
+node --check scripts/verifyInstalledPlugin.mjs
 node scripts/verifyPlugin.mjs .
 node scripts/evaluateRouting.mjs check
+node scripts/verifyInstalledPlugin.mjs
 node --test scripts/__tests__/*.test.mjs
 git diff --check
 ```
 
-`verifyPlugin.mjs` проверяет манифест, форматы навыков, объявленные пути, ресурсы и локальные Markdown-ссылки; внешние ссылки не загружает. `evaluateRouting.mjs check` выполняет **статическую проверку** каталога сценариев и согласованности ожиданий, включая хеши исходных строк. Он не вызывает и не тестирует реальную модель (`modelBehaviorEvaluated: false`), не подтверждает качество её решений или обнаружение установленного плагина. Команда `node --test` проверяет локальные инструменты и формулировки правил; вызовы Docker и модели в тестах подменены.
+`verifyPlugin.mjs` проверяет manifest, ограничения Agent Skills, поддерживаемый YAML/frontmatter, explicit-only policy, ресурсы, пути и локальные Markdown-ссылки. Внешние ссылки не загружаются; symlinks/junctions отклоняются. Поддерживаются строки, literal/folded blocks и вложенная строковая metadata; неподдерживаемый YAML явно отклоняется. Ограничения формата сверены со [спецификацией Agent Skills](https://agentskills.io/specification), manifest — со [схемой Agent Plugins 1.0.0](https://agent-plugins.org/schemas/1.0.0/plugin.schema.json).
+
+CLI дополнительно вызывает `skills-ref validate` для каждого skill, если валидатор установлен отдельно и доступен в PATH. Его отсутствие явно выводится как `skipped`; зависимости автоматически не устанавливаются. Команда `node scripts/verifyPlugin.mjs . --skills-ref` требует эту проверку: отсутствие валидатора или ошибка дают ненулевой exit code. Собственные semantic/security проверки сохраняются независимо от внешнего валидатора.
+
+`evaluateRouting.mjs check` проверяет 235 offline-сценариев, структурированные expectations, хеши исходных строк и границы skills. Unit-тесты проверяют локальные инструменты и правила. Синтетические решения не подтверждают реальную активацию skills, чтение инструкций или качество реализации (`modelBehaviorEvaluated: false`). API-зависимые команды evaluator удалены.
+
+`verifyInstalledPlugin.mjs` без аргументов создаёт временную копию layout, проверяет manifest, все 16 skills, references, ссылки и побайтовую целостность файлов через SHA-256, затем удаляет копию. Для проверки фактической установки: `node scripts/verifyInstalledPlugin.mjs /path/to/installed/plugin`. Необязательный второй аргумент задаёт source checkout. Сравниваются все файлы, кроме Git-метаданных; дополнительные, отсутствующие и изменённые файлы дают ошибку. Это локальная проверка структуры, а не имитация установки или активации через Codex.
 
 ## Обновление и сопровождение
 
@@ -77,6 +85,6 @@ codex plugin remove amy-agents-guidelines --marketplace marketplace-name
 codex plugin add amy-agents-guidelines --marketplace marketplace-name
 ```
 
-5. Проверьте установленную версию и совпадение файлов с source checkout, затем выполните `node scripts/verifyPlugin.mjs /path/to/installed/plugin`, заменив путь фактическим каталогом установленного плагина.
+5. Проверьте установленную версию и совпадение файлов с source checkout, затем выполните `node scripts/verifyInstalledPlugin.mjs /path/to/installed/plugin`, заменив путь фактическим каталогом установленного плагина.
 
 Не добавляйте cachebuster, не меняйте код сопровождаемых проектов и не создавайте Git-коммиты при сопровождении плагина.

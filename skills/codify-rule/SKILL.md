@@ -1,6 +1,6 @@
 ---
 name: codify-rule
-description: Explicit requests to persist or amend a lasting working rule. Feedback, repetition, and task-only constraints alone do not activate it; memory updates are separate.
+description: Use when the user explicitly requests persisting or amending a lasting working rule. Feedback, repetition, and task-only constraints alone do not activate it; memory updates are separate.
 ---
 
 # Codify Rule

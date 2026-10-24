@@ -1,6 +1,6 @@
 ---
 name: route-project-changes
-description: Explicit invocation of route-project-changes to assess artifact ownership and applicable Amy guidance. Never an automatic preflight or fallback for unmatched tasks.
+description: Use when the user explicitly invokes route-project-changes to assess artifact ownership and applicable Amy guidance. Never an automatic preflight or fallback for unmatched tasks.
 ---
 
 # Route Project Changes

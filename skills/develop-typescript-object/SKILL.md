@@ -1,6 +1,6 @@
 ---
 name: develop-typescript-object
-description: Standalone TypeScript functions, types, constants, and utilities. Fallback only when no React, Effector, TanStack Query, NestJS, Mongoose, test, or story artifact owns them.
+description: Use when working on standalone TypeScript functions, types, constants, and utilities. Fallback only when no React, Effector, TanStack Query, NestJS, Mongoose, test, or story artifact owns them.
 ---
 
 # Develop TypeScript Object

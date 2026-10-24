@@ -1,6 +1,6 @@
 ---
 name: author-typescript-test
-description: Explicitly requested TypeScript test authoring, repair, or review. Excludes test execution, generic verification, and production-only changes.
+description: Use when working on explicitly requested TypeScript test authoring, repair, or review. Excludes test execution, generic verification, and production-only changes.
 ---
 
 # Author TypeScript Test

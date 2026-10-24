@@ -1,6 +1,6 @@
 ---
 name: document-agent-context
-description: Requested agent documentation or AGENTS.md routing; maintenance when authorized implementation makes existing docs stale or establishes useful facts about their subject. No automatic docs for read-only work or new subjects.
+description: Use when the user requests agent documentation or AGENTS.md routing, or authorized implementation makes existing docs stale or establishes useful facts about their subject. No automatic docs for read-only work or new subjects.
 ---
 
 # Document Agent Context

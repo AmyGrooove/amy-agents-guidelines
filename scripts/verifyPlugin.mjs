@@ -1,6 +1,7 @@
 import { lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve, relative, isAbsolute, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 const VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const LINK_PATTERN = /!?\[[^\]\r\n]*\]\(([^)\r\n]*)\)/g;
@@ -9,9 +10,8 @@ const PLUGIN_NAME_PATTERN = /^(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$
 const OPENAI_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 const OPENAI_CATEGORIES = ['Productivity', 'Creativity', 'Developer Tools', 'Business & Operations', 'Data & Analytics', 'Communication', 'Education & Research', 'Security', 'Finance', 'Healthcare', 'Travel', 'Entertainment', 'Other'];
 const LINE_BREAK_PATTERN = /[\r\n\u0085\u2028\u2029]/u;
-let pluginRoot;
 
-export const containedPath = (root, target) => {
+export const containedPath = (root, target, { allowMissing = false } = {}) => {
   if (/^(?:[A-Za-z]:|[\\/]{2})/.test(target) && !isAbsolute(target)) throw new Error(`unsupported absolute path: ${target}`);
   const path = resolve(root, target);
   const part = relative(root, path);
@@ -19,7 +19,11 @@ export const containedPath = (root, target) => {
   let current = parse(path).root;
   for (const component of path.slice(current.length).split(/[\\/]/).filter(Boolean)) {
     current = join(current, component);
-    if (lstatSync(current).isSymbolicLink()) throw new Error(`symbolic links and junctions are not supported: ${current}`);
+    try {
+      if (lstatSync(current).isSymbolicLink()) throw new Error(`symbolic links and junctions are not supported: ${current}`);
+    } catch (error) {
+      if (!allowMissing || error.code !== 'ENOENT') throw error;
+    }
   }
   return path;
 };
@@ -28,9 +32,9 @@ const getErrorMessage = (error) => error instanceof Error ? error.message : Stri
 
 const compareNames = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 
-const readText = (path, errors) => {
+const readText = (root, path, errors) => {
   try {
-    if (pluginRoot) containedPath(pluginRoot, path);
+    containedPath(root, path);
     return readFileSync(path, 'utf8');
   } catch (error) {
     errors.push(`${path}: cannot read: ${getErrorMessage(error)}`);
@@ -38,9 +42,9 @@ const readText = (path, errors) => {
   }
 };
 
-const getPathInfo = (path, errors, label) => {
+const getPathInfo = (root, path, errors, label) => {
   try {
-    if (pluginRoot) containedPath(pluginRoot, path);
+    containedPath(root, path);
     return lstatSync(path);
   } catch (error) {
     errors.push(`${path}: cannot access ${label}: ${getErrorMessage(error)}`);
@@ -127,7 +131,7 @@ const validateOpenAIManifest = (root, manifest, errors) => {
     const value = interfaceSettings?.[key];
     if (value !== undefined && (typeof value !== 'string' || !value.startsWith('./'))) errors.push(`${manifestPath}: ${key} must be a relative plugin path`);
     else if (value !== undefined) {
-      const info = getPathInfo(resolve(root, value), errors, key);
+      const info = getPathInfo(root, resolve(root, value), errors, key);
       if (info && !info.isFile()) errors.push(`${manifestPath}: ${key} must point to a regular file`);
     }
   }
@@ -135,7 +139,7 @@ const validateOpenAIManifest = (root, manifest, errors) => {
 
 const validateManifest = (root, errors) => {
   const manifestPath = join(root, 'plugin.json');
-  const text = readText(manifestPath, errors);
+  const text = readText(root, manifestPath, errors);
   if (text === undefined) {
     return undefined;
   }
@@ -160,11 +164,11 @@ const validateManifest = (root, errors) => {
   collectManifestPaths(manifest, manifestPaths);
   for (const relativePath of [...new Set(manifestPaths)].sort(compareNames)) {
     if (relativePath.includes('\\') || relativePath.split('/').includes('..')) errors.push(`${manifestPath}: declared paths must use forward slashes and contain no .. components: ${relativePath}`);
-    getPathInfo(resolve(root, relativePath), errors, `declared path ${relativePath}`);
+    getPathInfo(root, resolve(root, relativePath), errors, `declared path ${relativePath}`);
   }
 
   const skillsRoot = join(root, 'skills');
-  const skillsInfo = getPathInfo(skillsRoot, errors, 'skills directory');
+  const skillsInfo = getPathInfo(root, skillsRoot, errors, 'skills directory');
   if (skillsInfo !== undefined && !skillsInfo.isDirectory()) {
     errors.push(`${skillsRoot}: skills path must be a directory`);
     return undefined;
@@ -271,7 +275,7 @@ export const parseFrontmatter = (path, content, errors) => {
   const description = fields.get('description');
   if (typeof name === 'string' && (name.length > 64 || !SKILL_NAME_PATTERN.test(name))) errors.push(`${path}: invalid skill name (1-64 lowercase letters, digits, single hyphens)`);
   if (typeof description === 'string' && (!description.trim() || [...description].length > 1024)) errors.push(`${path}: invalid description (1-1024 characters)`);
-  if (fields.has('compatibility') && (typeof fields.get('compatibility') !== 'string' || !fields.get('compatibility').trim() || fields.get('compatibility').length > 500)) errors.push(`${path}: compatibility must contain 1-500 characters`);
+  if (fields.has('compatibility') && (typeof fields.get('compatibility') !== 'string' || !fields.get('compatibility').trim() || [...fields.get('compatibility')].length > 500)) errors.push(`${path}: compatibility must contain 1-500 characters`);
   if (!lines.slice(endIndex + 1).join('\n').trim()) errors.push(`${path}: missing skill body`);
 
   for (const field of ['name', 'description']) {
@@ -286,8 +290,9 @@ export const parseFrontmatter = (path, content, errors) => {
   };
 };
 
-const getDirectoryEntries = (directory, errors) => {
+const getDirectoryEntries = (root, directory, errors) => {
   try {
+    containedPath(root, directory);
     return readdirSync(directory, { withFileTypes: true }).sort((left, right) => compareNames(left.name, right.name));
   } catch (error) {
     errors.push(`${directory}: cannot read directory: ${getErrorMessage(error)}`);
@@ -295,24 +300,24 @@ const getDirectoryEntries = (directory, errors) => {
   }
 };
 
-const validateSkillAgent = (skillRoot, errors) => {
+const validateSkillAgent = (root, skillRoot, errors) => {
   const explicitOnly = ['codify-rule', 'route-project-changes'].includes(parse(skillRoot).base);
   const path = join(skillRoot, 'agents', 'openai.yaml');
-  const agents = getDirectoryEntries(skillRoot, errors).find((entry) => entry.name === 'agents');
+  const agents = getDirectoryEntries(root, skillRoot, errors).find((entry) => entry.name === 'agents');
   if (!agents) {
     if (explicitOnly) errors.push(`${path}: explicit-only skill requires policy.allow_implicit_invocation: false`);
     return;
   }
-  const agentsInfo = getPathInfo(join(skillRoot, 'agents'), errors, 'agents directory');
+  const agentsInfo = getPathInfo(root, join(skillRoot, 'agents'), errors, 'agents directory');
   if (!agentsInfo || !agentsInfo.isDirectory()) {
     if (agentsInfo) errors.push(`${path}: agents must be a directory`);
     return;
   }
-  if (!getDirectoryEntries(join(skillRoot, 'agents'), errors).some((entry) => entry.name === 'openai.yaml')) {
+  if (!getDirectoryEntries(root, join(skillRoot, 'agents'), errors).some((entry) => entry.name === 'openai.yaml')) {
     if (explicitOnly) errors.push(`${path}: explicit-only skill requires policy.allow_implicit_invocation: false`);
     return;
   }
-  const info = getPathInfo(path, errors, 'skill agent metadata');
+  const info = getPathInfo(root, path, errors, 'skill agent metadata');
   if (!info) return;
   if (!info.isFile()) {
     errors.push(`${path}: skill agent metadata must be a regular file`);
@@ -375,17 +380,17 @@ const validateSkillAgent = (skillRoot, errors) => {
       errors.push(`${path}: interface.${key} must be a relative skill file path without traversal`);
       continue;
     }
-    const asset = getPathInfo(resolve(skillRoot, value), errors, `interface.${key}`);
+    const asset = getPathInfo(root, resolve(skillRoot, value), errors, `interface.${key}`);
     if (asset && !asset.isFile()) errors.push(`${path}: interface.${key} must point to a regular file`);
   }
   if (explicitOnly && sections.get('policy')?.get('allow_implicit_invocation') !== false) errors.push(`${path}: explicit-only skill requires policy.allow_implicit_invocation: false`);
 };
 
-const validateSkills = (skillsRoot, pluginName, errors) => {
+const validateSkills = (root, skillsRoot, pluginName, errors) => {
   const skillNames = new Map();
   let skillCount = 0;
 
-  for (const entry of getDirectoryEntries(skillsRoot, errors)) {
+  for (const entry of getDirectoryEntries(root, skillsRoot, errors)) {
     const entryPath = join(skillsRoot, entry.name);
     if (entry.isSymbolicLink()) {
       errors.push(`${entryPath}: symbolic links and junctions are not supported`);
@@ -396,9 +401,9 @@ const validateSkills = (skillsRoot, pluginName, errors) => {
     }
 
     skillCount += 1;
-    validateSkillAgent(entryPath, errors);
+    validateSkillAgent(root, entryPath, errors);
     const skillPath = join(entryPath, 'SKILL.md');
-    const skillInfo = getPathInfo(skillPath, errors, 'SKILL.md');
+    const skillInfo = getPathInfo(root, skillPath, errors, 'SKILL.md');
     if (skillInfo === undefined) {
       continue;
     }
@@ -407,7 +412,7 @@ const validateSkills = (skillsRoot, pluginName, errors) => {
       continue;
     }
 
-    const content = readText(skillPath, errors);
+    const content = readText(root, skillPath, errors);
     if (content === undefined) {
       continue;
     }
@@ -438,10 +443,10 @@ const validateSkills = (skillsRoot, pluginName, errors) => {
   return skillCount;
 };
 
-const getMarkdownFiles = (directory, errors) => {
+const getMarkdownFiles = (root, directory, errors) => {
   const files = [];
   const walk = (currentDirectory) => {
-    for (const entry of getDirectoryEntries(currentDirectory, errors)) {
+    for (const entry of getDirectoryEntries(root, currentDirectory, errors)) {
       const entryPath = join(currentDirectory, entry.name);
       if (entry.isSymbolicLink()) {
         errors.push(`${entryPath}: symbolic links and junctions are not supported`);
@@ -499,7 +504,7 @@ const parseLinkTarget = (source, target, errors) => {
   return undefined;
 };
 
-const validateLinks = (source, content, errors) => {
+const validateLinks = (root, source, content, errors) => {
   const visible = removeCode(content);
   const definitions = [...visible.matchAll(/^\s{0,3}\[[^\]]+\]:\s*(.+)$/gm)].map((match) => [match[0], match[1]]);
   const labels = new Set([...visible.matchAll(/^\s{0,3}\[([^\]]+)\]:/gm)].map((match) => match[1].toLowerCase().replace(/\s+/g, ' ')));
@@ -527,15 +532,15 @@ const validateLinks = (source, content, errors) => {
       errors.push(`${source}: local link must be relative: ${linkTarget}`);
       continue;
     }
-    const targetInfo = getPathInfo(targetPath, errors, `local link ${linkTarget}`);
+    const targetInfo = getPathInfo(root, targetPath, errors, `local link ${linkTarget}`);
     if (targetInfo !== undefined && targetInfo.isDirectory()) {
       errors.push(`${source}: local link points to a directory ${linkTarget}`);
     }
   }
 };
 
-const validateMarkdownDirectory = (directory, errors) => {
-  const directoryInfo = getPathInfo(directory, errors, 'required directory');
+const validateMarkdownDirectory = (root, directory, errors) => {
+  const directoryInfo = getPathInfo(root, directory, errors, 'required directory');
   if (directoryInfo === undefined) {
     return;
   }
@@ -544,10 +549,10 @@ const validateMarkdownDirectory = (directory, errors) => {
     return;
   }
 
-  for (const source of getMarkdownFiles(directory, errors)) {
-    const content = readText(source, errors);
+  for (const source of getMarkdownFiles(root, directory, errors)) {
+    const content = readText(root, source, errors);
     if (content !== undefined) {
-      validateLinks(source, content, errors);
+      validateLinks(root, source, content, errors);
     }
   }
 };
@@ -565,8 +570,7 @@ const getRoot = (argumentsList, errors) => {
   const root = argumentsList[0] === undefined
     ? resolve(fileURLToPath(new URL('..', import.meta.url)))
     : resolve(argumentsList[0]);
-  pluginRoot = root;
-  const rootInfo = getPathInfo(root, errors, 'plugin root');
+  const rootInfo = getPathInfo(root, root, errors, 'plugin root');
   if (rootInfo !== undefined && !rootInfo.isDirectory()) {
     errors.push(`${root}: plugin root must be a directory`);
     return undefined;
@@ -574,31 +578,51 @@ const getRoot = (argumentsList, errors) => {
   return rootInfo === undefined ? undefined : root;
 };
 
-export const verifyPlugin = (argumentsList = []) => {
+export const validateSkillsReference = (root, spawn = spawnSync) => {
   const errors = [];
-  pluginRoot = undefined;
+  let checked = 0;
+  for (const entry of readdirSync(containedPath(root, 'skills'), { withFileTypes: true }).filter(x => x.isDirectory()).sort((a, b) => compareNames(a.name, b.name))) {
+    const path = containedPath(root, join('skills', entry.name));
+    const result = spawn('skills-ref', ['validate', path], { shell: false, encoding: 'utf8', timeout: 30000, windowsHide: true });
+    if (result.error?.code === 'ENOENT' && !checked) return { status: 'skipped', reason: 'skills-ref unavailable; no dependencies were installed', checked };
+    checked += 1;
+    if (result.error || result.status !== 0) errors.push(path + ': skills-ref failed: ' + (result.error?.message || result.stderr || result.stdout || result.status));
+  }
+  return { status: errors.length ? 'fail' : 'pass', checked, errors };
+};
+
+export const verifyPlugin = (argumentsList = [], options = {}) => {
+  const errors = [];
   const root = getRoot(argumentsList, errors);
   let skillCount = 0;
 
   if (root !== undefined) {
     const manifest = validateManifest(root, errors);
     if (manifest !== undefined) {
-      skillCount = validateSkills(manifest.skillsRoot, manifest.name, errors);
-      validateMarkdownDirectory(manifest.skillsRoot, errors);
+      skillCount = validateSkills(root, manifest.skillsRoot, manifest.name, errors);
+      validateMarkdownDirectory(root, manifest.skillsRoot, errors);
     }
-    validateMarkdownDirectory(join(root, 'references'), errors);
-    for (const entry of getDirectoryEntries(root, errors).filter((entry) => entry.isFile() && entry.name.endsWith('.md'))) {
+    validateMarkdownDirectory(root, join(root, 'references'), errors);
+    for (const entry of getDirectoryEntries(root, root, errors).filter((entry) => entry.isFile() && entry.name.endsWith('.md'))) {
       const source = join(root, entry.name);
-      const content = readText(source, errors);
-      if (content !== undefined) validateLinks(source, content, errors);
+      const content = readText(root, source, errors);
+      if (content !== undefined) validateLinks(root, source, content, errors);
     }
   }
 
-  return { errors: errors.sort(compareNames), skillCount, root };
+  const skillsRef = options.skillsRef && root && !errors.length
+    ? validateSkillsReference(root, options.spawn || spawnSync)
+    : { status: 'skipped', reason: options.skillsRef ? 'Local validation failed' : 'Not requested' };
+  if (skillsRef.status === 'fail') errors.push(...skillsRef.errors);
+  return { errors: errors.sort(compareNames), skillCount, root, skillsRef };
 };
 
 const run = () => {
-  const { errors, skillCount, root } = verifyPlugin(process.argv.slice(2));
+  const args = process.argv.slice(2);
+  const required = args.includes('--skills-ref');
+  const { errors, skillCount, root, skillsRef } = verifyPlugin(args.filter(x => x !== '--skills-ref'), { skillsRef: true });
+  console.log('skills-ref: ' + skillsRef.status + (skillsRef.reason ? ' (' + skillsRef.reason + ')' : ''));
+  if (required && skillsRef.status === 'skipped') errors.push('Required skills-ref validation was skipped');
 
   if (errors.length > 0) {
     console.error('Plugin integrity check failed:');

@@ -1,6 +1,6 @@
 ---
 name: develop-react-hook
-description: Standalone reusable React hooks. Excludes component-owned hooks, TanStack Query hooks, and pure functions without React semantics.
+description: Use when working on standalone reusable React hooks. Excludes component-owned hooks, TanStack Query hooks, and pure functions without React semantics.
 ---
 
 # Develop React Hook

@@ -1,6 +1,6 @@
 ---
 name: develop-react-component
-description: React components and exclusively owned props, hooks, stores, helpers, internal components, and SCSS Modules. Excludes standalone hooks/Effector models, shared styles, and test/story-only work.
+description: Use when working on React components and exclusively owned props, hooks, stores, helpers, internal components, and SCSS Modules. Excludes standalone hooks/Effector models, shared styles, and test/story-only work.
 ---
 
 # Develop React Component

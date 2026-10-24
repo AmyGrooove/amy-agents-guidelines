@@ -1,6 +1,6 @@
 ---
 name: place-typescript-object
-description: TypeScript object placement, layer ownership, public API/dependency boundaries, or cycle analysis. Excludes project inception and routine implementation with an established destination.
+description: Use when working on TypeScript object placement, layer ownership, public API/dependency boundaries, or cycle analysis. Excludes project inception and routine implementation with an established destination.
 ---
 
 # Place TypeScript Object

@@ -1,6 +1,6 @@
 ---
 name: develop-tanstack-query-api
-description: TanStack Query API hooks and their owned raw requests, query keys, and types. Excludes standalone fetch utilities, backend endpoints, and caller-only component changes.
+description: Use when working on TanStack Query API hooks and their owned raw requests, query keys, and types. Excludes standalone fetch utilities, backend endpoints, and caller-only component changes.
 ---
 
 # Develop TanStack Query API
